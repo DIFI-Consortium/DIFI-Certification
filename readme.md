@@ -232,6 +232,7 @@ sudo docker run -it --net=host -v /tmp:/tmp -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE
 
 (note: will be nginx server calling through application gateway unix domain socket to uwsgi server hosting flask app, listening on port configured in nginx conf server block like port 80)
 
+```
     example nginx server block:
     server {
         listen 80;
@@ -247,3 +248,4 @@ sudo docker run -it --net=host -v /tmp:/tmp -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE
                 uwsgi_pass unix:/tmp/difi.sock;  #path to unix socket
             }
     }
+```
