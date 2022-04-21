@@ -196,14 +196,16 @@ sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FL
 sudo docker build --force-rm -f docker/Dockerfile -t difi_one .
 sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod difi_one
 ```
-    (note: will be uwsgi server hosting flask app, listening on port 5000)
+
+(note: will be uwsgi server hosting flask app, listening on port 5000)
 
 with proxy server:
 ```bash
 sudo docker build --build-arg USER=nginx --build-arg GROUP=nginx --build-arg UID=2000 --build-arg GID=2000 --force-rm -f docker/Dockerfile -t difi_one .
 sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod difi_one
 ```
-    (note: will be nginx server proxying to uwsgi server hosting flask app, listening on port configured in nginx conf server block like port 80)
+
+(note: will be nginx server proxying to uwsgi server hosting flask app, listening on port configured in nginx conf server block like port 80)
 
 ```
     example nginx server block:
