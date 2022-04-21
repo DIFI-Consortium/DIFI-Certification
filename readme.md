@@ -13,15 +13,15 @@ Digital signal processing (DSP) revolutionized acquisition and reproduction of a
 
 This **DIFI** standard provides two independent data flows:   
 1. RF input to network output (RF-to-IP) 
-2. Network input to RF output (IP-to-RF)
+1. Network input to RF output (IP-to-RF)
 
 Both VITA and **DIFI** describe the data plane interface with the ability to transmit and receive digitized IF data and corresponding metadata over standard IP networks. DIFI is a specific framework implementation that is meant to interface in alignment with with the VITA 49.2 framework.
 
 Knowledge of related documents is helpful.
 ___
 
-▪ VITA Radio Transport (VRT) Standard, VITA-49.0 – 2015
-▪ VITA Radio Transport (VRT) Standard, VITA-49.2 – 2017
+- VITA Radio Transport (VRT) Standard, VITA-49.0 – 2015
+- VITA Radio Transport (VRT) Standard, VITA-49.2 – 2017
 
 
 
