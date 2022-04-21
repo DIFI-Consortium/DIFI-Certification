@@ -1,18 +1,19 @@
-# Copyright (C) 2022 Kratos Technology & Training Solutions, Inc.
-# Licensed under the MIT License.
-# SPDX-License-Identifier: MIT
-  # Instructions for saving a docker image
+Copyright © `2022` `Kratos Technology & Training Solutions, Inc.`
+Licensed under the MIT License.
+SPDX-License-Identifier: MIT
+
+Instructions for saving a docker image
   These instructions intend to prepare any Docker image for deployment within OpenSpace. They also serve to package up any docker image for delivery to another party.
 
-  # See Also:
+See Also:
   https://docs.docker.com/engine/reference/commandline/save/
 
-  # Context
+Context
   Docker images are akin to an entire OS image; they contain an OS, as well as all of the packages and scripts required for an application. As such, this is an increasingly popular way to version control an entire application. However, that also means that the files can be very large. See #TODO for file compression tricks.
 
   This instruction set assumes that the reader has a Dockerfile and a working knowledge of the Docker system.
 
-  # Instructions
+Instructions
   1. cd to the directory that contains your Dockerfile.
   2. Build your docker image using the same 'docker build' command that your application requires
       _It is recommended that you use best practices for cleaning your environment and building the image from scratch_

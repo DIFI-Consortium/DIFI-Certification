@@ -1,7 +1,11 @@
-# Copyright (C) 2022 Kratos Technology & Training Solutions, Inc.
-# Licensed under the MIT License.
-# SPDX-License-Identifier: MIT
-# DIFI
+Copyright © `2022` `Kratos Technology & Training Solutions, Inc.`
+Licensed under the MIT License.
+SPDX-License-Identifier: MIT
+
+DIFI
+
+https://www.luismg.com/protocol/
+
 DIFI verification
 
 These scripts send and recieve VITA/DIFI packets.  There are examples of Context, Dat and Version packets.
