@@ -189,7 +189,8 @@ Note: This application starts a UDP socket server that listens for DIFI packets 
 sudo docker build --force-rm -f docker/Dockerfile -t difi_one .
 sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=dev difi_one
 ```
-    (note: will be development flask server, listening on port 5000)
+
+(note: will be development flask server, listening on port 5000)
 
 ```bash
 [PROD] (proxy server)
@@ -229,7 +230,7 @@ sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FL
 sudo docker build --build-arg USER=nginx --build-arg GROUP=nginx --build-arg UID=2000 --build-arg GID=2000 --force-rm -f docker/Dockerfile -t difi_one .
 sudo docker run -it --net=host -v /tmp:/tmp -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod-gateway difi_one
 
-    (note: will be nginx server calling through application gateway unix domain socket to uwsgi server hosting flask app, listening on port configured in nginx conf server block like port 80)
+(note: will be nginx server calling through application gateway unix domain socket to uwsgi server hosting flask app, listening on port configured in nginx conf server block like port 80)
 
     example nginx server block:
     server {
