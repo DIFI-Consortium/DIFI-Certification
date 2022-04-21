@@ -27,10 +27,10 @@ ___
 
 Note: This application can be used as a stand-alone application that decodes and verifies whether packets in a packet stream are in compliance with the DIFI 1.0 standard, and can prepare and send DIFI compliant packets for testing purposes. It is also import-able into your own scripts/applications that can be customized to provide additional functionality not covered in this application. i.e. you can re-use the packet classes and validation functions stand-alone, completely independent of this application, for higher throughput scenario's.
 
-drx.py - receiver that decodes packets
-dcs.py - sends 'Standard Context' packet
-dvs.py - sends 'Version Context' packet
-dds.py - sends 'Data' packet
+- drx.py - receiver that decodes packets
+- dcs.py - sends 'Standard Context' packet
+- dvs.py - sends 'Version Context' packet
+- dds.py - sends 'Data' packet
 
 all fields in all send packets are user-configurable\changeable into anything that fits application's needs, i.e. there's an arg for every field in the packet
 
