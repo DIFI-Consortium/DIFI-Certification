@@ -1,0 +1,10 @@
+_devops.ps1
+_devops.sh
+
+python/__pycache__/
+*.py[cod]
+python/setup.py
+ci/ci_docker.sh
+ci/ci_lint.sh
+ci/common_env.sh
+ci/run_in_docker.sh
