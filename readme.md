@@ -76,9 +76,14 @@ except Exception as e:
 
 ```
 
-(note:  dvs.py --help)   #will print usage string which has more detail about each arg for 'Version Context' packet
-(note:  dcs.py --help)   #will print usage string which has more detail about each arg for 'Standard Context' packet
-(note:  dds.py --help)   #will print usage string which has more detail about each arg for 'Data' packet
+(note:  dvs.py --help)   
+print usage string which has more detail about each arg for 'Version Context' packet
+
+(note:  dcs.py --help)   
+print usage string which has more detail about each arg for 'Standard Context' packet
+
+(note:  dds.py --help)   
+print usage string which has more detail about each arg for 'Data' packet
 
 
 2) To serialize/decode stream of bytes into DifiVersionContextPacket class instance, and then output instance as JSON string:
