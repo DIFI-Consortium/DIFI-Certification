@@ -8,7 +8,7 @@ References:
 01 SEPTEMBER 2021
 [IEEE difi-announcement](https://ieee-isto.org/press-releases/difi-announcement/)
 
-Digital signal processing (DSP) revolutionized acquisition and reproduction of analog data.  One format for signal data is known as 'digital radio' data when the analog sources convey radio (and intermediate) frequency data it is required corresponding metadata also be communicated.  VITA defines the format for the digital format (packets) for transmission. The VITA 49.2 framework provides many options for packing digital IF data and allows multiple transports. This flexibility requires that an additional layer of documentation be provided in order to explain a manufacturer’s implementation of the standard.  DIFI leverages the flexibility of VITA to specify a subset of the CIF and CIF 0.
+Digital signal processing (DSP) revolutionized acquisition and reproduction of analog data.  One format for signal data is known as 'digital radio' data.  The analog sources often convey radio (and intermediate) frequency data it is required corresponding metadata also be communicated.  VITA defines the format for the digital format (packets) for transmission. The VITA 49.2 framework provides many options for packing digital IF data and allows multiple transports. This flexibility requires that an additional layer of class documentation be provided in order to describe a specifc implementation.  DIFI leverages the flexibility of VITA to specify a subset of the CIF and CIF 0.
 
 
 This **DIFI** standard provides two independent data flows:   
