@@ -1,8 +1,8 @@
-# Copyright © `2022` `Kratos Technology & Training Solutions, Inc.`
-# Licensed under the MIT License.
-# SPDX-License-Identifier: MIT
-# How to build and run docker image
-## Build  (Note the period . at the end)
+Copyright © `2022` `Kratos Technology & Training Solutions, Inc.`
+Licensed under the MIT License.
+SPDX-License-Identifier: MIT
+How to build and run docker image
+Build  (Note the period . at the end)
 
 ```bash
 cd to difi:
