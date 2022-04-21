@@ -31,12 +31,14 @@ drx.py - receiver that decodes packets
 dcs.py - sends 'Standard Context' packet
 dvs.py - sends 'Version Context' packet
 dds.py - sends 'Data' packet
-(all fields in all send packets are user-configurable\changeable into anything that fits application's needs, i.e. there's an arg for every field in the packet)
 
-import drx - to decode packets in byte stream into instances of DifiStandardContextPacket, DifiVersionContextPacket, and DifiDataPacket classes that can be serialized to JSON
-import dcs - to send 'Standard Context' packet
-import dvs - to send 'Version Context' packet
-import dds - to send 'Data' packet
+all fields in all send packets are user-configurable\changeable into anything that fits application's needs, i.e. there's an arg for every field in the packet
+
+- import drx - to decode packets in byte stream into instances of DifiStandardContextPacket, DifiVersionContextPacket, and DifiDataPacket classes that can be serialized to JSON
+
+- import dcs - to send 'Standard Context' packet
+- import dvs - to send 'Version Context' packet
+- import dds - to send 'Data' packet
 
 
 Below are several quick hint examples for reference purposes:
