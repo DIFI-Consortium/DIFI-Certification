@@ -37,7 +37,7 @@ DIFI Headers (based on VITA)
 python protocol --no-numbers "Pckt Type:4,C:1,Indicators:3, TSI:2,TSF:2,Pckt Ct:4,Packet Size:16" 
 ```
 <!-- language: lang-none -->
-    3                   2                   1                   0
+      3                   2                   1                   0
     1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     |Pckt T.|C|Indi.|TSI|TSF|Pckt Ct|          Packet Size          |
