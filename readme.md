@@ -80,7 +80,7 @@ except Exception as e:
 
 2) To serialize/decode stream of bytes into DifiVersionContextPacket class instance, and then output instance as JSON string:
 (note: use this when you're sure the byte stream contains a 'Version Context' packet inside)
-```
+# Python
 import drx
 import io
 try:
@@ -100,7 +100,7 @@ except drx.NoncompliantDifiPacket as e:
     print("--> not DIFI compliant, packet not decoded:\r\n%s" % e.difi_info.to_json())
 except Exception as e:
     print("error: ", e)
-```
+
 
 3) To serialize/decode stream of bytes into DifiVersionContextPacket class instance, and then output instance as JSON string:
 (note: use this when you're not sure which type of DIFI packet the byte stream contains inside, it's using the same main decode function this application uses internally)
