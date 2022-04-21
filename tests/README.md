@@ -1,6 +1,6 @@
-# Copyright © `2022` `Kratos Technology & Training Solutions, Inc.`
-# Licensed under the MIT License.
-# SPDX-License-Identifier: MIT
+Copyright © `2022` `Kratos Technology & Training Solutions, Inc.`
+Licensed under the MIT License.
+SPDX-License-Identifier: MIT
 
 How to run pytests for DIFI:
 
