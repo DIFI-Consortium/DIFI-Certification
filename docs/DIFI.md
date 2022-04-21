@@ -58,6 +58,7 @@ VITA 49.2
  Context  Packet Type 0100
  Version  Packet Type 0101
  Data     Packet Type 0001
+ <!-- language: lang-none -->
               3                                       2                                       1                                       0
           1   0   9   8   7   6   5   4   3   2   1   0   9   8   7   6   5   4   3   2   1   0   9   8   7   6   5   4   3   2   1   0
         +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
@@ -75,6 +76,7 @@ payload length in words (N) + 7.
 
 
 Device Identifer Field
+<!-- language: lang-none -->
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         |    Reserved   |                Manufacurer OUI                |
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -84,6 +86,7 @@ Device Identifer Field
 ```bash
 python protocol --no-numbers "Reserved:8,Manufacurer OUI:24, Reserved:16,Device Code:16"
 ```
+<!-- language: lang-none -->
         3                   2                   1                   0
         1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -97,6 +100,7 @@ Fractional Seconds Timestamp
 ```bash
 python protocol --no-numbers "Most-significant Upper 32-bits:32,Least-significant Lower 32-bits:32"
 ```
+<!-- language: lang-none -->
         3                   2                   1                   0
         1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -109,7 +113,7 @@ python protocol --no-numbers "Most-significant Upper 32-bits:32,Least-significan
 ```bash
 python protocol --no-numbers "Pckt Type:4,C:1,Indicators:3, TSI:2,TSF:2,Packet Count:4,Packet Size:16,Stream ID:32, Pad:5, Res:3,OUI:24,Info Class:16,Packet Class:16, Integer Sec Timestamp:32, Fractional-Seconds Timestamp:64, Context Indicators:32, Reference Point:32, Bandwidth:64,IF Reference Freqency:64,RF Reference Freq:64,IF Band Offset:64, Reference Level:32,Gain & Attenuation:32,Sample Rate:64,Timestamp Adjustment:64, Timestamp Calibration Time (sec):32, State and Event Indicators:32, Data Packet Payload Format:64" 
 ```
-
+<!-- language: lang-none -->
         DIFI Context Packet
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         |Pckt T.|C|Indi.| T.|TSF|Packet.|          Packet Size          |
@@ -171,7 +175,7 @@ DIFI Version Packet
 ```bash
 python protocol --no-numbers "Pckt Type:4,C:1,Indicators:3, TSI:2,TSF:2,Seq Num:4,Packet Size:16,Stream ID:32, Pad:5, Res:3,OUI:24,Info Class:16,Packet Class:16, Integer Sec Timestamp:32, Fractional-Seconds Timestamp:64,Context Indicator Field 0:32,Context Indicator Field 1:32, V49 Spec Version:32, Year:7, Day:9, Rev:6,Type:4,ICD Version:6" 
 ```
-
+<!-- language: lang-none -->
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         |Pckt T.|C|Indi.| T.|TSF|Seq Num|          Packet Size          |
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -197,9 +201,11 @@ python protocol --no-numbers "Pckt Type:4,C:1,Indicators:3, TSI:2,TSF:2,Seq Num:
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 DIFI Data Packet
+
 ```bash
 python protocol --no-numbers "Pckt Type:4, C:1, Indicators:3, TSI:2, TSF:2, Seq Num:4, Packet Size:16,Stream ID:32, Pad:5, Res:3,OUI:24, Info Class:16, Packet Class:16, Integer Sec Timestamp:32, Fractional-Seconds Timestamp:64, Signal Data Payload Complex 4-16 bit signed N Words:128" 
-        ```
+```
+<!-- language: lang-none -->
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         |Pckt T.| | Ind.| T.| T.| Seq N.|           Packet Size         |
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
