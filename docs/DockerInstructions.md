@@ -9,7 +9,7 @@ See Also:
   https://docs.docker.com/engine/reference/commandline/save/
 
 Context
-  Docker images are akin to an entire OS image; they contain an OS, as well as all of the packages and scripts required for an application. As such, this is an increasingly popular way to version control an entire application. However, that also means that the files can be very large. See #TODO for file compression tricks.
+  Docker images are akin to an entire OS image; they contain an OS, as well as all of the packages and scripts required for an application. As such, this is an increasingly popular way to version control an entire application. However, that also means that the files can be very large. Search docker for file compression tricks.
 
   This instruction set assumes that the reader has a Dockerfile and a working knowledge of the Docker system.
 

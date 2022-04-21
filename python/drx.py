@@ -1574,7 +1574,6 @@ class DifiDataPacket():
             if DEBUG: print(". . .")
             if DEBUG: print(" Payload Data Size = %d (bytes), %d (32-bit words)" % (self.payload_data_size_in_bytes, self.payload_data_num_32bit_words))
 
-            #TODO: should we include???????
             #self.payload_raw_data = data[24:]  #str(data[24:]) for json
             #self.payload_raw_hex_data = data[24:].hex()
             #words_list = [data[24:].hex()[i:i+8] for i in range(0,len(data[24:].hex()),8)]
@@ -1914,7 +1913,7 @@ def main():
 
     #truncate all difi output files on startup
     truncate_all_difi_files()
-    #TODO: should we change to delete instead of truncate???????
+    
     #delete all difi output files on startup
     #delete_all_difi_files()
 
