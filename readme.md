@@ -43,6 +43,7 @@ Below are several quick hint examples for reference purposes:
 
 1) To send a 'Version Context Packet' (that's DIFI compliant illustrating  the fields in the packets as args)
 
+```Python
 import dvs
 try:
     dvs.DESTINATION_IP = "10.1.1.1"   #it will send this version packet to this destination server address
@@ -72,6 +73,8 @@ try:
     dvs.send_difi_compliant_version_context_packet()
 except Exception as e:
     print(e)
+
+```
 
 (note:  dvs.py --help)   #will print usage string which has more detail about each arg for 'Version Context' packet
 (note:  dcs.py --help)   #will print usage string which has more detail about each arg for 'Standard Context' packet
