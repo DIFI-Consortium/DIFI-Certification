@@ -227,8 +227,10 @@ sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FL
 ```
 
 [PROD-GATEWAY] (application-gateway)
+```bash
 sudo docker build --build-arg USER=nginx --build-arg GROUP=nginx --build-arg UID=2000 --build-arg GID=2000 --force-rm -f docker/Dockerfile -t difi_one .
 sudo docker run -it --net=host -v /tmp:/tmp -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod-gateway difi_one
+```
 
 (note: will be nginx server calling through application gateway unix domain socket to uwsgi server hosting flask app, listening on port configured in nginx conf server block like port 80)
 
