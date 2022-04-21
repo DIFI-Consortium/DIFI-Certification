@@ -1,4 +1,4 @@
-# Copyright (c) ___________________.
+# Copyright (C) 2022 Kratos Technology & Training Solutions, Inc.
 # Licensed under the MIT License.
 # SPDX-License-Identifier: MIT
 
