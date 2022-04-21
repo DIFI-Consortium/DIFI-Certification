@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>DIFI Packet Checker</title>
+
+		<style>
+			/* tr */
+			.r {
+				width: 100%;
+			}
+			/* th */ 
+			.h {
+				text-align: center;
+				height: 20px;
+				border: 1px solid black;
+				background-color: teal;
+				color: white;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+			/* td left aligned text */ 
+			.dl {
+				text-align: left;
+				height: 20px;
+				border: 1px solid black;
+				padding: 4px;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+			/* td left aligned text - wrap */ 
+			.dl2 {
+				text-align: left;
+				height: 20px;
+				border: 1px solid black;
+				padding: 4px;
+			}
+			/* td single height */
+			.d {
+				text-align: center;
+				height: 20px;
+				border: 1px solid black;
+				padding: 4px;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+		<div style="width:80%; margin: auto; font-size: 12pt;">
+			
+			<a href="/">Home</a>
+			
+			<h2>List of available REST endpoints in API and HTML web interface endpoints.</h2>
+			
+			<table width=100% style="border-collapse: collapse">
+				
+				<caption><b><i>Available API</i></b></caption>
+				
+				<th class="h">Endpoint</th><th class="h">Description</th>
+				{% for key, value in api.items() %}
+				<tr class="r">
+					<td class="dl"><b>{{key}}</b></td><td class="dl2">{{value}}</td>
+				</tr>
+				{% endfor %}
+			</table>
+
+		</div>
+	</body>
+</html>
+

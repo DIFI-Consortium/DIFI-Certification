@@ -1,0 +1,21 @@
+flask
+
+uwsgi
+
+psutil
+
+#pypacker==5.0
+
+#netifaces
+
+# tornado (for websocket)
+#tornado
+
+# quart (asgi server that supports websockets)
+#quart
+
+# asyncio wrapper for linux inotify
+#asyncinotify
+
+
+

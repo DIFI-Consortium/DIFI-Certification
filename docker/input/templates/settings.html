@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>DIFI Packet Checker</title>
+
+		<style>
+			/* tr */
+			.r {
+				width: 100%;
+			}
+			/* th */ 
+			.h {
+				text-align: center;
+				height: 20px;
+				border: 1px solid black;
+				background-color: teal;
+				color: white;
+				white-space: nowrap;
+				overflow: hidden;
+                padding: 3px;
+			}
+			/* td left aligned text */ 
+			.dl {
+				text-align: left;
+				height: 20px;
+				border: 1px solid black;
+				padding: 4px;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+			/* td left aligned text - wrap */ 
+			.dl2 {
+				text-align: left;
+				height: 20px;
+				border: 1px solid black;
+				padding: 4px;
+			}
+			/* td single height */
+			.d {
+				text-align: center;
+				height: 20px;
+				border: 1px solid black;
+				padding: 4px;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+		</style>
+		<script>
+			window.onload = function() {
+				//convert all specified date time elements from UTC to local time
+				var elems = document.getElementsByClassName("localtime");
+				for (let i = 0; i < elems.length; i++) {
+					var date = new Date(elems[i].innerHTML);
+					if (date != 'Invalid Date') {
+						elems[i].innerHTML = date.toLocaleString();
+					}
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<div style="width:80%; margin: auto; font-size: 12pt;">
+			
+			<a href="/">Home</a>
+			
+			<h2>System Settings</h2>
+			
+            {% for key, value in info.items() %}
+			<table width=100% style="border-collapse: collapse">
+				
+				<caption><b><i>{{key}} settings</i></b></caption>
+				
+				<th class="h">Setting</th><th class="h">Value</th>
+				
+				{% for item in value %}
+                    {% for key2, value2 in item.items() %}
+                    <tr class="r">
+                        <td class="dl"><b>{{key2}}</b></td><td class="d">{{value2}}</td>
+                    </tr>
+                    {% endfor %}
+				{% endfor %}
+			</table>
+            <br/>
+            {% endfor %}
+
+		</div>
+	</body>
+</html>
+

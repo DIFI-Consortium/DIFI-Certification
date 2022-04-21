@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>DIFI Packet Checker</title>
+
+	<style>
+		/* tr */
+		.r {
+			width: 100%;
+		}
+		/* bits header */
+		.h {padding: 5px;
+			text-align: center;
+			font-size: 12pt;
+			border: 1px solid black;
+			background-color: teal;
+			color: white;
+			height: 20px;
+			width: 3.125%;
+		}
+		/* td small font */
+		.dsf {padding: 5px;
+  			text-align: center;
+			font-size: 12pt;
+			border: 1px solid black;
+			height: 20px;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		/* td extra small font */
+		.dsf2 {padding: 5px;
+  			text-align: center;
+			font-size: 12pt;
+			border: 1px solid black;
+			height: 20px;
+			max-height: 20px;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		/* td empty placeholder */
+		.de {padding: 5px;
+  			text-align: center;
+			font-size: 12pt;
+			border: 1px solid black;
+			background-color: lightgray;
+			height: 20px;
+		}
+		/* td left aligned text */ 
+		.dl {padding: 5px;
+  			text-align: left;
+			font-size: 12pt;
+			border: 0px solid black;
+			height: 20px;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		/* td single height */
+    		.d {padding: 5px;
+  			text-align: center;
+		    font-size: 12pt;
+			border: 1px solid black;
+			height: 20px;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		/* td double height */
+		.d2 {padding: 5px;
+  			text-align: center;
+		    font-size: 12pt;
+			border: 1px solid black;
+			height: 40px;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		/* td for data payload section */
+		.d8 {padding: 5px;
+  			text-align: center;
+		    font-size: 12pt;
+			border: 1px solid black;
+			height: 160px;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		/* empty placeholder zero */
+		.ez {
+			width: 12.5%;
+			float: left;
+		}
+	</style>
+	<script>
+		function setArchiveDateToLocal() {
+			var date = new Date('{{archive_date}}');
+			if (date != 'Invalid Date') {
+				document.getElementById('archive').innerHTML = date.toLocaleString();
+			}
+		}
+	</script>
+</head>
+<body onload="setArchiveDateToLocal()">
+	
+	<div style="width:80%; margin: auto">
+	
+		<a href="/">Home</a>
+	
+		<h2>Last 'Compliant' DIFI Packet Received for Stream ID [{{stream_id|hex8}}]</h2>
+
+		<h5>Archived: <span id="archive">{{archive_date}}</span></h5>
+
+
+		<!--Standard Context Packet-->
+		{% if pkt_type == 4 or pkt_type == "0x4" %}
+		<table width=100%>
+
+			<caption><b><i>Standard Context Packet</i></b></caption>
+
+			<!--32 bits header-->
+			<tr class="r"><td class="h">31</td><td class="h">30</td><td class="h">29</td><td class="h">28</td><td class="h">27</td><td class="h">26</td><td class="h">25</td><td class="h">24</td><td class="h">23</td><td class="h">22</td><td class="h">21</td><td class="h">20</td><td class="h">19</td><td class="h">18</td><td class="h">17</td><td class="h">16</td><td class="h">15</td><td class="h">14</td><td class="h">13</td><td class="h">12</td><td class="h">11</td><td class="h">10</td><td class="h">&nbsp9&nbsp</td><td class="h">&nbsp8&nbsp</td><td class="h">&nbsp7&nbsp</td><td class="h">&nbsp6&nbsp</td><td class="h">&nbsp5&nbsp</td><td class="h">&nbsp4&nbsp</td><td class="h">&nbsp3&nbsp</td><td class="h">&nbsp2&nbsp</td><td class="h">&nbsp1&nbsp</td><td class="h">&nbsp0&nbsp</td></tr>
+
+			<!--packet header-->
+			<tr class="r"><td class="dsf" colspan=4>pkt type={{pkt_type|hex1}}</td><td class="dsf" colspan=1>{{class_id|hex1}}</td><td class="dsf" colspan=2>rsvd={{reserved|hex1}}</td><td class="dsf" colspan=1>{{tsm|hex1}}</td><td class="dsf" colspan=2>tsi={{tsi|hex1}}</td><td class="dsf" colspan=2>tsf={{tsf|hex1}}</td><td class="dsf" colspan=4>seqnum={{seq_num}}</td><td class="d" colspan=16>packet size = {{pkt_size}} (words)</td></tr>
+		
+			<!--packet fields-->
+			<tr class="r"><td class="d" colspan=32>stream id = {{stream_id|hex8}}</td></tr>
+			<tr class="r"><td class="de" colspan=8><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span></td><td class="d" colspan=24>oui = {{oui|hex6}}</td></tr>
+			<tr class="r"><td class="d" colspan=16>information class code = {{information_class_code|hex4}}</td><td class="d" colspan=16>packet class code = {{packet_class_code|hex4}}</td></tr>
+			<tr class="r"><td class="d" colspan=32>integer-seconds timestamp = {{integer_seconds_timestamp}} (seconds since epoch) ({{integer_seconds_timestamp_display}})</td></tr>
+			<tr class="r"><td class="d2" colspan=32>fractional-seconds timestamp = {{fractional_seconds_timestamp}} (picoseconds past integer-seconds)</td></tr>
+			<tr class="r"><td class="d" colspan=32>context indicator field (CIF 0) = {{context_indicator_field_cif0|hex8}}</td></tr>
+			<tr class="r"><td class="d" colspan=32>reference point = {{ref_point|hex8}}</td></tr>
+			<tr class="r"><td class="d2" colspan=32>bandwidth = {{"%.8f" % bandwidth}} (Hertz)</td></tr>
+			<tr class="r"><td class="d2" colspan=32>if reference frequency = {{"%.8f" % if_ref_freq}} (Hertz)</td></tr>
+			<tr class="r"><td class="d2" colspan=32>rf reference frequency = {{"%.8f" % rf_ref_freq}} (Hertz)</td></tr>
+			<tr class="r"><td class="d2" colspan=32>if band offset = {{"%.8f" % if_band_offset}} (Hertz)</td></tr>
+			<tr class="r"><td class="d" colspan=32>reference level = {{"%.8f" % ref_level}} (dBm)</td></tr>
+			<tr class="r"><td class="d" colspan=16>stage 1 gain/attenuation = {{"%.8f" % gain_attenuation[1]}}</td><td class="d" colspan=16>stage 2 gain/attenuation = {{"%.8f" % gain_attenuation[0]}}</td></tr>
+			<tr class="r"><td class="d2" colspan=32>sample rate = {{"%.8f" % sample_rate}} (Hertz)</td></tr>
+			<tr class="r"><td class="d2" colspan=32>timestamp adjustment = {{timestamp_adjustment}} (femtoseconds)</td></tr>
+			<tr class="r"><td class="d" colspan=32>timestamp calibration time = {{timestamp_calibration_time}} (seconds)</td></tr>
+
+			<!--state and event indicators field-->
+			<tr class="r"><td class="de" style="text-align: right" colspan=12>state and event indicators--</td><td class="d">{{state_and_event_indicators["calibrated_time_indicator"]}}</td><td class="d">{{state_and_event_indicators["valid_data_indicator"]}}</td><td class="d">{{state_and_event_indicators["reference_lock_indicator"]}}</td><td class="d">{{state_and_event_indicators["agc_mgc_indicator"]}}</td><td class="d">{{state_and_event_indicators["detected_signal_indicator"]}}</td><td class="d">{{state_and_event_indicators["spectral_inversion_indicator"]}}</td><td class="d">{{state_and_event_indicators["over_range_indicator"]}}</td><td class="d">{{state_and_event_indicators["sample_loss_indicator"]}}</td><td class="de" style="text-align: left" colspan=12>--state and event indicators</td></tr>
+
+			<!--data packet payload format field (word1)-->
+			<tr class="r">
+				<td class="dsf2" colspan=1>pk mh<br/>{{data_packet_payload_format["packing_method"]}}</td>
+				<td class="dsf2" colspan=2>real/cmp type<br/>{{data_packet_payload_format["real_complex_type"]}}</td>
+				<td class="dsf2" colspan=5>data item format<br/>{{data_packet_payload_format["data_item_format"]}}</td>
+				<td class="dsf2" colspan=1>rpt ind<br/>{{data_packet_payload_format["sample_component_repeat_indicator"]}}</td>
+				<td class="dsf2" colspan=3>even-tag size<br/>{{data_packet_payload_format["event_tag_size"]}}</td>
+				<td class="dsf2" colspan=4>channel-tag size<br/>{{data_packet_payload_format["channel_tag_size"]}}</td>
+				<td class="dsf2" colspan=4>data item fraction size<br/>{{data_packet_payload_format["data_item_fraction_size"]}}</td>
+				<td class="dsf2" colspan=6>item packing field size<br/>{{data_packet_payload_format["item_packing_field_size"]}}</td>
+				<td class="dsf2" colspan=61>data item size<br/>{{data_packet_payload_format["data_item_size"]}}</td>
+			</tr>
+
+			<!--data packet payload format field (word2)-->
+			<tr class="r">
+				<td class="dsf2" colspan=16>repeat count<br/>{{data_packet_payload_format["repeat_count"]}}</td>
+				<td class="dsf2" colspan=16>vector size<br/>{{data_packet_payload_format["vector_size"]}}</td>
+			</tr>
+
+		</table>
+
+		<br/><br/><br/><br/>
+		<!--state and event indicators - (legend)-->
+		<table width=49% style="border: 1px solid black; background-color: lightgray; display: inline-table">
+
+			<caption style="text-align: left; background-color: teal; color: white; border-left: 1px solid black; border-top: 1px solid black; border-right: 1px solid black; border-bottom: 0px solid black; white-space: nowrap; overflow: hidden">State and Event Indicators <span style="float: right; white-space: nowrap; overflow: hidden; text-overflow: clip">-- legend --&nbsp</span></caption>
+
+			<!--bit indicator fields (bit 12-19)-->
+			<tr class="r"><td class="dl">(bit 19)  Calibrated Time Indicator</td></tr>
+			<tr class="r"><td class="dl">(bit 18)  Valid Data Indicator</td></tr>
+			<tr class="r"><td class="dl">(bit 17)  Reference Lock Indicator</td></tr>
+			<tr class="r"><td class="dl">(bit 16)  AGC/MGC Indicator</td></tr>
+			<tr class="r"><td class="dl">(bit 15)  Detected Signal Indicator</td></tr>
+			<tr class="r"><td class="dl">(bit 14)  Spectral Inversion Indicator</td></tr>
+			<tr class="r"><td class="dl">(bit 13)  Over-range Indicator</td></tr>
+			<tr class="r"><td class="dl">(bit 12)  Sample Loss Indicator</td></tr>
+		</table>
+
+		<br/><br/><br/><br/>
+		<!--data packet payload format field (word1) - (legend)-->
+		<table width=49% style="border: 1px solid black; background-color: lightgray; display: inline-table">
+
+			<caption style="text-align: left; background-color: teal; color: white; border-left: 1px solid black; border-top: 1px solid black; border-right: 1px solid black; border-bottom: 0px solid black; white-space: nowrap; overflow: hidden">Data Packet Payload Format Field (word1) <span style="float: right; white-space: nowrap; overflow: hidden; text-overflow: clip">-- legend --&nbsp</span></caption>
+
+			<!--bit fields (bit 0-31)-->
+			<tr class="r"><td class="dl">(bit &nbsp&nbsp&nbsp&nbsp 31)  Packing Method</td></tr>
+			<tr class="r"><td class="dl">(bit 29-30)  Real/Complex Type</td></tr>
+			<tr class="r"><td class="dl">(bit 24-28)  Data Item Format</td></tr>
+			<tr class="r"><td class="dl">(bit &nbsp&nbsp&nbsp&nbsp 23)  Sample-Component Repeat Indicator</td></tr>
+			<tr class="r"><td class="dl">(bit 20-22)  Event-Tag Size</td></tr>
+			<tr class="r"><td class="dl">(bit 16-19)  Channel-Tag Size</td></tr>
+			<tr class="r"><td class="dl">(bit 12-15)  Data Item Fraction Size</td></tr>
+			<tr class="r"><td class="dl">(bit &nbsp 6-11)  Item Packing Field Size</td></tr>
+			<tr class="r"><td class="dl">(bit &nbsp&nbsp&nbsp 0-5)  Data Item Size</td></tr>
+		</table>
+
+		<!--data packet payload format field (word2) - (legend)-->
+		<table width=49% style="border: 1px solid black; background-color: lightgray; display: inline-table">
+
+			<caption style="text-align: left; background-color: teal; color: white; border-left: 1px solid black; border-top: 1px solid black; border-right: 1px solid black; border-bottom: 0px solid black; white-space: nowrap; overflow: hidden">Data Packet Payload Format Field (word2) <span style="float: right; white-space: nowrap; overflow: hidden; text-overflow: clip">-- legend --&nbsp</span></caption>
+
+			<!--bit fields (bit 0-31)-->
+			<tr class="r"><td class="dl">(bit 16-31)  Repeat Count</td></tr>
+			<tr class="r"><td class="dl">(bit &nbsp&nbsp0-15)  Vector Size</td></tr>
+		</table>
+
+
+		<!--Version Context Packet-->
+		{% elif pkt_type == 5 or pkt_type == "0x5" %}
+		<table width=100%>
+
+			<caption><b><i>Version Context Packet</i></b></caption>
+
+			<!--32 bits header-->
+			<tr class="r"><td class="h">31</td><td class="h">30</td><td class="h">29</td><td class="h">28</td><td class="h">27</td><td class="h">26</td><td class="h">25</td><td class="h">24</td><td class="h">23</td><td class="h">22</td><td class="h">21</td><td class="h">20</td><td class="h">19</td><td class="h">18</td><td class="h">17</td><td class="h">16</td><td class="h">15</td><td class="h">14</td><td class="h">13</td><td class="h">12</td><td class="h">11</td><td class="h">10</td><td class="h">&nbsp9&nbsp</td><td class="h">&nbsp8&nbsp</td><td class="h">&nbsp7&nbsp</td><td class="h">&nbsp6&nbsp</td><td class="h">&nbsp5&nbsp</td><td class="h">&nbsp4&nbsp</td><td class="h">&nbsp3&nbsp</td><td class="h">&nbsp2&nbsp</td><td class="h">&nbsp1&nbsp</td><td class="h">&nbsp0&nbsp</td></tr>
+
+			<!--packet header-->
+			<tr class="r"><td class="dsf" colspan=4>pkt type={{pkt_type|hex1}}</td><td class="dsf" colspan=1>{{class_id|hex1}}</td><td class="dsf" colspan=2>rsvd={{reserved|hex1}}</td><td class="dsf" colspan=1>{{tsm|hex1}}</td><td class="dsf" colspan=2>tsi={{tsi|hex1}}</td><td class="dsf" colspan=2>tsf={{tsf|hex1}}</td><td class="dsf" colspan=4>seqnum={{seq_num}}</td><td class="d" colspan=16>packet size = {{pkt_size}} (words)</td></tr>
+		
+			<!--packet fields-->
+			<tr class="r"><td class="d" colspan=32>stream id = {{stream_id|hex8}}</td></tr>
+			<tr class="r"><td class="de" colspan=8><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span></td><td class="d" colspan=24>oui = {{oui|hex6}}</td></tr>
+			<tr class="r"><td class="d" colspan=16>information class code = {{information_class_code|hex4}}</td><td class="d" colspan=16>packet class code = {{packet_class_code|hex4}}</td></tr>
+			<tr class="r"><td class="d" colspan=32>integer-seconds timestamp = {{integer_seconds_timestamp}} (seconds since epoch) ({{integer_seconds_timestamp_display}})</td></tr>
+			<tr class="r"><td class="d2" colspan=32>fractional-seconds timestamp = {{fractional_seconds_timestamp}} (picoseconds past integer-seconds)</td></tr>
+			<tr class="r"><td class="d" colspan=32>context indicator field (CIF 0) = {{context_indicator_field_cif0|hex8}}</td></tr>
+			<tr class="r"><td class="d" colspan=32>context indicator field (CIF 1) = {{context_indicator_field_cif1|hex8}}</td></tr>
+			<tr class="r"><td class="d" colspan=32>v49 spec version = {{v49_spec_version|hex8}}</td></tr>
+			<tr class="r"><td class="d" colspan=7>year = {{year}}</td><td class="d" colspan=9>day = {{day}}</td><td class="d" colspan=6>revision = {{revision}}</td><td class="d" colspan=4>type = {{type}}</td><td class="d" colspan=6>icd version = {{icd_version}}</td></tr>
+
+		</table>
+
+
+		<!--Signal Data Packet-->
+		{% elif pkt_type == 1 or pkt_type == "0x1" %}
+		<table width=100%>
+
+			<caption><b><i>Signal Data Packet</i></b></caption>
+
+			<!--32 bits header-->
+			<tr class="r"><td class="h">31</td><td class="h">30</td><td class="h">29</td><td class="h">28</td><td class="h">27</td><td class="h">26</td><td class="h">25</td><td class="h">24</td><td class="h">23</td><td class="h">22</td><td class="h">21</td><td class="h">20</td><td class="h">19</td><td class="h">18</td><td class="h">17</td><td class="h">16</td><td class="h">15</td><td class="h">14</td><td class="h">13</td><td class="h">12</td><td class="h">11</td><td class="h">10</td><td class="h">&nbsp9&nbsp</td><td class="h">&nbsp8&nbsp</td><td class="h">&nbsp7&nbsp</td><td class="h">&nbsp6&nbsp</td><td class="h">&nbsp5&nbsp</td><td class="h">&nbsp4&nbsp</td><td class="h">&nbsp3&nbsp</td><td class="h">&nbsp2&nbsp</td><td class="h">&nbsp1&nbsp</td><td class="h">&nbsp0&nbsp</td></tr>
+
+			<!--packet header-->
+			<tr class="r"><td class="dsf" colspan=4>pkt type={{pkt_type|hex1}}</td><td class="dsf" colspan=1>{{class_id|hex1}}</td><td class="dsf" colspan=2>rsvd={{reserved|hex1}}</td><td class="dsf" colspan=1>{{tsm|hex1}}</td><td class="dsf" colspan=2>tsi={{tsi|hex1}}</td><td class="dsf" colspan=2>tsf={{tsf|hex1}}</td><td class="dsf" colspan=4>seqnum={{seq_num}}</td><td class="d" colspan=16>packet size = {{pkt_size}} (words)</td></tr>
+		
+			<!--packet fields-->
+			<tr class="r"><td class="d" colspan=32>stream id = {{stream_id|hex8}}</td></tr>
+			<tr class="r"><td class="de" colspan=8><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span></td><td class="d" colspan=24>oui = {{oui|hex6}}</td></tr>
+			<tr class="r"><td class="d" colspan=16>information class code = {{information_class_code|hex4}}</td><td class="d" colspan=16>packet class code = {{packet_class_code|hex4}}</td></tr>
+			<tr class="r"><td class="d" colspan=32>integer-seconds timestamp = {{integer_seconds_timestamp}} (seconds since epoch) ({{integer_seconds_timestamp_display}})</td></tr>
+			<tr class="r"><td class="d2" colspan=32>fractional-seconds timestamp = {{fractional_seconds_timestamp}} (picoseconds past integer-seconds)</td></tr>
+
+			<tr class="r"><td class="d8" colspan=32>signal data payload = {{payload_data_num_32bit_words}} (32-bit words)</td></tr>
+
+		</table>
+
+
+		<!--Unknown Packet Type-->
+		{% else %}
+		<table width=100%>
+
+			<caption><b><i>Unknown Packet Type</i></b></caption>
+
+			<!--32 bits header-->
+			<tr class="r"><td class="h">31</td><td class="h">30</td><td class="h">29</td><td class="h">28</td><td class="h">27</td><td class="h">26</td><td class="h">25</td><td class="h">24</td><td class="h">23</td><td class="h">22</td><td class="h">21</td><td class="h">20</td><td class="h">19</td><td class="h">18</td><td class="h">17</td><td class="h">16</td><td class="h">15</td><td class="h">14</td><td class="h">13</td><td class="h">12</td><td class="h">11</td><td class="h">10</td><td class="h">&nbsp9&nbsp</td><td class="h">&nbsp8&nbsp</td><td class="h">&nbsp7&nbsp</td><td class="h">&nbsp6&nbsp</td><td class="h">&nbsp5&nbsp</td><td class="h">&nbsp4&nbsp</td><td class="h">&nbsp3&nbsp</td><td class="h">&nbsp2&nbsp</td><td class="h">&nbsp1&nbsp</td><td class="h">&nbsp0&nbsp</td></tr>
+
+			<!--packet header-->
+			<tr class="r"><td class="dsf" colspan=4>pkt type={{pkt_type|hex1}}</td><td class="d" colspan=28>...</td></tr>
+
+		</table>
+		{% endif %}
+
+		<br/><br/><br/><br/>
+		<!--packet type - (legend)-->
+		<table width=33% style="border: 1px solid black; background-color: lightgray; display: inline-table">
+
+			<caption style="text-align: left; background-color: teal; color: white; border-left: 1px solid black; border-top: 1px solid black; border-right: 1px solid black; border-bottom: 0px solid black; white-space: nowrap; overflow: hidden">Packet Type <span style="float: right; white-space: nowrap; overflow: hidden; text-overflow: clip">-- legend --&nbsp</span></caption>
+
+			<!--standard context packet-->
+			<tr class="r"><td class="dl">(0x4)  Standard Flow Signal Context Packet</td></tr>
+			<!--version context packet-->
+			<tr class="r"><td class="dl">(0x5)  Version Flow Signal Context Packet</td></tr>
+			<!--signal data packet-->
+			<tr class="r"><td class="dl">(0x1)  Standard Flow Signal Data Packet</td></tr>
+
+		</table>
+
+	</div>
+
+</body>
+</html>
+
+

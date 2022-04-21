@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+        <head>
+                <meta charset="UTF-8">
+                <title>DIFI Packet Checker</title>
+
+                <style>
+                        /* tr */
+                        .r {
+                                width: 100%;
+                        }
+                        /* bits header */
+                        .h {
+                                text-align: center;
+                                border: 1px solid black;
+                                background-color: teal;
+                                color: white;
+                                height: 20px;
+                                width: 3.125%;
+                        }
+                        /* td small font */
+                        .dsf {
+                                text-align: center;
+                                border: 1px solid black;
+                                height: 20px;
+                                font-size: 9pt;
+                                white-space: nowrap;
+                                overflow: hidden;
+                        }
+                        /* td extra small font */
+                        .dsf2 {
+                                text-align: center;
+                                border: 1px solid black;
+                                height: 20px;
+                                max-height: 20px;
+                                font-size: 7pt;
+                                white-space: nowrap;
+                                overflow: hidden;
+                        }
+                        /* td empty placeholder */
+                        .de {
+                                text-align: center;
+                                border: 1px solid black;
+                                background-color: lightgray;
+                                height: 20px;
+                        }
+                        /* td left aligned text */
+                        .dl {
+                                text-align: left;
+                                border: 0px solid black;
+                                height: 20px;
+                                white-space: nowrap;
+                                overflow: hidden;
+                        }
+                        /* td single height */
+                        .d {
+                                text-align: center;
+                                border: 1px solid black;
+                                height: 20px;
+                                white-space: nowrap;
+                                overflow: hidden;
+                        }
+                        /* td double height */
+                        .d2 {
+                                text-align: center;
+                                border: 1px solid black;
+                                height: 40px;
+                                white-space: nowrap;
+                                overflow: hidden;
+                        }
+                        /* td for data payload section */
+                        .d8 {
+                                text-align: center;
+                                border: 1px solid black;
+                                height: 160px;
+                                white-space: nowrap;
+                                overflow: hidden;
+                        }
+                        /* empty placeholder zero */
+                        .ez {
+                                width: 12.5%;
+                                float: left;
+                        }
+                        /* small input (1 char) */
+                        .sm-input {
+                                width: 7px !important;
+                        }
+                        /* hide number up down arrows */
+                        .sm-input::-webkit-inner-spin-button,
+                        .sm-input::-webkit-outer-spin-button {
+                                -webkit-appearance: none;
+                                margin: 0;
+                        }
+                        /* hide number up down arrows - in firefox */
+                        .sm-input[type=number] {
+                                -moz-appearance: textfield;
+                        }
+                        /* small input (2 char) */
+                        .md-input {
+                                width: 12px !important;
+                        }
+                        .sm-font-input {
+                                font-size: 6pt;
+                        }
+                        .sm-font-sm-input {
+                                width: 6px !important;
+                                font-size: 6pt;
+                        }
+                        .sm-font-md-input {
+                                width: 12px !important;
+                                font-size: 6pt;
+                        }
+                        input {
+                                color: blue;
+                                background-color: #ffff80;
+                                border: solid 1px black;
+                        }
+                        .difi-input {
+                                color: blue;
+                                background-color: #ffff80;
+                                border: solid 1px red;
+                        }
+                        span.sticky {
+                                line-height: 20px;
+                                color: blue;
+                                font-weight: bold;
+                                height: 20px;
+                                display: inline-block;
+                                font-size: 12pt;
+                        }
+                        button.sticky {
+                                font-weight: bold;
+                                height: 24px;
+                                width: 40px;
+                                display: inline-block;
+                                font-size: 12pt;
+                        }
+                        div.sticky-top-right {
+                                position: fixed;
+                                top: 0vmin;
+                                right: 0vmax;
+                                padding-top: 5px;
+                                padding-right: 5px;
+                                padding-bottom: 0px;
+                                padding-left: 0px;
+                                margin: 0px;
+                                line-height: 20px;
+                                color: blue;
+                                font-weight: bold;
+                                display: inline-block;
+                                font-size: 0;
+                                white-space : nowrap;
+                                overflow : hidden;
+                        }
+                </style>
+        </head>
+        <body>
+                <!-- zoom controls -->
+                <div class="sticky-top-right">
+                        <span class="sticky" style="width: 45px; text-align: left;">Zoom</span>
+                        <button type="button" class="btn btn-primary sticky" onclick="document.getElementById('zoom-value').innerHTML = (document.getElementById('zoom-value').innerHTML == '500') ? document.getElementById('zoom-value').innerHTML : parseFloat(document.getElementById('zoom-value').innerHTML) + 10; document.getElementById('main').style.zoom = parseFloat(document.getElementById('zoom-value').innerHTML)/100;">+</button>
+                        <button type="button" class="btn btn-primary sticky" onclick="document.getElementById('zoom-value').innerHTML = (document.getElementById('zoom-value').innerHTML == '30') ? document.getElementById('zoom-value').innerHTML : parseFloat(document.getElementById('zoom-value').innerHTML) - 10; document.getElementById('main').style.zoom = parseFloat(document.getElementById('zoom-value').innerHTML)/100;">-</button>
+                        <span class="sticky" style="width: 28px; text-align: right;" id="zoom-value">100</span>
+                        <span class="sticky" style="width: 20px; text-align: left;">%</span>
+                </div>
+
+                <div id="main" name="main" style="width:80%; margin: auto; font-size: 12pt;">
+                        
+                        <a href="/">Home</a>
+                        
+                        <h2>Send 'Version Context' DIFI Packet</h2>
+
+
+                        <!--Version Context Packet-->
+                        <form action="/web/v1/difi/send/version-context" method="POST" onsubmit="this['--stream-id'].value = '0x' + this['stream-id'].value; return true;">
+                        <table>
+                                <tr><td>Target address: <input type="text" class="form-control" id="--address" name="--address" value="{{send_host|default('')}}" maxlength="15" size="15" placeholder="ex: 10.1.1.1" title="IP address of target machine where you want packet to be sent"></td></tr>
+
+                                <tr><td>Target port: <input type="text" class="form-control" id="--port" name="--port" value="{{send_port|default('')}}" maxlength="5" size="5" placeholder="ex: 4991" title="Port of target machine where you want packet to be sent"></td></tr>
+                        </table>
+
+                        <h4>
+                        <span style="color: red">Note: Input fields with red border require values that are DIFI compliant (see tooltip for additional information)</span>
+                        </h4>
+
+                        <table width=100%>
+
+                                <caption><b><i>Version Context Packet</i></b></caption>
+
+                                <!--32 bits header-->
+                                <tr class="r"><td class="h">31</td><td class="h">30</td><td class="h">29</td><td class="h">28</td><td class="h">27</td><td class="h">26</td><td class="h">25</td><td class="h">24</td><td class="h">23</td><td class="h">22</td><td class="h">21</td><td class="h">20</td><td class="h">19</td><td class="h">18</td><td class="h">17</td><td class="h">16</td><td class="h">15</td><td class="h">14</td><td class="h">13</td><td class="h">12</td><td class="h">11</td><td class="h">10</td><td class="h">&nbsp9&nbsp</td><td class="h">&nbsp8&nbsp</td><td class="h">&nbsp7&nbsp</td><td class="h">&nbsp6&nbsp</td><td class="h">&nbsp5&nbsp</td><td class="h">&nbsp4&nbsp</td><td class="h">&nbsp3&nbsp</td><td class="h">&nbsp2&nbsp</td><td class="h">&nbsp1&nbsp</td><td class="h">&nbsp0&nbsp</td></tr>
+
+                                <!--packet header-->
+                                <tr class="r">
+                                        <td class="dsf" colspan=4>pkt type=0x<input type="text" required class="form-control sm-input difi-input" id="--pkt-type" name="--pkt-type" value="5" maxlength="1" size="1" minlength="1" pattern="[0-7]{1}" title="[DIFI] 'pkt type' must be: 5 &#13;&#13;DIFI options: &#13;(0x4) Standard Flow Signal Context Packet &#13;(0x5) Version Flow Signal Context Packet &#13;(0x1) Standard Flow Signal Data Packet"></td>
+                                        <td class="dsf" colspan=1>0x<input type="text" class="form-control sm-input difi-input" id="--clsid" name="--clsid" value="1" maxlength="1" size="1" minlength="1" pattern="[0-1]{1}" title="[DIFI] 'clsid' must be: 1 (blank defaults to 1)"></td>
+                                        <td class="dsf" colspan=2>rsvd=0x<input type="text" class="form-control sm-input difi-input" id="--rsvd" name="--rsvd" value="0" maxlength="1" size="1" minlength="1" pattern="[0-3]{1}" title="[DIFI] 'rsvd' must be: 0 (blank defaults to 0)"></td>
+                                        <td class="dsf" colspan=1>0x<input type="text" class="form-control sm-input difi-input" id="--tsm" name="--tsm" value="1" maxlength="1" size="1" minlength="1" pattern="[0-1]{1}" title="[DIFI] 'tsm' must be: 1 (blank defaults to 1)"></td>
+                                        <td class="dsf" colspan=2>tsi=0x<input type="text" class="form-control sm-input" id="--tsi" name="--tsi" value="1" maxlength="1" size="1" minlength="1" pattern="[1-3]{1}" title="'tsi' can be: 1-3 (blank defaults to 1) &#13;&#13;Sample values from vita spec: &#13;0 = not allowed &#13;1 = (UTC) with epoch Jan 1, 1970 &#13;2 = GPS with epoch Jan 6, 1980 &#13;3 = POSIX time with epoch Jan 1, 1970"></td>
+                                        <td class="dsf" colspan=2>tsf=0x<input type="text" class="form-control sm-input difi-input" id="--tsf" name="--tsf" value="2" maxlength="1" size="1" minlength="1" pattern="[0-3]{1}" title="[DIFI] 'tsf' must be: 2 (blank defaults to 2)  &#13;&#13;Sample values from vita spec: &#13;0 = No Fractional-seconds Timestamp field included &#13;1 = Sample Count Timestamp &#13;2 = Real-Time (Picoseconds) Timestamp &#13;3 = Free Running Count Timestamp"></td>
+                                        <td class="dsf" colspan=4>seqnum=0x<input type="text" class="form-control sm-input" id="--seqnum" name="--seqnum" value="0" maxlength="1" size="1" minlength="0" pattern="[0-9a-fA-F]{1}" title="can be: 0-f hex (value is mod 16 of packet count)"></td>
+                                        <td class="d" colspan=16>packet size = 0x<input type="text" class="form-control difi-input" id="--pkt-size" name="--pkt-size" value="000b" maxlength="4" size="4" minlength="0" pattern="[0-9a-fA-F]{1,4}" placeholder="ex: 000b" title="[DIFI] must be: 000b (11 words) &#13;&#13;DIFI options: &#13;Standard Context Packet = 001b (27 words) &#13;Version Context Packet = 000b (11 words) &#13;Signal Data Packet = 7 words + payload size in words"> (words)</td>
+                                </tr>
+
+                                <!--packet fields-->
+                                <tr class="r"><td class="d" colspan=32>stream id = 0x<input type="text" class="form-control" id="stream-id" name="stream-id" value="00000001" maxlength="8" size="8" minlength="0" pattern="[0-9a-fA-F]{1,8}" placeholder="ex: 00000001" title="can be: any 8 digit hex (blank defaults to 00000001) &#13;&#13;Description: &#13;ID of the stream to which the packet belongs"><input type="hidden" id="--stream-id" name="--stream-id" value=""></td></tr>
+
+                                <tr class="r"><td class="de" colspan=8><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span><span class="ez">0</span></td>
+                                        <td class="d" colspan=24>oui = 0x<input type="text" class="form-control" id="--oui" name="--oui" value="0012a2" maxlength="6" size="6" minlength="0" pattern="[0-9a-fA-F]{1,6}" placeholder="ex: 0012a2" title="can be: any 6 digit hex  &#13;&#13;Description: &#13;OUI assigned"></td>
+                                </tr>
+
+                                <tr class="r">
+                                        <td class="d" colspan=16>information class code = 0x<input type="text" class="form-control difi-input" id="--icc" name="--icc" value="0001" maxlength="4" size="4" minlength="0" pattern="[0-9a-fA-F]{1,4}" placeholder="ex: 0001" title="[DIFI] must be: 0001 (blank defaults to 0001) &#13;&#13;DIFI options: &#13;Version Context Packet = 0001"></td>
+                                        <td class="d" colspan=16>packet class code = 0x<input type="text" class="form-control difi-input" id="--pcc" name="--pcc" value="0004" maxlength="4" size="4" minlength="0" pattern="[0-9a-fA-F]{1,4}" placeholder="ex: 0004" title="[DIFI] must be: 0004 (blank defaults to 0004) &#13;&#13;DIFI options: &#13;Version Context Packet = 0004"></td>
+                                </tr>
+
+                                <tr class="r"><td class="d" colspan=32>integer-seconds timestamp = <input type="number" class="form-control" id="--integer-seconds-ts" name="--integer-seconds-ts" value="1" min="1" max="4294967295" step="1" placeholder="ex: 1" title="seconds since epoch (blank defaults to current date)"> (seconds since epoch)</td></tr>
+
+                                <tr class="r"><td class="d2" colspan=32>fractional-seconds timestamp = <input type="number" class="form-control" id="--fractional-seconds-ts" name="--fractional-seconds-ts" value="1" min="1" max="18446744073709551615" step="1" placeholder="ex: 1" title="picoseconds past integer-seconds"> (picoseconds past integer-seconds)</td></tr>
+
+                                <tr class="r"><td class="d" colspan=32>context indicator field (CIF 0) = 0x<input type="text" class="form-control difi-input" id="--cif0" name="--cif0" value="80000002" maxlength="8" size="8" minlength="0" pattern="[0-9a-fA-F]{1,8}" placeholder="ex: 80000002" title="[DIFI] must be: 0000002 (ignores first hex character which is changed indicator) &#13;&#13;DIFI options: &#13;Standard Context Packet = fbb98000 (change) or 7bb98000 (no change) &#13;Version Context Packet = 80000002 (change) or 00000002 (no change)"></td></tr>
+                                <tr class="r"><td class="d" colspan=32>context indicator field (CIF 1) = 0x<input type="text" class="form-control difi-input" id="--cif1" name="--cif1" value="0000000C" maxlength="8" size="8" minlength="0" pattern="[0-9a-fA-F]{1,8}" placeholder="ex: 0000000c" title="[DIFI] must be: 0000000c (blank defaults to 0000000c)"></td></tr>
+                                <tr class="r"><td class="d" colspan=32>v49 spec version = 0x<input type="text" class="form-control difi-input" id="--v49-spec-version" name="--v49-spec-version" value="00000004" maxlength="8" size="8" minlength="0" pattern="[0-9a-fA-F]{1,8}" placeholder="ex: 00000004" title="[DIFI] must be: 00000004 (blank defaults to 00000004)"></td></tr>
+
+                                <tr class="r">
+                                        <td class="dsf2" colspan=7>year<br/><input type="number" class="form-control sm-font-input" id="--year" name="--year" value="" min="1" max="127" step="1" title="'year' can be: 0-127 (leave blank for current year) &#13;&#13;Note: automatically adds +2000 to year value"></td>
+                                        <td class="dsf2" colspan=9>day<br/><input type="number" class="form-control sm-font-input" id="--day" name="--day" value="" min="1" max="366" step="1" title="'day' can be: 1-366 (leave blank for current day) &#13;&#13;Description: day of the year"></td>
+                                        <td class="dsf2" colspan=6>revision<br/><input type="number" class="form-control sm-font-input" id="--revision" name="--revision" value="0" min="0" max="63" step="1" title="'revision' can be: 0-63"></td>
+                                        <td class="dsf2" colspan=4>type<br/><input type="number" class="form-control sm-font-input" id="--type" name="--type" value="0" min="0" max="1" step="1" title="'type' can be: 0-1 &#13;&#13;Sample values from DIFI spec: &#13;0 = Narrowband &#13;1 = Wideband"></td>
+                                        <td class="dsf2" colspan=6>icd version<br/><input type="number" class="form-control sm-font-input" id="--icd-version" name="--icd-version" value="0" min="0" max="0" step="1" title="'icd-version' can be: 0  &#13;&#13;Sample values from DIFI spec: &#13;0 = Version 1"></td>
+                                </tr>
+
+                        </table>
+                        <br>
+                        <button type="submit" class="btn btn-primary">Send Packet</button>
+                        </form>
+                </div>
+        </body>
+</html>

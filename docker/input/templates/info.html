@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>DIFI Packet Checker</title>
+
+		<style>
+			/* tr */
+			.r {
+				width: 100%;
+			}
+			/* th */ 
+			.h {
+				text-align: center;
+				height: 20px;
+				border: 1px solid black;
+				background-color: teal;
+				color: white;
+				white-space: nowrap;
+				overflow: hidden;
+                padding: 3px;
+			}
+			/* td left aligned text */ 
+			.dl {
+				text-align: left;
+				height: 20px;
+				border: 1px solid black;
+				padding: 4px;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+			/* td left aligned text - wrap */ 
+			.dl2 {
+				text-align: left;
+				height: 20px;
+				border: 1px solid black;
+				padding: 4px;
+			}
+			/* td single height */
+			.d {
+				text-align: center;
+				height: 20px;
+				border: 1px solid black;
+				padding: 4px;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+		</style>
+		<script>
+			window.onload = function() {
+				//convert all specified date time elements from UTC to local time
+				var elems = document.getElementsByClassName("localtime");
+				for (let i = 0; i < elems.length; i++) {
+					var date = new Date(elems[i].innerHTML);
+					if (date != 'Invalid Date') {
+						elems[i].innerHTML = date.toLocaleString();
+					}
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<div style="width:80%; margin: auto; font-size: 12pt;">
+			
+			<a href="/">Home</a>
+			
+			<h2>System Information</h2>
+			
+			<table width=100% style="border-collapse: collapse">
+				
+				<caption><b><i>System Information</i></b></caption>
+				
+				<th class="h">Name</th><th class="h">Description</th><th class="h">Start Time</th><th class="h">Version</th>
+				
+				<tr class="r">
+					<td class="d"><b>{{info["name"]}}</b></td><td class="d">{{info["description"]}}</td><td class="d">{{info["startTime"]}}</td><td class="d">{{info["version"]["major"]}}.{{info["version"]["minor"]}}.{{info["version"]["patch"]}}.{{info["version"]["build"]}}</td>
+				</tr>
+			</table>
+
+		</div>
+	</body>
+</html>
+

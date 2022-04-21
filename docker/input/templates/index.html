@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>DIFI Packet Checker</title>
+
+	<style>
+		input {
+			color: blue;
+			font-size: 12pt;
+			background-color: #ffff80;
+			border: solid 1px black;
+			width:auto;
+		}
+	</style>
+	<script>
+			function nav(route, elem_id) {
+				let stream_id = document.getElementById(elem_id).value;
+				if (stream_id=='') {
+					alert('Must enter a stream ID.');
+					document.getElementById(elem_id).focus();
+					return;
+				} else {
+					url=route.toLowerCase() + '/' + stream_id.toString(16).padStart(8,"0").toLowerCase();
+					window.location.href=url;
+					return;
+				}
+			}
+	</script>
+</head>
+	<body>
+		<div style="width:80%; margin: auto; font-size: 12pt;">
+
+			<h2>
+				DIFI Console
+			</h2>
+			
+			<h3>
+				Listening on {{ip}}:{{port}}
+			</h3>
+
+			<table>
+				<tr style="outline:thin solid; border-radius: 10px">
+					<td style="padding: 15px">
+						Stream ID: 0x<input type="text" class="form-control" id="stream-id" name="stream-id" value="00000001" maxlength="8" size="8" minlength="1" placeholder="ex: 00000001" title="Please enter a stream ID  (8 digit hex (Base 16 format)) &#13;&#13;Examples: 00000001, a0000001, f7ac0001, f, etc.">
+						<br><br>
+						<button type="button" onclick="nav('/web/v1/difi/compliant/standardcontext','stream-id');" name="standardcontext" id="standardcontext" class="btn btn-primary" style="width:100%">
+							See latest good 'standard context' packet
+						</button>
+						<br><br>
+						<button type="button" onclick="nav('/web/v1/difi/compliant/versioncontext','stream-id');" name="versioncontext" id="versioncontext" class="btn btn-primary" style="width:100%">
+							See latest good 'version context' packet
+						</button>
+						<br><br>
+						<button type="button" onclick="nav('/web/v1/difi/compliant/data','stream-id');" name="data" id="data" class="btn btn-primary" style="width:100%">
+							See latest good 'data' packet
+						</button>
+						<br><br>
+						<button type="button" onclick="nav('/web/v1/difi/compliant/count','stream-id');" class="btn btn-primary" style="width:100%">
+							See count of good packets
+						</button>
+						<br><br><br>
+						<button type="button" onclick="nav('/web/v1/difi/noncompliant','stream-id');" class="btn btn-primary" style="width:100%">
+							See latest failed packet
+						</button>
+						<br><br>
+						<button type="button" onclick="nav('/web/v1/difi/noncompliant/count','stream-id');" class="btn btn-primary" style="width:100%">
+							See count of failed packets
+						</button>
+					</td>
+				</tr>
+				<tr style="height: 5px"></tr>
+				<tr style="outline:thin solid; border-radius: 10px">
+					<td style="padding: 15px">
+						<button type="button" onclick="window.location.href='/web/v1/difi/send/standard-context';" name="standard_context" class="btn btn-primary" style="width:100%">
+							Send a 'standard context' packet
+						</button>
+						<br><br>
+						<button type="button" onclick="window.location.href='/web/v1/difi/send/signal-data';" name="signal_data" class="btn btn-primary" style="width:100%">
+							Send a 'data' packet
+						</button>
+						<br><br>
+						<button type="button" onclick="window.location.href='/web/v1/difi/send/version-context';" name="version_context" class="btn btn-primary" style="width:100%">
+							Send a 'version context' packet
+						</button>
+					</td>
+				</tr>
+				<tr style="height: 5px"></tr>
+				<tr style="outline:thin solid; border-radius: 10px">
+					<td style="padding: 15px">
+						<button type="button" onclick="window.location.href='/web/v1/difi/compliant';" name="standard_context" class="btn btn-primary" style="width:100%">
+							See all available stream id's for good packets
+						</button>
+						<br><br>
+						<button type="button" onclick="window.location.href='/web/v1/difi/noncompliant';" name="signal_data" class="btn btn-primary" style="width:100%">
+							See all available stream id's for failed packets
+						</button>
+					</td>
+				</tr>
+				<tr style="height: 5px"></tr>
+				<tr style="outline:thin solid; border-radius: 10px">
+					<td style="padding: 15px">
+						<button type="button" onclick="window.location.href='/web/v1/difi/help/api';" class="btn btn-primary" style="width:100%">
+							See all Rest endpoints in API
+						</button>
+						<br><br>
+						<button type="button" onclick="window.location.href='/web/v1/difi/Info';" class="btn btn-primary" style="width:100%">
+							See System Info
+						</button>
+						<br><br>
+						<button type="button" onclick="window.location.href='/web/v1/difi/Health';" class="btn btn-primary" style="width:100%">
+							See System Health
+						</button>
+						<br><br>
+						<button type="button" onclick="window.location.href='/web/v1/difi/Settings';" class="btn btn-primary" style="width:100%">
+							See System Settings
+						</button>
+						<br><br>
+						<button type="button" onclick="window.location.href='/web/v1/difi/Status';" class="btn btn-primary" style="width:100%">
+							See System Status  (packet counts per stream)
+						</button>
+						<br><br>
+						<form action="/api/v1/difi/Operations/ResetStatistics" method="POST">
+							<button type="submit" class="btn btn-primary" style="width:100%">Clear System Status  (packet counts per stream)</button>
+						</form>
+					</td>
+				</tr>
+			</table>
+
+		</div>
+	</body>
+</html>
+
