@@ -41,7 +41,7 @@ import dds - to send 'Data' packet
 
 Below are several quick hint examples for reference purposes:
 
-1) To send a 'Version Context Packet' (that's DIFI compliant and is supplying all the fields in the packet):
+1) To send a 'Version Context Packet' (that's DIFI compliant illustrating  the fields in the packets as args)
 
 import dvs
 try:
