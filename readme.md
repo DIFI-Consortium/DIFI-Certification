@@ -84,10 +84,7 @@ except Exception as e:
 2) To serialize/decode stream of bytes into DifiVersionContextPacket class instance, and then output instance as JSON string:
 (note: use this when you're sure the byte stream contains a 'Version Context' packet inside)
 
-# Python
-
-```
-
+```Python
 import drx
 import io
 try:
@@ -114,7 +111,7 @@ except Exception as e:
 3) To serialize/decode stream of bytes into DifiVersionContextPacket class instance, and then output instance as JSON string:
 (note: use this when you're not sure which type of DIFI packet the byte stream contains inside, it's using the same main decode function this application uses internally)
 
-```
+```Python
 
 import drx
 try:
@@ -141,6 +138,7 @@ except Exception as e:
 
 4) To check if header in packet is DIFI compliant:
 
+```Python
 import drx
 try:
     pkt = drx.DifiVersionContextPacket
@@ -159,10 +157,10 @@ try:
 
 except Exception as e:
     print("error: ", e)
-
+```
 
 5) To check if packet contents are DIFI compliant (i.e. packet fields after the header):
-
+```Python
 import drx
 try:
     pkt = drx.DifiVersionContextPacket
@@ -180,30 +178,34 @@ try:
 
 except Exception as e:
     print("error: ", e)
-
+```
 
 
 
 Note: This application starts a UDP socket server that listens for DIFI packets from a device, and starts a Flask server that listens for HTTP requests for API endpoints and GUI. There are three server deployment options for Flask when building the Docker container:
 
+```bash
 [DEV]
 sudo docker build --force-rm -f docker/Dockerfile -t difi_one .
 sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=dev difi_one
-
+```
     (note: will be development flask server, listening on port 5000)
 
+```bash
 [PROD] (proxy server)
 sudo docker build --force-rm -f docker/Dockerfile -t difi_one .
 sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod difi_one
-
+```
     (note: will be uwsgi server hosting flask app, listening on port 5000)
 
 with proxy server:
+```bash
 sudo docker build --build-arg USER=nginx --build-arg GROUP=nginx --build-arg UID=2000 --build-arg GID=2000 --force-rm -f docker/Dockerfile -t difi_one .
 sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod difi_one
-
+```
     (note: will be nginx server proxying to uwsgi server hosting flask app, listening on port configured in nginx conf server block like port 80)
 
+```
     example nginx server block:
     server {
         listen 80;
@@ -219,6 +221,7 @@ sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FL
                 proxy_pass http://10.1.1.1:5000;  #url to uwsgi/flask server
             }
     }
+```
 
 [PROD-GATEWAY] (application-gateway)
 sudo docker build --build-arg USER=nginx --build-arg GROUP=nginx --build-arg UID=2000 --build-arg GID=2000 --force-rm -f docker/Dockerfile -t difi_one .
