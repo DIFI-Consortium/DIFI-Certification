@@ -8,6 +8,14 @@ Current projects:
 
 GitHub is a code hosting platform, great for version control and collaboration.  It uses Git under the hood, but you don't have to be an expert in Git to make changes to a page.
 
+### Downloading the Code
+
+From the browser, you can download the code by clicking the green Code button in the top right, and then clicking Download Zip, as shown below.
+
+![](images/download.png)
+
+Those familiar with Git commands may choose to do the process with a `git clone` instead.  For a tutorial on using Git and GitHub via the command line, including creating your own repo, refer to [this guide](https://docs.github.com/en/get-started/quickstart).
+
 ### Making Changes to Text
 
 To view code on a public GitHub repository (a.k.a. repo) like this one, you don't need a GitHub account.  You will need a GitHub account to suggest edits to a page.  For making documentation or other text changes, you can do everything from the browser.
