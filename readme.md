@@ -14,9 +14,9 @@ From the browser, you can download the code by clicking the green Code button in
 
 ![](images/download.png)
 
-Those familiar with Git commands may choose to do the process with a `git clone` instead.  For a tutorial on using Git and GitHub via the command line, including creating your own repo, refer to [this guide](https://docs.github.com/en/get-started/quickstart).
+Those familiar with Git commands may choose to do the process with a `git clone` instead.  For a tutorial on using Git and GitHub via the command line, including creating your own repo, refer to [this series of tutorials](https://docs.github.com/en/get-started/quickstart).
 
-### Making Changes to Text
+### Making Changes to Text Using Your Browser
 
 To view code on a public GitHub repository (a.k.a. repo) like this one, you don't need a GitHub account.  You will need a GitHub account to suggest edits to a page.  For making documentation or other text changes, you can do everything from the browser.
 
