@@ -8,3 +8,14 @@ ci/ci_docker.sh
 ci/ci_lint.sh
 ci/common_env.sh
 ci/run_in_docker.sh
+
+DIFI_Validator/_devops.ps1
+DIFI_Validator/_devops.sh
+
+DIFI_Validator/python/__pycache__/
+DIFI_Validator/*.py[cod]
+DIFI_Validator/python/setup.py
+DIFI_Validator/ci/ci_docker.sh
+DIFI_Validator/ci/ci_lint.sh
+DIFI_Validator/ci/common_env.sh
+DIFI_Validator/ci/run_in_docker.sh
