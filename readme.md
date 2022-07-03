@@ -1,7 +1,15 @@
+# DIFI Certification
+
+<p align="center">
+  <img src="https://dificonsortium.org/wp-content/uploads/difi-consortium-logo.png">
+</p>
+
+Welcome to the Digital Intermediate Frequency Interoperability (DIFI) Certification GitHub Repo! This repository is used by the [DIFI Consortium Working Group](https://dificonsortium.org/) to share resources and tooling with DIFI Consortium members and the user community to enable verification, validation and testing of DIFI streams and devices in accordance with the [DIFI standards](https://dificonsortium.org/standards/).
+
 ## DIFI Certification Working Group Projects
 
 
-Current projects: 
+Current projects:
 1. DIFI packet validator (implemented in Python)
 
 ## Using Git and GitHub
@@ -28,7 +36,7 @@ To edit a file, click it, then click the pencil icon circled  below:
 
 ![](images/edit_file.png)
 
-You will be brought to an in-browser text editor, where you can make your edit.  Note the Preview tab at the top, to preview your changes.  
+You will be brought to an in-browser text editor, where you can make your edit.  Note the Preview tab at the top, to preview your changes.
 
 When you're done making the edits, scroll to the bottom and under Propose Changes you need to fill out the first bar, with a summary of the change.  You can leave the large box empty.  Click Propose Changes.
 
@@ -38,6 +46,6 @@ Click the Create Pull Request button as shown below
 
 ![](images/create_pr.png)
 
-This will bring you to the Open a Pull Request window, which might seem confusing, but all you have to do is click the green Create Pull Request button at the bottom.  
+This will bring you to the Open a Pull Request window, which might seem confusing, but all you have to do is click the green Create Pull Request button at the bottom.
 
 At this point the maintainers of the code will likely receive an email that there is a new change request, known as a "pull request", and they will review it.  You might receive emails related to the review process on the email you used to create your GitHub account.
