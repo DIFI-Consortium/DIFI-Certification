@@ -1,7 +1,7 @@
 # DIFI Certification
 
 <p align="center">
-  <img width="200" height="180" src="https://dificonsortium.org/wp-content/uploads/difi-consortium-logo.png">
+  <img src="https://dificonsortium.org/wp-content/uploads/difi-consortium-logo.png">
 </p>
 
 Welcome to the Digital Intermediate Frequency Interoperability (DIFI) Certification GitHub Repo! This repository is used by the [DIFI Consortium Working Group](https://dificonsortium.org/) to share resources and tooling with DIFI Consortium members and the user community to enable verification, validation and testing of DIFI streams and devices for certification in accordance with the [DIFI standards](https://dificonsortium.org/standards/).
