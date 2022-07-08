@@ -137,39 +137,22 @@
 # sys.exit(2)
 """
 
-#from pypacker import ppcap
-#from pypacker.pypacker import byte2hex
-#from pypacker.layer12 import ethernet
-#from pypacker.layer3 import ip
-#from pypacker.layer4 import tcp
-#from pypacker.layer4 import udp
-
-#takes care of forward declaration problem for type hints/annotations
-#(so don't have to put quotes around types)
+#takes care of forward declaration problem for type hints/annotations (so don't have to put quotes around types)
 from __future__ import annotations
+
 from typing import Union
-
-#from time import  perf_counter, sleep
 from datetime import timezone, datetime
-
 import asyncio
-
 import struct
 import io
 from io import BytesIO
-#from io import BufferedReader
-
-#import array
 import sys
 import json
-#import numpy as np
-#import pickle
 import pprint
 import socket
 import getopt
 import os
 import threading
-
 
 ##########
 #settings
@@ -1977,6 +1960,12 @@ def main():
     #decode pcap file mode
     ##########
     #elif MODE == MODE_PCAP:
+    #from pypacker import ppcap
+    #from pypacker.pypacker import byte2hex
+    #from pypacker.layer12 import ethernet
+    #from pypacker.layer3 import ip
+    #from pypacker.layer4 import tcp
+    #from pypacker.layer4 import udp
     #    preader = ppcap.Reader(filename=PCAP_FILE)
     #
     #    for ts, buf in preader:

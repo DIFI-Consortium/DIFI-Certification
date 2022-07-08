@@ -27,7 +27,7 @@ ___
 
 Note: This application can be used as a stand-alone application that decodes and verifies whether packets in a packet stream are in compliance with the DIFI 1.0 standard, and can prepare and send DIFI compliant packets for testing purposes. It is also import-able into your own scripts/applications that can be customized to provide additional functionality not covered in this application. i.e. you can re-use the packet classes and validation functions stand-alone, completely independent of this application, for higher throughput scenario's.
 
-- drx.py - receiver that decodes packets
+- drx.py - receiver that decodes packets (note that the REST API/server code is in docker/input/app.py)
 - dcs.py - sends 'Standard Context' packet
 - dvs.py - sends 'Version Context' packet
 - dds.py - sends 'Data' packet
@@ -190,6 +190,10 @@ except Exception as e:
 
 
 Note: This application starts a UDP socket server that listens for DIFI packets from a device, and starts a Flask server that listens for HTTP requests for API endpoints and GUI. There are three server deployment options for Flask when building the Docker container:
+
+1. Using Flask's built-in dev server, this is the simplest but not meant for production
+2. Using a uWSGI server that runs the Flask app
+3. Using a NGINX server proxying to the uWSGI server hosting flask app
 
 ```bash
 [DEV]

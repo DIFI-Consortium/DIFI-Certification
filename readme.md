@@ -10,12 +10,12 @@ Welcome to the Digital Intermediate Frequency Interoperability (DIFI) Certificat
 
 
 Current projects:
-1. DIFI packet validator (implemented in Python)
+1. DIFI packet parser/validator and companion web app (all implemented in Python)
 
 ## Using Git and GitHub
 
 GitHub is a code hosting platform, great for version control and collaboration.  It uses Git under the hood, but you don't have to be an expert in Git to make changes to a page.
-
+s
 ### Downloading the Code
 
 From the browser, you can download the code by clicking the green Code button in the top right, and then clicking Download Zip, as shown below.

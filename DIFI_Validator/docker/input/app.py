@@ -1,5 +1,4 @@
 """
-
 # Copyright © `2022` `Kratos Technology & Training Solutions, Inc.`
 # Licensed under the MIT License.
 # SPDX-License-Identifier: MIT
@@ -41,29 +40,21 @@
 #
 """
 
-#takes care of forward declaration problem for type hints/annotations
-#(so don't have to put quotes around types)
-from __future__ import annotations
-from typing import Union
+from __future__ import annotations #takes care of forward declaration problem for type hints/annotations (so don't have to put quotes around types)
 
 import subprocess
 from subprocess import CalledProcessError
 import sys
-
 import json
 import os
 import pprint
-import socket
 import psutil
 import re
-
 from flask import Flask, jsonify, request, redirect, render_template, Response, session, Markup, url_for
 from urllib.parse import urlparse
 from datetime import timezone, datetime
 
-
 app = Flask(__name__)
-
 
 ###########
 #config
