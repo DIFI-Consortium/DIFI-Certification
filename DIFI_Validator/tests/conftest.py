@@ -2,10 +2,6 @@
 # Licensed under the MIT License.
 # SPDX-License-Identifier: MIT
 
-#import logging
-#import os
-#from typing import Any, Dict, List
-
 import pytest
 
 ##import urllib3
