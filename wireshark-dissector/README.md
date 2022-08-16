@@ -14,7 +14,7 @@ Copy the [DIFI plugin](#difi-dissector.lua) to the Wireshark plugins directory. 
 
 * Run Wireshark
 * Verify the plugin is loaded under Help->About Wireshark->Plugins
-* Open a PCAP file with DIFI packets or use one of the example test files [difi-gnuradio-example](tests/difi-gnuradio-example.pcap)
+* Open a PCAP file with DIFI packets or use one of the example test files [difi-gnuradio-example](tests/difi-gnuradio-example.pcapng)
 
 <p align="center">
   <img src="./images/difi-gnuradio-example.png">
