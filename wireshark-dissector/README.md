@@ -1,13 +1,13 @@
 # DIFI Dissector
 
-This project contains a [DIFI](#https://dificonsortium.org/) dissector plugin for Wireshark. It supports decoding of Context, Data and Version packets as defined in v1.0.0 of the DIFI spec.
+This project contains a [DIFI](https://dificonsortium.org/) dissector plugin for Wireshark. It supports decoding of Context, Data and Version packets as defined in v1.0.0 of the DIFI spec.
 
 # Pre-requisites
 * Install [Wireshark](https://www.wireshark.org/)
 
 # Usage
 
-Copy the [DIFI plugin](#difi-dissector.lua) to the Wireshark plugins directory. For Windows the directory has the following path:
+Copy the [DIFI plugin](difi-dissector.lua) to the Wireshark plugins directory. For Windows the directory has the following path:
      `C:\Users\<username>\AppData\Roaming\Wireshark\plugins`
  If using Linux:
     `~./local/lib/wireshark/plugins`
