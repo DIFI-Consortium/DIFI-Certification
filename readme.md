@@ -8,9 +8,20 @@ Welcome to the Digital Intermediate Frequency Interoperability (DIFI) Certificat
 
 ## DIFI Certification Working Group Projects
 
+### DIFI Python Packet Validator 
+The Packet validator is a collection of [Python](https://www.python.org/ "Python") scripts that generate Standard Context' packets, 'Version Context' packets and 'Data' packets (dcs.py, dvs.py & dds.py) for consumption by a DIFI packet receiver (drx.py). The collection of scripts were released as open source by [Kratos Defense](https://www.kratosdefense.com/ "Kratos") to the DIFI Consortium. 
 
-Current projects:
-1. DIFI packet parser/validator and companion web app (all implemented in Python)
+### DIFI GNU Radio Out of Tree blocks (gr-difi) 
+The [GNU Radio](https://www.gnuradio.org/ "GNU Radio") out of tree blocks consist of a "Data" packet Source and Sink blocks and can be found in [gr-difi](https://github.com/DIFI-Consortium/gr-difi "gr-difi"). The collection of GNU Radio blocks were part of [gr-azure](https://github.com/microsoft/gr-azure "gr-azure") and released as open source by [Microsoft](https://www.Microsoft.com/ "Microsoft") to the DIFI Consortium.
+
+### DIFI Wireshark Dissector 
+The DIFI Wireshark Dissector is a LUA plugin created for [Wireshark](https://www.wireshark.org/ "Wireshark") that allows for packet inspection of DIFI Standard Context, Standard Data and Version Context packets. The plug-in was created by [Johanna Rivera](https://github.com/jo-rivera).
+
+### DIFI Tutorials (Coming soon)
+The tutorials section is a collection of educational material that describe DIFI packets and include hands on tutorials that combine the Python Packet Validator with gr-difi to illustrate the power of interoperability. 
+
+### DIFI Certification software (Coming soon)
+DIFI Certification software is a container based tool suite that allows for 1P & 3P certification of DIFI compliant devices and software.
 
 ## Using Git and GitHub
 
