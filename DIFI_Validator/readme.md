@@ -27,7 +27,7 @@ ___
 
 Note: This application can be used as a stand-alone application that decodes and verifies whether packets in a packet stream are in compliance with the DIFI 1.0 standard, and can prepare and send DIFI compliant packets for testing purposes. It is also import-able into your own scripts/applications that can be customized to provide additional functionality not covered in this application. i.e. you can re-use the packet classes and validation functions stand-alone, completely independent of this application, for higher throughput scenario's.
 
-- drx.py - receiver that decodes packets
+- drx.py - receiver that decodes packets (note that the REST API/server code is in docker/input/app.py)
 - dcs.py - sends 'Standard Context' packet
 - dvs.py - sends 'Version Context' packet
 - dds.py - sends 'Data' packet
@@ -40,6 +40,17 @@ all fields in all send packets are user-configurable\changeable into anything th
 - import dvs - to send 'Version Context' packet
 - import dds - to send 'Data' packet
 
+To run the containerized app using Docker,
+
+```
+cd DIFI-Certification/DIFI_Validator
+docker build --force-rm -f docker/Dockerfile -t difi .
+docker run -it -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -p 5000:5000 -e FLASK_DEPLOY_ENV=dev difi
+```
+
+and open a browser on the host machine to http://127.0.0.1:5000/, and you should see the following page:
+
+![](../images/difi_validator.png)
 
 Below are several quick hint examples for reference purposes:
 
@@ -190,6 +201,10 @@ except Exception as e:
 
 
 Note: This application starts a UDP socket server that listens for DIFI packets from a device, and starts a Flask server that listens for HTTP requests for API endpoints and GUI. There are three server deployment options for Flask when building the Docker container:
+
+1. Using Flask's built-in dev server, this is the simplest but not meant for production
+2. Using a uWSGI server that runs the Flask app
+3. Using a NGINX server proxying to the uWSGI server hosting flask app
 
 ```bash
 [DEV]

@@ -43,16 +43,9 @@ import socket
 import time
 from datetime import datetime
 import getopt
-
 import asyncio
-#import functools
-#import multiprocessing
-#from concurrent.futures.thread import ThreadPoolExecutor
-#from time import sleep
 
-# Local Import
 import dificommon
-
 
 #   3                   2                   1                   0
 # 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
@@ -99,6 +92,17 @@ SECONDS_BETWEEN_SENDS = 1  #default is 1 second if arg not supplied
 FIELDS={}
 
 
+def bitstring_to_bytes(s, handle_empty=False):
+    v = int(s, 2)
+    b = bytearray()
+    if handle_empty is True and v == 0:
+        if len(s) >= 8:
+            return (0).to_bytes(int(len(s)/8), byteorder='big')
+    else:
+        while v:
+            b.append(v & 0xff)
+            v >>= 8
+    return bytes(b[::-1])
 
 ###########
 # primary function
@@ -217,7 +221,7 @@ def send_difi_compliant_version_context_packet(count: int = 0):
     if not SILENT and DEBUG: print(f" year = {int(today.strftime('%y')) + 2000}")
     if not SILENT and DEBUG: print(f" ver footer year = {ver_footer_year}")
     # The range for the year is 2000 to 2127.
-    packetchunk = dificommon.bitstring_to_bytes(ver_footer_year)
+    packetchunk = bitstring_to_bytes(ver_footer_year)
     if not SILENT and DEBUG: print (' packetchunk start')
     if not SILENT and DEBUG: print (' ', packetchunk)
     if not SILENT and DEBUG: print (' packetchunk end')
@@ -241,7 +245,7 @@ def send_difi_compliant_version_context_packet(count: int = 0):
     ver_footer_icd_version = "{0:06b}".format(int(FIELDS["--icd-version"],10)) if "--icd-version" in FIELDS else "000000"  # 6 of 32 bits
     bitstring = ver_footer_year + ver_footer_day + ver_footer_rev + ver_footer_type + ver_footer_icd_version
 
-    packetchunk = dificommon.bitstring_to_bytes(bitstring, handle_empty=True)
+    packetchunk = bitstring_to_bytes(bitstring, handle_empty=True)
     if not SILENT and DEBUG: print (' bitstring start')
     if not SILENT and DEBUG: print (' ', bitstring)
     if not SILENT and DEBUG: print (' bitstring end')

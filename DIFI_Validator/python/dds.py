@@ -40,21 +40,11 @@
 import sys
 import socket
 import time
-#import random
-#from datetime import datetime, timedelta
 import getopt
-
 import asyncio
-#import functools
-#import multiprocessing
-#from concurrent.futures.thread import ThreadPoolExecutor
-#from time import sleep
-#import netifaces
 
-# Local Import
 import dificommon
 import dds_data
-
 
 #   3                   2                   1                   0
 # 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0

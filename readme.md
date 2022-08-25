@@ -8,8 +8,6 @@ Welcome to the Digital Intermediate Frequency Interoperability (DIFI) Certificat
 
 ## DIFI Certification Working Group Projects
 
-
-
 ### DIFI Python Packet Validator 
 The Packet validator is a collection of [Python](https://www.python.org/ "Python") scripts that generate Standard Context' packets, 'Version Context' packets and 'Data' packets (dcs.py, dvs.py & dds.py) for consumption by a DIFI packet receiver (drx.py). The collection of scripts were released as open source by [Kratos Defense](https://www.kratosdefense.com/ "Kratos") to the DIFI Consortium. 
 
@@ -24,7 +22,6 @@ The tutorials section is a collection of educational material that describe DIFI
 
 ### DIFI Certification software (Coming soon)
 DIFI Certification software is a container based tool suite that allows for 1P & 3P certification of DIFI compliant devices and software.
-
 
 ## Using Git and GitHub
 
