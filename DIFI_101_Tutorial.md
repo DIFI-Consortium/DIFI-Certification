@@ -2,27 +2,27 @@
 
 ## What is DIFI
 
-
-
-The DIFI Packet Protocol, technically referred to as "IEEE-ISTO Std 4900-2021:  Digital IF Interoperability Standard", defines a data plane interface meant for transmitting and receive digitized IF data and corresponding metadata over standard IP networks. The DIFI interface is meant to be fully compliant with the VITA 49.2 standard, VITA 49 is a very flexible standard, and DIFI is a specific VITA 49 schema.  The primary use-case of DIFI packets is to create an interface between satellite ground station digitizers (transceivers) and software modems, enabling interoperability and combatting vendor lock-in that has plagued the satellite industry for decades.  The DIFI packet protocol can also be used for other purposes, including applications that don't involve hardware, such as streaming an RF signal between different software applications.
+The DIFI Packet Protocol, technically referred to as "IEEE-ISTO Std 4900-2021:  Digital IF Interoperability Standard", defines a data plane interface meant for transmitting and receive digitized IF data (such as IQ samples) and corresponding metadata over standard IP networks. Even though it is called an IF standard, IQ samples at baseband can also be streamed with DIFI.  The DIFI interface is designed to be fully compliant with the widely used VITA 49.2 standard, VITA 49 is a very flexible standard, and DIFI is a specific VITA 49 schema.  By creating a specific schema of VITA 49.2, interoperability between devices and software is more achievable.  The primary use-case of DIFI packets is to create an interface between satellite ground station digitizers (transceivers) and software modems, enabling interoperability and combatting vendor lock-in that has plagued the satellite industry for decades.  The DIFI packet protocol can also be used for other purposes, including applications that don't involve satellites or even hardware, such as streaming an RF signal between different software applications.  The DIFI standard is currently being created by the [DIFI Consortium](https://dificonsortium.org/), although version 1 of the standard has been locked in, and contains all of the functionality we will discuss in this tutorial. 
 
 ![](images/difi-consortium-logo.png)
 
 ## Overview of the DIFI Specifications
 
-There are three types of DIFI packets: signal data, signal context, and version context. 
+The DIFI packet protocol defines the payload of UDP packets, although some vendors have implemented TCP versions as well, even though it's not officially part of the specifications.  Like any TCP/UDP packets, the max packet size (the Ethernet frame payload) is adjustable from 128 octets to 9000 octets, which will determine how many IQ samples can be sent in each packet.
 
-The signal context packet includes fields such as timestamp, bandwidth, RF frequency, gain, sample rate, and the data format used within the signal data packets.  The version context packet is even shorter and is used to convey version information for the software/firmware sending the DIFI packets, as well as the DIFI spec version being used (currently there is just one option). Lastly, the signal data packets contain the actual signal, in the form of IQ samples, as well as a timestamp that includes both integer and fractional seconds, to mark the precise time of the first sample.  
+There are three types of DIFI packets: signal data, signal context, and version context.  The signal context packet includes fields such as timestamp, bandwidth, RF frequency, gain, sample rate, and the data format used within the signal data packets.  The version context packet is even shorter and is used to convey version information for the software/firmware sending the DIFI packets, as well as the DIFI spec version being used (currently there is just one option). Lastly, the signal data packets contain the actual signal, in the form of IQ samples, as well as a timestamp that includes both integer and fractional seconds, to mark the precise time of the first sample.  The number of data packets sent per second is determined by the sample rate, and the MTU size (which determines the samples per packet).  Context packets are either sent periodically or as needed, e.g., when a parameter changes.  Version packets are sent periodically, such as once per second.
 
-Regarding the specific data type used for the IQ samples, DIFI uses fixed point signed integers, where each integer can be 4 through 16 bits (specified in the signal context packet).  DIFI does not use zero padding, so for bit depths other than 8 and 16, the integers essentially share bytes, and the samples per packet must lead to an integer number of 4-byte words.  
+Regarding the specific data type used for the IQ samples, DIFI uses fixed point signed integers, where each integer can be 4 through 16 bits (specified in the signal context packet).  DIFI does not use zero padding, so for bit depths other than 8 and 16, the integers share bytes, and the samples per packet must lead to an even number of 4-byte words in the packet.
 
-All DIFI packets also have a 4-bit sequence number that can be used to deal with out of order packets at the destination.  They also all have a stream ID which defaults to 0 but can be set to something else in order to have multiple independent streams over the same port.
+All DIFI packets also have a 4-bit sequence number that can be used to deal with out of order packets at the destination.  They also all have a stream ID which defaults to 0 but can be set to something else in order to have multiple independent streams over the same port (it is up to the receiving side to choose to filter off stream ID).
 
-The DIFI packet protocol defines the payload of UDP packets, although some vendors have implemented TCP versions as well, even though it's not actually part of the specifications.  Like any TCP/UDP packets, the max packet size (the Ethernet frame payload) is adjustable from 128 octets to 9000 octets, including overhead.
+## How to Use DIFI 
+
+There are multiple ways you can use DIFI in your application.  If you are using GNU Radio, there are blocks in the out-of-tree module [gr-difi](https://github.com/DIFI-Consortium/gr-difi) that provide DIFI Source and DIFI Sink functionality to GNU Radio, so that you can send or receive DIFI packets using UDP or TCP.  There is also the Python code in the DIFI_Validator directory which provides methods for generating and parsing DIFI packets.  On the hardware side, there are vendors such as [Kratos](https://www.kratosdefense.com/products/space/networks/network-devices/spectralnet) who make digitizers (transceivers) that can communicate over DIFI.  If you use USRP SDRs, there will soon be a UHD C++ application added to this repo that will generate DIFI packets, as well as an RFNoC block that allows a USRP to generate DIFI packets on a different interface than that used for UHD control.
 
 ## Creating DIFI Packets in Python
 
-We will now create an example DIFI signal data packet in Python, without needing any dependencies other than numpy and matplotlib.
+We will now create an example DIFI signal data packet in Python, without requiring any dependencies other than numpy and matplotlib, to demonstrate how it works.
 
 For reference, and because the DIFI specifications are behind a pay-wall, the signal data packet structure is depicted below, using 4 bytes per line:
 
@@ -51,7 +51,7 @@ For reference, and because the DIFI specifications are behind a pay-wall, the si
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-The following code creates a valid DIFI signal data packet, filled with 1's and 0's for the IQ samples.  In the later portion of this tutorial we will create code that can parse this packet, but first we will dissect it in Wireshark.
+The following code creates a valid DIFI signal data packet, filled with repeating 1's and 0's for the IQ samples.  In the later portion of this tutorial we will create code that can parse this packet, but first we will dissect it in Wireshark.
 
 ``` python
 import socket
@@ -108,7 +108,7 @@ print(f'Length of this bytes object is {length} bytes and {length/4} 32 bit word
 udp_socket.sendto(difi_packet, (DESTINATION_IP, DESTINATION_PORT))
 ```
 
-You can feel free to change the IQ samples, or put a loop around it to send multiple packets.
+You can feel free to change the IQ samples, or put a loop around it to send multiple packets.  If your IQ samples start as a numpy array, you can convert them to integers of the correct datatype (e.g., int16), and then use `bytearray()` to generate the bytearray associated with the samples.
 
 ## Dissecting a DIFI Packet in Wireshark
 
@@ -122,17 +122,19 @@ We will now dissect the signal data packet we generated using the code in the pr
 
 Run Wireshark, and verify the plugin is loaded under Help->About Wireshark->Plugins.
 
-To capture the packet we generate with our code, enter "port 1234" which is the port our code was set to use, and then select the interface "Adapter for loopback", as shown below:
+To capture the packet we generate with our code, enter "port 1234" into the filter text box, which is the port our code was set to use, and then select the interface "Adapter for loopback", as shown below:
 
 ![](images/wireshark_capture.png)
 
-Hit the Start button, which is the shark fin on the top-left, then trigger a packet.  You should see a packet pop up in Wireshark as a new line, click on it to see the details.  We can see the 1's and 0's, as well as the other fields included in the packet. For more details on how the dissector works, you can reference the README and .lua file in the wireshark-dissector directory.
+Hit the Start button, which is the shark fin on the top-left, then trigger a packet by running the code from the previous section.  You should see a packet pop up in Wireshark as a new line, click on it to see the details.  We can see the 1's and 0's, as well as the other fields included in the packet. For more details on how the dissector works, you can reference the README and .lua file in the wireshark-dissector directory.
 
 ![](images/example_wireshark.png)
 
 ## Parsing DIFI Packets in Python
 
-The following script receives UDP packets on a specified port, and then parses packets that are found to have the DIFI data packet type (it doesn't support parsing context or version packets, see the DIFI_Validator code if that is your goal).  This is meant to provide an example of how to receive packets in Python, parse the bytes, and pull out the DIFI fields.  To exit the application you may have to hit control-C, and then send another packet, for it to fully exit.
+Instead of using Wireshark to parse the packet, we will do it ourselves in Python.  The following script receives UDP packets on a specified port, and then parses packets that are found to have the DIFI data packet type (it doesn't support parsing context or version packets, see the DIFI_Validator code if that is your goal).  This is meant to provide an example of how to receive packets in Python, parse the bytes, and pull out the DIFI fields.  
+
+To exit the application you may have to hit control-C, and then send another packet, for it to fully exit.
 
 ``` python
 from datetime import timezone, datetime
