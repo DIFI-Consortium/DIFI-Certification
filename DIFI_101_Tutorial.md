@@ -53,9 +53,13 @@ For reference, and because the DIFI specifications are behind a pay-wall, the si
 
 The following code creates a valid DIFI signal data packet, filled with repeating 1's and 0's for the IQ samples.  In the later portion of this tutorial we will create code that can parse this packet, but first we will dissect it in Wireshark.
 
+Save the following code into a file called difi_tx.py, and then run it with `python difi_tx.py`.  If you have issues running it you may have to first run `sudo pip install numpy matplotlib` (remove sudo if not on Linux), which assumes you already have pip installed.
+
 ``` python
 import socket
 import time
+import numpy as np
+import matplotlib.pyplot as plt
 
 DESTINATION_IP = '127.0.0.1'  # dest address to send packets to
 DESTINATION_PORT = 1234  # dest port to send packets to
@@ -108,7 +112,35 @@ print(f'Length of this bytes object is {length} bytes and {length/4} 32 bit word
 udp_socket.sendto(difi_packet, (DESTINATION_IP, DESTINATION_PORT))
 ```
 
-You can feel free to change the IQ samples, or put a loop around it to send multiple packets.  If your IQ samples start as a numpy array, you can convert them to integers of the correct datatype (e.g., int16), and then use `bytearray()` to generate the bytearray associated with the samples.
+You can feel free to change the IQ samples, or put a loop around it to send multiple packets.  
+
+### Simulating a Signal
+
+To make things more interesting, we will simulate a baseband signal, and use the IQ samples in place of the 1's and 0's we had above.  When your IQ samples start as a numpy array, you can convert them to integers of the correct datatype (e.g., int16), and then use `bytearray()` to generate the bytearray associated with the samples, as shown below.  Replace the `for` loop in the code above with the code below:
+
+``` python
+# Simulate a signal instead of 1's and 0's
+N = 200 # number of IQ samples, which will equate to 4x as many bytes
+f = 0.01
+t = np.arange(N)
+signal = 1000*np.exp(1j*2*np.pi*t*f)
+if False:
+    plt.plot(signal.real, '.-')
+    plt.plot(signal.imag, '.-')
+    plt.legend(['I','Q'])
+    plt.show()
+# Deinterleave the IQ so it's a bunch of ints in a row (IQIQIQIQ...)
+deinterleaved_signal = np.zeros(len(signal)*2, dtype=np.int16)
+deinterleaved_signal[::2] = signal.real
+deinterleaved_signal[1::2] = signal.imag
+signal_bytearray = bytearray(deinterleaved_signal)
+difi_packet.extend(signal_bytearray) # add it to the packet
+# Note that at this point, the Packet Size defined before should be updated, it's currently hardcoded
+```
+
+For the signal we generated a complex exponential (essentially, a sine wave), which looks like the following:
+
+![](images/example_signal.png)
 
 ## Dissecting a DIFI Packet in Wireshark
 
