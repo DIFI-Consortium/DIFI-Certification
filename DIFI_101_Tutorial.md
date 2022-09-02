@@ -126,7 +126,11 @@ To capture the packet we generate with our code, enter "port 1234" which is the 
 
 ![](images/wireshark_capture.png)
 
-Hit the Start button, which is the shark fin on the top-left, then trigger a packet.  You should see a packet pop up in Wireshark as a new line, click on it to see the details.  GET JOHANNA TO HELP FIGURE OUT HOW TO MAKE DIFI LUA WORK
+Hit the Start button, which is the shark fin on the top-left, then trigger a packet.  You should see a packet pop up in Wireshark as a new line, click on it to see the details.  We can see the 1's and 0's, as well as the other fields included in the packet. For more details on how the dissector works, you can reference the README and .lua file in the wireshark-dissector directory.
+
+![](images/example_wireshark.png)
 
 ## Parsing DIFI Packets in Python
+
+
 

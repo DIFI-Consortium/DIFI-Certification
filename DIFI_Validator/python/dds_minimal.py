@@ -37,7 +37,7 @@ difi_packet.extend(bytearray.fromhex("00C9")) # C9 is 201 which tells us how man
 
 difi_packet.extend(STREAM_ID.to_bytes(4, 'big'))
           
-difi_packet.extend(bytearray.fromhex("000012A2")) # XX:000012A2  XX:OUI for Vita
+difi_packet.extend(bytearray.fromhex("007C386C")) # might also be 0x6A621E
              
 difi_packet.extend(bytearray.fromhex("00000000")) # Info Class Code, Packet Class Code #icc=0x0000,pcc=0x0000
 
