@@ -132,5 +132,3 @@ Hit the Start button, which is the shark fin on the top-left, then trigger a pac
 
 ## Parsing DIFI Packets in Python
 
-
-
