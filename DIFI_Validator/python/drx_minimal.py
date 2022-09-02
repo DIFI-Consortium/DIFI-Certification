@@ -6,6 +6,8 @@ from datetime import timezone, datetime
 import struct
 import io
 import socket
+import numpy as np
+import matplotlib.pyplot as plt
 
 DIFI_RECEIVER_ADDRESS = "0.0.0.0"
 DIFI_RECEIVER_PORT = 1234
@@ -99,6 +101,15 @@ def decode_difi_packet(stream: io.BytesIO):
     payload_data_size_in_bytes = len(context_data) - 24
     payload_data_num_32bit_words = (len(context_data) - 24) / 4
     print(" Payload Data Size = %d (bytes), %d (32-bit words)" % (payload_data_size_in_bytes, payload_data_num_32bit_words))
+
+    signal_bytes = context_data[24:]
+    signal =  np.frombuffer(signal_bytes, dtype=np.int16) # assumes int16s of IQ
+    signal = signal[::2] + 1j*signal[1::2] # interleave the IQ
+    if True:
+        plt.plot(signal.real, '.-')
+        plt.plot(signal.imag, '.-')
+        plt.legend(['I','Q'])
+        plt.show()
 
 ######################################
 # main script
