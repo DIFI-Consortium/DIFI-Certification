@@ -8,7 +8,7 @@ The DIFI Packet Protocol, technically referred to as "IEEE-ISTO Std 4900-2021:  
 
 ## Overview of the DIFI Specifications
 
-The DIFI packet protocol defines the payload of UDP packets, although some vendors have implemented TCP versions as well, even though it's not officially part of the specifications.  Like any TCP/UDP packets, the max packet size (the Ethernet frame payload) is adjustable from 128 octets to 9000 octets, which will determine how many IQ samples can be sent in each packet.
+The DIFI packet protocol defines the payload of UDP packets.  Like any UDP packets, the max packet size (the Ethernet frame payload) is adjustable from 128 octets to 9000 octets, which will determine how many IQ samples can be sent in each packet.
 
 There are three types of DIFI packets: signal data, signal context, and version context.  The signal context packet includes fields such as timestamp, bandwidth, RF frequency, gain, sample rate, and the data format used within the signal data packets.  The version context packet is even shorter and is used to convey version information for the software/firmware sending the DIFI packets, as well as the DIFI spec version being used (currently there is just one option). Lastly, the signal data packets contain the actual signal, in the form of IQ samples, as well as a timestamp that includes both integer and fractional seconds, to mark the precise time of the first sample.  The number of data packets sent per second is determined by the sample rate, and the MTU size (which determines the samples per packet).  Context packets are either sent periodically or as needed, e.g., when a parameter changes.  Version packets are sent periodically, such as once per second.
 
