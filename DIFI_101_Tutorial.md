@@ -108,8 +108,25 @@ print(f'Length of this bytes object is {length} bytes and {length/4} 32 bit word
 udp_socket.sendto(difi_packet, (DESTINATION_IP, DESTINATION_PORT))
 ```
 
+You can feel free to change the IQ samples, or put a loop around it to send multiple packets.
+
 ## Dissecting a DIFI Packet in Wireshark
 
+We will now dissect the signal data packet we generated using the code in the previous section.  Install [Wireshark](https://www.wireshark.org/) and then copy the [DIFI plugin](/wireshark-dissector/difi-dissector.lua) to the Wireshark plugins directory. For Windows the directory has the following path:
+
+     `C:\Users\<username>\AppData\Roaming\Wireshark\plugins`
+
+ If using Linux:
+
+    `~./local/lib/wireshark/plugins`
+
+Run Wireshark, and verify the plugin is loaded under Help->About Wireshark->Plugins.
+
+To capture the packet we generate with our code, enter "port 1234" which is the port our code was set to use, and then select the interface "Adapter for loopback", as shown below:
+
+![](images/wireshark_capture.png)
+
+Hit the Start button, which is the shark fin on the top-left, then trigger a packet.  You should see a packet pop up in Wireshark as a new line, click on it to see the details.  GET JOHANNA TO HELP FIGURE OUT HOW TO MAKE DIFI LUA WORK
 
 ## Parsing DIFI Packets in Python
 
