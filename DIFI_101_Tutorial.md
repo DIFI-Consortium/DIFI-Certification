@@ -301,3 +301,9 @@ while True:
     stream = io.BytesIO(data)
     decode_difi_packet(stream)
 ```
+
+## External References
+
+- [DIFI Consortium](https://dificonsortium.org/)
+- For a primer on DSP and SDR, check out [www.pysdr.org](www.pysdr.org)
+- [GNU Radio Tutorials](https://wiki.gnuradio.org/index.php/Tutorials)
