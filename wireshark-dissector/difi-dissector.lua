@@ -155,7 +155,7 @@ local function heuristic_checker(buffer, pinfo, tree)
     if buffer:len() < 28 then return false end
 
     local potential_oui = buffer(8, 4):uint()
-    if potential_oui ~= 0x7C386C then return false end
+    if (potential_oui ~= 0x7C386C and potential_oui ~= 0x6A621E) then return false end
 
     local word0 = buffer(0,4):uint()
     local potential_packet_type = bit.rshift(bit.band(word0,0xf0000000), 28)
