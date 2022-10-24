@@ -7,7 +7,7 @@ This project contains a [DIFI](https://dificonsortium.org/) dissector plugin for
 
 # Usage
 
-Copy the [DIFI plugin](difi-dissector.lua) to the Wireshark plugins directory. For Windows the directory has the following path:
+Copy [difi-dissector.lua](difi-dissector.lua) into the Wireshark plugins directory (you may have to create the plugins directory). For Windows the directory should have the following path:
 
      `C:\Users\<username>\AppData\Roaming\Wireshark\plugins`
 
