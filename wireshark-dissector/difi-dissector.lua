@@ -93,27 +93,49 @@ end
 
 local function context_pkt_dissector(buffer, tree)
 
-    if buffer:len() < 108 then return end
+    if buffer:len() == 108 then 
 
-    local subtree = tree:add(difi_protocol, buffer(0, 108), "DIFI Protocol, " .. CONTEXT_PKT)
+        local subtree = tree:add(difi_protocol, buffer(0, 108), "DIFI Protocol, " .. CONTEXT_PKT)
 
-    -- Header
-    difi_common_dissector(buffer, subtree)
+        -- Header
+        difi_common_dissector(buffer, subtree)
 
-    -- Additional header fiels
-    subtree:add(cif, buffer(28, 4):uint())
-    subtree:add(ref_point, buffer(32, 4):uint())
-    subtree:add(bandwidth, buffer(36, 8):uint64())
-    subtree:add(if_ref_freq, buffer(44, 8):uint64())
-    subtree:add(rf_ref_freq, buffer(52, 8):uint64())
-    subtree:add(if_offset, buffer(60, 8):int64())
-    subtree:add(ref_level, buffer(68, 4):uint())
-    subtree:add(gain, buffer(72, 4):int())
-    subtree:add(sample_rate, buffer(76, 8):uint64())
-    subtree:add(timestamp_adj, buffer(84, 8):uint64())
-    subtree:add(time_cal, buffer(92, 4):uint())
-    subtree:add(se_indicator, buffer(96, 4):uint())
-    subtree:add(data_format, buffer(100, 8):uint64())
+        -- Additional header fiels
+        subtree:add(cif, buffer(28, 4):uint())
+        subtree:add(ref_point, buffer(32, 4):uint())
+        subtree:add(bandwidth, buffer(36, 8):uint64())
+        subtree:add(if_ref_freq, buffer(44, 8):uint64())
+        subtree:add(rf_ref_freq, buffer(52, 8):uint64())
+        subtree:add(if_offset, buffer(60, 8):int64())
+        subtree:add(ref_level, buffer(68, 4):uint())
+        subtree:add(gain, buffer(72, 4):int())
+        subtree:add(sample_rate, buffer(76, 8):uint64())
+        subtree:add(timestamp_adj, buffer(84, 8):uint64())
+        subtree:add(time_cal, buffer(92, 4):uint())
+        subtree:add(se_indicator, buffer(96, 4):uint())
+        subtree:add(data_format, buffer(100, 8):uint64())
+    end 
+
+    -- Add support for non-standard DIFI packets
+    if buffer:len() == 72 then 
+        local subtree = tree:add(difi_protocol, buffer(0, 72), "DIFI Protocol, " .. CONTEXT_PKT)
+
+        -- Header
+        difi_common_dissector(buffer, subtree)
+
+        -- Additional header fiels
+        subtree:add(cif, buffer(16, 4):uint())
+        subtree:add(ref_point, buffer(32, 4):uint())
+        subtree:add(bandwidth, buffer(20, 8):uint64())
+        subtree:add(if_ref_freq, buffer(28, 8):uint64())
+        subtree:add(rf_ref_freq, buffer(36, 8):uint64())
+        subtree:add(ref_level, buffer(44, 4):uint())
+        subtree:add(gain, buffer(48, 4):int())
+        subtree:add(sample_rate, buffer(52, 8):uint64())
+        subtree:add(se_indicator, buffer(60, 4):uint())
+        subtree:add(data_format, buffer(64, 8):uint64())
+    end
+    if buffer:len() < 72 then return end
 end
 
 local function data_pkt_dissector(buffer, tree)
