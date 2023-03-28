@@ -3,8 +3,18 @@ Copyright © `2023` `Microsoft Corporation`
 Licensed under the MIT License.
 SPDX-License-Identifier: MIT
 
-## How to run pytests for DIFI
+## How to run tests
 
-Runs all tests against DIFI checker at ipaddress:
+In one terminal, launch app.py with:
+```
+cd DIFI_Validator
+sudo pip install -r requirements.txt
+python app.py
+```
 
-`python3 -m pytest tests/ --ipaddress="10.247.x.x"`
+In a second terminal, run the tests with:
+```
+sudo pip install pytest
+cd DIFI_Validator
+python3 -m pytest tests/ --ipaddress="127.0.0.1"
+```
