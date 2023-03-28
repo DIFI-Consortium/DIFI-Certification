@@ -6,7 +6,7 @@ SPDX-License-Identifier: MIT
 
 There are three server deployment options for the flask server when building the docker container: DEV, PROD, and PROD-GATEWAY.
 
-### DEV Deployment
+### DEV Deployment (simplest option)
 
 ```bash
 cd DIFI_Validator

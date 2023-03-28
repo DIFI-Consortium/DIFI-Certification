@@ -3,11 +3,7 @@
 # SPDX-License-Identifier: MIT
 # syntax=docker/dockerfile:1
 
-FROM python:3.7-alpine
-# newer versions also work
-#FROM python:3.9-alpine
-#FROM python:3.10-alpinew
-
+FROM python:3.9-alpine
 
 ### Optional args that can be passed in on docker 'build' command:
 
@@ -75,16 +71,15 @@ WORKDIR $FOLDER
 RUN chown -R $USER:$GROUP $FOLDER; \
     chmod 700 $FOLDER 
 
-# switch to non-root user
-USER $USER
-
-# create python virtual environment, so can do pip installs of dependencies not as root 
-ENV VIRTUAL_ENV=$FOLDER/venv
-RUN python3 -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
 # upgrade pip
 RUN python3 -m pip install --upgrade pip;
+
+# install python dependencies
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+
+# switch to non-root user
+USER $USER
 
 # DIFI receiver
 COPY --chown=$USER:$GROUP drx.py drx.py
@@ -96,21 +91,17 @@ COPY --chown=$USER:$GROUP dvs.py dvs.py
 COPY --chown=$USER:$GROUP dds.py dds.py
 
 # flask server
-COPY --chown=$USER:$GROUP docker/input/app.py app.py
+COPY --chown=$USER:$GROUP app.py app.py
 
 # flask html pages
-COPY --chown=$USER:$GROUP docker/input/templates/*.html templates/
+COPY --chown=$USER:$GROUP templates/*.html templates/
 
 # copy all local files to docker container
 #COPY --chown=$USER:$GROUP . .
 
-# install python dependencies
-COPY --chown=$USER:$GROUP docker/input/requirements.txt requirements.txt
-RUN pip install -r requirements.txt
-
 # starts flask server app.py - listening for http calls for gui
 # starts socket server drx.py - listening for difi packets from device
-COPY --chown=$USER:$GROUP docker/input/start.sh start.sh
+COPY --chown=$USER:$GROUP docker/start.sh start.sh
 RUN chmod 700 start.sh
 CMD ./start.sh $FLASK_DEPLOY_ENV $USER $GROUP
 
