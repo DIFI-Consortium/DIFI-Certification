@@ -6,34 +6,19 @@
 
 This server is a Flask http web server that hosts the http rest endpoints that are the client API for the DIFI checker/decoder (drx.py)
 
-This Flask http server runs in the same
-docker container, alongside the drx.py
-socket server that is receiving the packet
-data from the device.
+This Flask http server is meant to run alongside the drx.py, which is a socket server that receives and processes the packets
 
-How to call from client:
-[Example] curl -k http://<machine>:5000/api/v1/difi/compliant/standardcontext/00000001
-[Example] curl -k http://<machine>:5000/api/v1/difi/compliant/versioncontext/00000001
-[Example] curl -k http://<machine>:5000/api/v1/difi/compliant/data/00000001
-[Example] curl -k http://<machine>:5000/api/v1/difi/compliant/count/00000001
-[Example] curl -k http://<machine>:5000/api/v1/difi/noncompliant/00000001
-[Example] curl -k http://<machine>:5000/api/v1/difi/noncompliant/count/00000001
-[Example] curl -k http://<machine>:5000/api/v1/difi/help/api
-[Example] curl -k http://<machine>:5000/api/v1/difi/version
+You don't need to run the webgui to use the DIFI validator functionality, it simply adds a convinient web GUI interface for it
 
-How to call from browser:
-[Example] http://<machine>:5000/web/v1/difi/compliant/standardcontext/00000001
-[Example] http://<machine>:5000/web/v1/difi/compliant/versioncontext/00000001
-[Example] http://<machine>:5000/web/v1/difi/compliant/data/00000001
-[Example] http://<machine>:5000/web/v1/difi/compliant/count/00000001
-[Example] http://<machine>:5000/web/v1/difi/noncompliant/00000001
-[Example] http://<machine>:5000/web/v1/difi/noncompliant/count/00000001
-[Example] http://<machine>:5000/web/v1/difi/help/api
-
-To look at drx.py output result files inside docker
-container at runtime (i.e. at the cmd prompt inside container):
-docker ps  (to get container id)
-docker exec -it 3f650613bf36 /bin/sh  (to get cmd prompt inside container)
+API Examples:
+curl -k http://<machine>:5000/api/v1/difi/compliant/standardcontext/00000001
+curl -k http://<machine>:5000/api/v1/difi/compliant/versioncontext/00000001
+curl -k http://<machine>:5000/api/v1/difi/compliant/data/00000001
+curl -k http://<machine>:5000/api/v1/difi/compliant/count/00000001
+curl -k http://<machine>:5000/api/v1/difi/noncompliant/00000001
+curl -k http://<machine>:5000/api/v1/difi/noncompliant/count/00000001
+curl -k http://<machine>:5000/api/v1/difi/help/api
+curl -k http://<machine>:5000/api/v1/difi/version
 """
 
 from __future__ import annotations #takes care of forward declaration problem for type hints/annotations (so don't have to put quotes around types)
