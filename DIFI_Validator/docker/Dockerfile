@@ -2,58 +2,11 @@
 # Licensed under the MIT License.
 # SPDX-License-Identifier: MIT
 # syntax=docker/dockerfile:1
-#
-# cd to difi:
-# [Example] sudo docker build --no-cache --force-rm -f docker/Dockerfile -t difi:latest .
-#
-# To run in console and write output to console:
-# [Example] sudo docker run --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -i -t difi:latest
-# [Example] sudo docker run --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=asyncio -i -t difi:latest
-#
-# To run as daemon:
-# [Example] sudo docker run -d --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -i -t difi:latest
-#
-# To run in production (should add the restart on failure param):
-# [Example] sudo docker run -d --net=host --restart=on-failure -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -i -t difi:latest
-#
-# To run in each of the three server deployment options for flask:
-# DEV:
-# [Example] sudo docker build --force-rm -f docker/Dockerfile -t difi_one .
-# [Example] sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=dev difi_one
-#    (note: will be listening on port 5000)
-#
-# PROD:
-# [Example] sudo docker build --force-rm -f docker/Dockerfile -t difi_one .
-# [Example] sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod difi_one
-#    (note: will be listening on port 5000)
-# OR with proxy server:
-# [Example] sudo docker build --build-arg USER=nginx --build-arg GROUP=nginx --build-arg UID=2000 --build-arg GID=2000 --force-rm -f docker/Dockerfile -t difi_one .
-# [Example] sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod difi_one
-#    (note: will be listening on nginx port configured in nginx.conf, like port 80)
-#
-# PROD-GATEWAY (application-gateway):
-# [Example] sudo docker build --build-arg USER=nginx --build-arg GROUP=nginx --build-arg UID=2000 --build-arg GID=2000 --force-rm -f docker/Dockerfile -t difi_one .
-# [Example] sudo docker run -it --net=host -v /tmp:/tmp -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod-gateway difi_one
-#    (note: will be listening on nginx port configured in nginx.conf, like port 80)
-#
-# To save the built docker container image as .tar.gz package:
-# [Example] sudo docker save difi:latest|gzip > difi.tar.gz
-#   (note: to see list of built images run: docker images)
-#
-# To look at console output inside docker container at runtime (i.e. at the cmd prompt inside container):
-# sudo docker ps  (to get container id)
-# sudo docker exec -it 3f650613bf36 /bin/sh  (to get cmd prompt inside container)
-#
-# To see container's user account and environment variables:
-# sudo docker images  (to get container image id)
-# sudo docker inspect c4f2dae2db1f
-#
-
 
 FROM python:3.7-alpine
 # newer versions also work
 #FROM python:3.9-alpine
-#FROM python:3.10-alpine
+#FROM python:3.10-alpinew
 
 
 ### Optional args that can be passed in on docker 'build' command:
