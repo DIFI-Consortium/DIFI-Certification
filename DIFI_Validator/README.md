@@ -7,14 +7,16 @@ This DIFI validation tool can be used as a stand-alone application that decodes 
 The source code is split into the following files:
 
 - drx.py - Receives and decodes packets, includes a socket-based app
-- dcs.py - Creates 'Standard Context' packets
-- dvs.py - Creates 'Version Context' packets
-- dds.py - Creates 'Data' packets
+- dcs.py - Creates Context packets
+- dds.py - Creates Data packets
+- dvs.py - Creates Version packets
 - webgui.py - Flask REST API/server code that makes a web UI to go along with the drx.py app
 
 Each has a `--help` option for more info on running it directly
 
 See the [Docker README](docker/README.md) for instructions on running webgui.py in a containerized manner.
+
+For questions/comments on the Validator tool, reach out to Marc.
 
 # Basic Tutorial
 
