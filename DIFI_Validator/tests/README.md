@@ -5,16 +5,10 @@ SPDX-License-Identifier: MIT
 
 ## How to run tests
 
-In one terminal, launch app.py with:
+In a terminal, run all the tests with:
 ```
 cd DIFI_Validator
-sudo pip install -r requirements.txt
-python app.py
-```
-
-In a second terminal, run the tests with:
-```
 sudo pip install pytest
 cd DIFI_Validator
-python3 -m pytest tests/ --ipaddress="127.0.0.1"
+python3 -m pytest tests
 ```
