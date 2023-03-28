@@ -19,4 +19,4 @@ def pytest_addoption(parser):
     # add pytest "global" variables so they can be accessed by test fixtures
 
     # custom options
-    parser.addoption("--ipaddress", action="store", help="specify the ipAddress of the DIFI checker",default="1.2.3.4")
+    parser.addoption("--ipaddress", action="store", help="specify the ipAddress that will be used for destination field",default="1.2.3.4")
