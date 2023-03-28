@@ -54,7 +54,7 @@ ENV DIFI_RX_MODE=
 ENV DIFI_RX_HOST=0.0.0.0
 
 # flask http server settings
-ENV FLASK_APP=app.py
+ENV FLASK_APP=webgui.py
 ENV FLASK_RUN_HOST=0.0.0.0
 # change from default port 5000 to 6000
 #ENV FLASK_RUN_PORT=6000
@@ -92,7 +92,7 @@ COPY --chown=$USER:$GROUP dvs.py dvs.py
 COPY --chown=$USER:$GROUP dds.py dds.py
 
 # flask server
-COPY --chown=$USER:$GROUP app.py app.py
+COPY --chown=$USER:$GROUP webgui.py webgui.py
 
 # flask html pages
 COPY --chown=$USER:$GROUP templates/*.html templates/
@@ -100,7 +100,7 @@ COPY --chown=$USER:$GROUP templates/*.html templates/
 # copy all local files to docker container
 #COPY --chown=$USER:$GROUP . .
 
-# starts flask server app.py - listening for http calls for gui
+# starts flask server webgui.py - listening for http calls for gui
 # starts socket server drx.py - listening for difi packets from device
 COPY --chown=$USER:$GROUP docker/start.sh start.sh
 RUN chmod 700 start.sh
