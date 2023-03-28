@@ -46,7 +46,7 @@ import os
 import threading
 
 ##########
-#settings
+# Settings
 ##########
 VERBOSE = True  #prints fully decoded packets to console
 DEBUG = False  #prints packet data and additional debugging info to console
@@ -54,84 +54,80 @@ SAVE_LAST_GOOD_PACKET = True  #saves last decoded 'compliant' packet to file
 JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 SHOW_PKTS_PER_SEC = False  #outputs estimated packets p/sec to console for debugging purposes
 
-DIFI_RECEIVER_ADDRESS = "0.0.0.0" #default
-DIFI_RECEIVER_PORT = 4991 #default
-#assign new port if passed in on docker run command
-if os.getenv("DIFI_RX_PORT"):
-    DIFI_RECEIVER_PORT = int(os.getenv("DIFI_RX_PORT"))
-#assign address from docker container's ENV value
+DIFI_RECEIVER_ADDRESS = "0.0.0.0"
+DIFI_RECEIVER_PORT = 4991
 if os.getenv("DIFI_RX_HOST"):
     DIFI_RECEIVER_ADDRESS = os.getenv("DIFI_RX_HOST")
+if os.getenv("DIFI_RX_PORT"):
+    DIFI_RECEIVER_PORT = int(os.getenv("DIFI_RX_PORT"))
 
-#modes
-MODE_SOCKET = "socket"
-MODE_ASYNCIO = "asyncio"
-#MODE_PCAP = "pcap"
-MODE = MODE_SOCKET #default
-#assign new mode if passed in on docker run command
+# Modes
+MODE_SOCKET = "socket"   # constant
+MODE_ASYNCIO = "asyncio" # constant
+MODE_PCAP = "pcap"       # constant. pcap mode is currently disabled
+
+MODE = MODE_SOCKET # Define mode here (or through env var)
 if os.getenv("DIFI_RX_MODE"):
     MODE = os.getenv("DIFI_RX_MODE")
 
-#pcap mode is currently disabled
 #PCAP_FILE = "difi-compliant.pcap"
 
 
-###########
-#DIFI constants
-###########
+################
+# DIFI Constants
+################
 
-#DIFI packet types
-DIFI_STANDARD_FLOW_SIGNAL_CONTEXT = 0x4 #(DIF must be this)
-DIFI_STANDARD_FLOW_SIGNAL_CONTEXT_SIZE = 27 #(DIFI must be this)
-DIFI_VERSION_FLOW_SIGNAL_CONTEXT = 0x5 #(DIFI must be this)
-DIFI_VERSION_FLOW_SIGNAL_CONTEXT_SIZE = 11 #(DIFI must be this)
-DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID = 0x1 #(DIFI must be this)
+DIFI_STANDARD_FLOW_SIGNAL_CONTEXT = 0x4
+DIFI_STANDARD_FLOW_SIGNAL_CONTEXT_SIZE = 27
+DIFI_VERSION_FLOW_SIGNAL_CONTEXT = 0x5
+DIFI_VERSION_FLOW_SIGNAL_CONTEXT_SIZE = 11
+DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID = 0x1
 DIFI_STANDARD_FLOW_SIGNAL_DATA_NO_STREAMID = 0x0
 
-#class id
-DIFI_CLASSID = 0x1 #01 (DIFI must be this)
+# class id
+DIFI_CLASSID = 0x1 #01
 
-#reserved
-DIFI_RESERVED = 0x0 #00 (DIFI must be this)
+# reserved
+DIFI_RESERVED = 0x0 #00
 
-#tsm - data packets
-DIFI_TSM_DATA = 0x0 #00 (DIFI must be this)
-#tsm - standard context / version context
-DIFI_TSM_GENERAL_TIMING = 0x1 #01 (DIFI must be this)
+# tsm - data packets
+DIFI_TSM_DATA = 0x0 #00
+# tsm - standard context / version context
+DIFI_TSM_GENERAL_TIMING = 0x1 #01
 
-#tsi
+# tsi
 DIFI_TSI_NONE = 0x0  #00
 DIFI_TSI_UTC = 0x1   #01 (default, but can be any)
 DIFI_TSI_GPS = 0x2   #10
 DIFI_TSI_OTHER = 0x3 #11
 
-#tsf
+# tsf
 DIFI_TSF_NONE = 0x0 #00
 DIFI_TSF_SAMPLE_COUNT = 0x1 #01
-DIFI_TSF_REALTIME_PICOSECONDS = 0x2 #10 (DIFI must be this)
+DIFI_TSF_REALTIME_PICOSECONDS = 0x2 #10
 DIFI_TSF_FREE_RUNNING_COUNT = 0x3 #11
 
-#icc/pcc - version context
+# icc/pcc - version context
 DIFI_INFORMATION_CLASS_CODE_VERSION_FLOW_CONTEXT = 0x1 #(DIFI must be this)
 DIFI_PACKET_CLASS_CODE_VERSION_FLOW_CONTEXT = 0x4 #(DIFI must be this)
 
-#cif0/cif1 - standard context
+# cif0/cif1 - standard context
 DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT = 0xBB98000 #(DIFI must be this, which is ignoring 1st nibble)
-#cif0/cif1 - version context
+# cif0/cif1 - version context
 DIFI_CONTEXT_INDICATOR_FIELD_0_VERSION_FLOW_CONTEXT = 0x0000002 #(DIFI must be this, which is ignoring 1st nibble)
 DIFI_CONTEXT_INDICATOR_FIELD_1_VERSION_FLOW_CONTEXT = 0x0000000C #(DIFI must be this)
 
-#v49 spec - version context
+# v49 spec - version context
 DIFI_V49_SPEC_VERSION_VERSION_FLOW_CONTEXT = 0x00000004 #(DIFI must be this)
 
-#not required for DIFI anymore
+# not required for DIFI anymore
 #DIFI_REFERENCE_POINT = 0x00000064 #(DIFI must be this)
 
-#state/event indicators - standard context
+# state/event indicators - standard context
 DIFI_STATE_EVENT_IND_FREQ_REF_LOCK_BIT = (1 << 17)
 DIFI_STATE_EVENT_IND_CALIBRATED_TIME_BIT = (1 << 19)
 
-#data packet payload format field - standard context
+# data packet payload format field - standard context
 DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_PACKING_METHOD = 1 #(DIFI must be this)
 DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_REAL_COMPLEX_TYPE = 1 #(DIFI must be this)
 DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT = 0 #(DIFI must be this)
@@ -139,10 +135,10 @@ DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_SAMPLE_COMPONENT_REPEAT_IND = 0 #(DIFI mus
 DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_EVENT_TAG_SIZE = 0 #(DIFI must be this)
 DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_CHANNEL_TAG_SIZE = 0 #(DIFI must be this)
 
-#protocol
+# protocol
 UDP_PROTO = b'\x11' #(DIFI must be this)
 
-#output files
+# output files
 DIFI_NONCOMPLIANT_FILE_PREFIX = "difi-noncompliant-"
 DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX = "difi-noncompliant-count-"
 
@@ -155,9 +151,9 @@ DIFI_COMPLIANT_COUNT_FILE_PREFIX = "difi-compliant-count-"
 DIFI_FILE_EXTENSION = ".dat"
 
 
-###################
-#packet error types
-###################
+####################
+# Error Types
+####################
 class InvalidDataReceived(Exception):
     pass
 
@@ -173,19 +169,14 @@ class NoncompliantDifiPacket(Exception):
     def __str__(self):
         return str(self.message)
 
-
-###################
-#command-line args error types
-###################
-class InvalidArgs(Exception):
+class InvalidArgs(Exception): #command-line args error type
     pass
 
 
-###############
-#write to files
-###############
+################
+# Write to Files
+################
 def truncate_all_difi_files():
-
     try:
         with os.scandir() as directory:
             for entry in directory:
@@ -202,7 +193,6 @@ def truncate_all_difi_files():
 
 
 def delete_all_difi_files():
-
     try:
         with os.scandir() as directory:
             for entry in directory:
@@ -219,9 +209,7 @@ def delete_all_difi_files():
 
 
 def write_noncompliant_to_file(e: NoncompliantDifiPacket):
-
     #TODO: in the future switch to write to kafka or database here instead...
-
     try:
         if type(e.difi_info.stream_id) is str:
             fname = "%s%s%s" % (DIFI_NONCOMPLIANT_FILE_PREFIX, e.difi_info.stream_id, DIFI_FILE_EXTENSION)
@@ -245,9 +233,7 @@ def write_noncompliant_to_file(e: NoncompliantDifiPacket):
 
 
 def write_noncompliant_count_to_file(stream_id: Union[int,str]):
-
     #TODO: in the future switch to write to kafka or database here instead...
-
     try:
         if type(stream_id) is str:
             fname = "%s%s%s" % (DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
@@ -275,13 +261,10 @@ def write_noncompliant_count_to_file(stream_id: Union[int,str]):
 
 
 def write_compliant_to_file(packet: Union[DifiStandardContextPacket,DifiVersionContextPacket,DifiDataPacket]):
-
     if type(packet) not in (DifiStandardContextPacket, DifiVersionContextPacket, DifiDataPacket):
         print("packet type '%s' not allowed.\r\n" % (type(packet).__name__))
         return
-
     #TODO: in the future switch to write to kafka or database here instead...
-
     try:
         if type(packet) is DifiStandardContextPacket:
             fname = "%s%s%08x%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_STANDARD_CONTEXT, packet.stream_id, DIFI_FILE_EXTENSION)
@@ -307,9 +290,7 @@ def write_compliant_to_file(packet: Union[DifiStandardContextPacket,DifiVersionC
 
 
 def write_compliant_count_to_file(stream_id: int):
-
     #TODO: in the future switch to write to kafka or database here instead...
-
     try:
         fname = "%s%08x%s" % (DIFI_COMPLIANT_COUNT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
         with open(fname, 'a+', encoding="utf-8") as f:
@@ -333,9 +314,8 @@ def write_compliant_count_to_file(stream_id: int):
     if DEBUG: print("incremented entry in '%s'.\r\n" % (fname))
 
 
-
 ############
-#class used to store non-compliance info for DIFI custom non-compliant exception and to write json object of info out to file
+# class used to store non-compliance info for DIFI custom non-compliant exception and to write json object of info out to file
 ############
 class DifiInfo():
     def __init__(self, packet_type:int, stream_id:int=None, packet_size=None, class_id=None, reserved=None, tsm=None, tsf=None, icc=None, pcc=None, cif0=None, cif1=None, v49_spec=None, data_payload_fmt_pk_mh=None, data_payload_fmt_real_cmp_type=None, data_payload_fmt_data_item_fmt=None, data_payload_fmt_rpt_ind=None, data_payload_fmt_event_tag_size=None, data_payload_fmt_channel_tag_size=None):
@@ -444,7 +424,7 @@ class DifiInfo():
 
 
 ############################
-#primary function that decodes DIFI packets
+# primary function that decodes DIFI packets
 ############################
 def decode_difi_vrt_packet(stream: BytesIO) -> Union[DifiStandardContextPacket,DifiVersionContextPacket,DifiDataPacket]:
     """
@@ -485,7 +465,7 @@ def decode_difi_vrt_packet(stream: BytesIO) -> Union[DifiStandardContextPacket,D
 
 
 ##############################
-#standard context packet class - object that is filled from the decoded standard context packet stream
+# standard context packet class - object that is filled from the decoded standard context packet stream
 ##############################
 class DifiStandardContextPacket():
     """
@@ -498,7 +478,7 @@ class DifiStandardContextPacket():
     def __init__(self, stream: BytesIO):
 
         ##############################
-        #decode 32bit header (4 bytes)
+        # decode 32bit header (4 bytes)
         ##############################
         hdrbuf = stream.read1(4)
         if not hdrbuf:
@@ -515,7 +495,7 @@ class DifiStandardContextPacket():
         self.pkt_size = (hdr >> 0) & 0xffff    #(bit 0-15) #num 32bit words in pkt
 
         ##############################
-        #decode stream id (4 bytes)
+        # decode stream id (4 bytes)
         ##############################
         idbuf = stream.read1(4)
         (value,) = struct.unpack(">I", idbuf)
@@ -577,7 +557,7 @@ class DifiStandardContextPacket():
 
 
             #######################
-            #Stream ID (5.1.2)
+            # Stream ID (5.1.2)
             #######################
             if DEBUG: print(data[0:4].hex())
             #already unpacked in constructor __init__
@@ -587,7 +567,7 @@ class DifiStandardContextPacket():
             if DEBUG: print(" Stream ID = 0x%08x (ID)" % (self.stream_id))
 
             ##########################
-            #OUI (5.1.3)
+            # OUI (5.1.3)
             ##########################
             if DEBUG: print(data[4:8].hex())
             #h = b'\x00\x7C\x38\x6C'
@@ -598,7 +578,7 @@ class DifiStandardContextPacket():
             self.oui = value
 
             #########################
-            #Information Class Code / Packet Class Code (5.1.3)
+            # Information Class Code / Packet Class Code (5.1.3)
             ########################
             if DEBUG: print(data[8:12].hex())
             #h = b'\x00\x00\x00\x80'
@@ -611,7 +591,7 @@ class DifiStandardContextPacket():
             self.packet_class_code = pcc
 
             #######################
-            #Integer-seconds Timestamp (5.1.4 and 5.1.5)
+            # Integer-seconds Timestamp (5.1.4 and 5.1.5)
             #######################
             if DEBUG: print(data[12:16].hex())
             (value,) = struct.unpack(">I", data[12:16])
@@ -621,7 +601,7 @@ class DifiStandardContextPacket():
             self.integer_seconds_timestamp_display = datetime.fromtimestamp(value, tz=timezone.utc).strftime('%m/%d/%Y %r %Z')
 
             #######################
-            #Fractional-seconds Timestamp (5.1.4 and 5.1.5)
+            # Fractional-seconds Timestamp (5.1.4 and 5.1.5)
             #######################
             if DEBUG: print(data[16:24].hex())
             (value,) = struct.unpack(">Q", data[16:24])
@@ -629,7 +609,7 @@ class DifiStandardContextPacket():
             self.fractional_seconds_timestamp = value
 
             #######################
-            #Context Indicator Field(CIF 0) (9)
+            # Context Indicator Field(CIF 0) (9)
             #######################
             if DEBUG: print(data[24:28].hex())
             (value,) = struct.unpack(">I", data[24:28])
@@ -637,7 +617,7 @@ class DifiStandardContextPacket():
             self.context_indicator_field_cif0 = value
 
             #######################
-            #Reference Point (9.2)
+            # Reference Point (9.2)
             #######################
             if DEBUG: print(data[28:32].hex())
             (value,) = struct.unpack(">I", data[28:32])
@@ -645,7 +625,7 @@ class DifiStandardContextPacket():
             self.ref_point = value
 
             ###################
-            #Bandwidth (9.5.1)
+            # Bandwidth (9.5.1)
             ###################
             if DEBUG: print(data[32:40].hex())
             #h = b'\x00\x00\x00\x00\x00\x10\x00\x00'
@@ -656,7 +636,7 @@ class DifiStandardContextPacket():
             self.bandwidth = value
 
             ################################
-            #IF Reference Frequency (9.5.5)
+            # IF Reference Frequency (9.5.5)
             ################################
             if DEBUG: print(data[40:48].hex())
             #h = b'\x00\x00\x00\x00\x00\x10\x00\x00'
@@ -669,7 +649,7 @@ class DifiStandardContextPacket():
             self.if_ref_freq = value
 
             #################################
-            #RF Reference Frequency (9.5.10)
+            # RF Reference Frequency (9.5.10)
             #################################
             if DEBUG: print(data[48:56].hex())
             #h = b'\x00\x00\x00\x00\x00\x10\x00\x00'
@@ -682,7 +662,7 @@ class DifiStandardContextPacket():
             self.rf_ref_freq = value
 
             ########################
-            #IF Band Offset (9.5.4)
+            # IF Band Offset (9.5.4)
             #######################
             if DEBUG: print(data[56:64].hex())
             #h = b'\x00\x00\x00\x00\x00\x10\x00\x00'
@@ -695,7 +675,7 @@ class DifiStandardContextPacket():
             self.if_band_offset = value
 
             #########################
-            #Reference Level (9.5.9)
+            # Reference Level (9.5.9)
             ########################
             if DEBUG: print(data[64:68].hex())
             #h = b'\x00\x00\x00\x80'
@@ -708,7 +688,7 @@ class DifiStandardContextPacket():
             self.ref_level = value
 
             ##########################
-            #Gain/Attenuation (9.5.3)
+            # Gain/Attenuation (9.5.3)
             ##########################
             if DEBUG: print(data[68:72].hex())
             #h = b'\x00\x80\x00\x80'
@@ -723,7 +703,7 @@ class DifiStandardContextPacket():
             self.gain_attenuation = (g2, g1)
 
             ######################
-            #Sample Rate (9.5.12)
+            # Sample Rate (9.5.12)
             ######################
             if DEBUG: print(data[72:80].hex())
             #h = b'\x00\x00\x00\x00\x00\x10\x00\x00'
@@ -734,7 +714,7 @@ class DifiStandardContextPacket():
             self.sample_rate = value
 
             ############################################
-            #Timestamp Adjustment (9.7.3.1)(rule 9.7-1)(9.7-2)
+            # Timestamp Adjustment (9.7.3.1)(rule 9.7-1)(9.7-2)
             ############################################
             if DEBUG: print(data[80:88].hex())
             (value,) = struct.unpack(">q", data[80:88])
@@ -742,7 +722,7 @@ class DifiStandardContextPacket():
             self.timestamp_adjustment = value
 
             ######################################
-            #Timestamp Calibration Time (9.7.3.3)
+            # Timestamp Calibration Time (9.7.3.3)
             ######################################
             if DEBUG: print(data[88:92].hex())
             #h = b'\xff\xff\xff\xff'
@@ -751,7 +731,7 @@ class DifiStandardContextPacket():
             self.timestamp_calibration_time = value
 
             #####################################
-            #State and Event Indicators (9.10.8)
+            # State and Event Indicators (9.10.8)
             #####################################
             #bit17 - Reference Lock Indicator
             #bit19 - Calibrated Time Indicator
@@ -780,7 +760,7 @@ class DifiStandardContextPacket():
             if DEBUG: print("   Sample Loss Indicator (bit 12) = %d" % (self.state_and_event_indicators["sample_loss_indicator"]))
 
             #####################################
-            #Data Packet Payload Format (9.13.3)(Figure B-37)
+            # Data Packet Payload Format (9.13.3)(Figure B-37)
             #####################################
             if DEBUG: print(data[96:104].hex())
             #h = b'\x00\x00\x07\xDF\x00\x00\x00\x00'
@@ -996,7 +976,7 @@ Data Packet Payload Format: %d (word1), %d (word2)\r\n\
 
 
     ##############################
-    #DIFI packet validation checks
+    # DIFI packet validation checks
     ##############################
 
     #standard context packet header
@@ -1021,7 +1001,7 @@ Data Packet Payload Format: %d (word1), %d (word2)\r\n\
 
 
 #############################
-#version context packet class - object that is filled from the decoded version context packet stream
+# version context packet class - object that is filled from the decoded version context packet stream
 #############################
 class DifiVersionContextPacket():
     """
@@ -1034,7 +1014,7 @@ class DifiVersionContextPacket():
     def __init__(self, stream: BytesIO):
 
         ##############################
-        #decode 32bit header (4 bytes)
+        # decode 32bit header (4 bytes)
         ##############################
         hdrbuf = stream.read1(4)
         if not hdrbuf:
@@ -1051,7 +1031,7 @@ class DifiVersionContextPacket():
         self.pkt_size = (hdr >> 0) & 0xffff    #(bit 0-15) #num 32bit words in pkt
 
         ##############################
-        #decode stream id (4 bytes)
+        # decode stream id (4 bytes)
         ##############################
         idbuf = stream.read1(4)
         (value,) = struct.unpack(">I", idbuf)
@@ -1111,7 +1091,7 @@ class DifiVersionContextPacket():
 
 
             #######################
-            #Stream ID (5.1.2)
+            # Stream ID (5.1.2)
             #######################
             if DEBUG: print(data[0:4].hex())
             #already unpacked in constructor __init__
@@ -1121,7 +1101,7 @@ class DifiVersionContextPacket():
             if DEBUG: print(" Stream ID = 0x%08x (ID)" % (self.stream_id))
 
             ##########################
-            #OUI (5.1.3)
+            # OUI (5.1.3)
             ##########################
             if DEBUG: print(data[4:8].hex())
             #h = b'\x00\x7C\x38\x6C'
@@ -1132,7 +1112,7 @@ class DifiVersionContextPacket():
             self.oui = value
 
             #########################
-            #Information Class Code / Packet Class Code (5.1.3)
+            # Information Class Code / Packet Class Code (5.1.3)
             ########################
             if DEBUG: print(data[8:12].hex())
             #h = b'\x00\x00\x00\x80'
@@ -1145,7 +1125,7 @@ class DifiVersionContextPacket():
             self.packet_class_code = pcc
 
             #######################
-            #Integer-seconds Timestamp (5.1.4 and 5.1.5)
+            # Integer-seconds Timestamp (5.1.4 and 5.1.5)
             #######################
             if DEBUG: print(data[12:16].hex())
             (value,) = struct.unpack(">I", data[12:16])
@@ -1155,7 +1135,7 @@ class DifiVersionContextPacket():
             self.integer_seconds_timestamp_display = datetime.fromtimestamp(value, tz=timezone.utc).strftime('%m/%d/%Y %r %Z')
 
             #######################
-            #Fractional-seconds Timestamp (5.1.4 and 5.1.5)
+            # Fractional-seconds Timestamp (5.1.4 and 5.1.5)
             #######################
             if DEBUG: print(data[16:24].hex())
             (value,) = struct.unpack(">Q", data[16:24])
@@ -1163,7 +1143,7 @@ class DifiVersionContextPacket():
             self.fractional_seconds_timestamp = value
 
             #######################
-            #Context Indicator Field(CIF 0) (9)
+            # Context Indicator Field(CIF 0) (9)
             #######################
             if DEBUG: print(data[24:28].hex())
             (value,) = struct.unpack(">I", data[24:28])
@@ -1171,7 +1151,7 @@ class DifiVersionContextPacket():
             self.context_indicator_field_cif0 = value
 
             #######################
-            #Context Indicator Field(CIF 1) (9)
+            # Context Indicator Field(CIF 1) (9)
             #######################
             if DEBUG: print(data[28:32].hex())
             (value,) = struct.unpack(">I", data[28:32])
@@ -1179,7 +1159,7 @@ class DifiVersionContextPacket():
             self.context_indicator_field_cif1 = value
 
             #######################
-            #V49 Spec Version (9)
+            # V49 Spec Version (9)
             #######################
             if DEBUG: print(data[32:36].hex())
             (value,) = struct.unpack(">I", data[32:36])
@@ -1187,7 +1167,7 @@ class DifiVersionContextPacket():
             self.v49_spec_version = value
 
             #######################
-            #Year, Day, Revision, Type, ICD Version (9.10.4)
+            # Year, Day, Revision, Type, ICD Version (9.10.4)
             #######################
             if DEBUG: print(data[36:40].hex())
             (value,) = struct.unpack(">I", data[36:40])
@@ -1289,7 +1269,7 @@ ICD Version: %d\r\n\
 
 
     ##############################
-    #DIFI packet validation checks
+    # DIFI packet validation checks
     ##############################
 
     #version context packet header
@@ -1312,7 +1292,7 @@ ICD Version: %d\r\n\
 
 
 ##################
-#data packet class - object that is filled from the decoded data packet stream
+# data packet class - object that is filled from the decoded data packet stream
 ##################
 class DifiDataPacket():
     """
@@ -1325,7 +1305,7 @@ class DifiDataPacket():
     def __init__(self, stream: BytesIO):
 
         ##############################
-        #decode 32bit header (4 bytes)
+        # decode 32bit header (4 bytes)
         ##############################
         hdrbuf = stream.read1(4)
         if not hdrbuf:
@@ -1342,7 +1322,7 @@ class DifiDataPacket():
         self.pkt_size = (hdr >> 0) & 0xffff    #(bit 0-15) #num 32bit words in pkt
 
         ##############################
-        #decode stream id (4 bytes)
+        # decode stream id (4 bytes)
         ##############################
         idbuf = stream.read1(4)
         (value,) = struct.unpack(">I", idbuf)
@@ -1388,7 +1368,7 @@ class DifiDataPacket():
 
         try:
             #######################
-            #Stream ID (5.1.2)
+            # Stream ID (5.1.2)
             #######################
             if DEBUG: print(data[0:4].hex())
             #already unpacked in constructor __init__
@@ -1398,7 +1378,7 @@ class DifiDataPacket():
             if DEBUG: print(" Stream ID = 0x%08x (ID)" % (self.stream_id))
 
             ##########################
-            #OUI (5.1.3)
+            # OUI (5.1.3)
             ##########################
             if DEBUG: print(data[4:8].hex())
             #h = b'\x00\x7C\x38\x6C'
@@ -1409,7 +1389,7 @@ class DifiDataPacket():
             self.oui = value
 
             #########################
-            #Information Class Code / Packet Class Code (5.1.3)
+            # Information Class Code / Packet Class Code (5.1.3)
             ########################
             if DEBUG: print(data[8:12].hex())
             #h = b'\x00\x00\x00\x00'
@@ -1419,7 +1399,7 @@ class DifiDataPacket():
             self.packet_class_code = pcc
 
             #######################
-            #Integer-seconds Timestamp (5.1.4 and 5.1.5)
+            # Integer-seconds Timestamp (5.1.4 and 5.1.5)
             #######################
             if DEBUG: print(data[12:16].hex())
             (value,) = struct.unpack(">I", data[12:16])
@@ -1429,7 +1409,7 @@ class DifiDataPacket():
             self.integer_seconds_timestamp_display = datetime.fromtimestamp(value, tz=timezone.utc).strftime('%m/%d/%Y %r %Z')
 
             #######################
-            #Fractional-seconds Timestamp (5.1.4 and 5.1.5)
+            # Fractional-seconds Timestamp (5.1.4 and 5.1.5)
             #######################
             if DEBUG: print(data[16:24].hex())
             (value,) = struct.unpack(">Q", data[16:24])
@@ -1437,7 +1417,7 @@ class DifiDataPacket():
             self.fractional_seconds_timestamp = value
 
             #######################
-            #Signal Data Payload
+            # Signal Data Payload
             #######################
             #payload size is size minus 28 bytes for difi headers
             # (7 words * 4 bytes per word) = 28 bytes
@@ -1537,7 +1517,7 @@ Payload Data Size: %d (bytes), %d (32-bit words)\r\n\
 
 
     ##############################
-    #DIFI packet validation checks
+    # DIFI packet validation checks
     ##############################
 
     #data packet header
@@ -1551,7 +1531,7 @@ Payload Data Size: %d (bytes), %d (32-bit words)\r\n\
 
 
 ###############
-#misc debugging-function to output roughly estimated packets p/sec to console
+# misc debugging-function to output roughly estimated packets p/sec to console
 ##############
 def estimate_pkts_per_sec(counts: list)->int:
 
@@ -1565,9 +1545,8 @@ def estimate_pkts_per_sec(counts: list)->int:
     timer.start()
 
 
-
 ################
-#function for processing data received from DIFI device
+# function for processing data received from DIFI device
 ################
 def process_data(data: Union[bytes,BytesIO]):
 
@@ -1647,7 +1626,7 @@ def process_data(data: Union[bytes,BytesIO]):
 
 
 ###################
-#class to implement asyncio UDP server mode
+# class to implement asyncio UDP server mode
 ###################
 class DifiProtocol(asyncio.DatagramProtocol):
     def __init__(self, on_connection_lost: asyncio.Future):
@@ -1681,7 +1660,7 @@ class DifiProtocol(asyncio.DatagramProtocol):
         print('waiting to receive packet data...')
 
 ################
-#main loop for asyncio UDP server mode
+# main loop for asyncio UDP server mode
 ################
 async def asyncio_main_loop():
 
@@ -1793,7 +1772,7 @@ def main():
 
 
     ##########
-    #asyncio udp socket server mode, listening for packets to decode
+    # asyncio udp socket server mode, listening for packets to decode
     ##########
     if MODE == MODE_ASYNCIO:
 
@@ -1812,7 +1791,7 @@ def main():
 
 
     ##########
-    #udp socket server mode, listening for packets to decode
+    # udp socket server mode, listening for packets to decode
     ##########
     elif MODE == MODE_SOCKET:
 
