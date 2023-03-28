@@ -1,10 +1,16 @@
-from difiConstants import *
 import pprint
 import os
 from datetime import timezone, datetime
 from typing import Union
 
+from .difiConstants import *
+from utils.customErrorTypes import *
+from utils.difiDataPacketClass import DifiDataPacket
+from utils.difiContextPacketClass import DifiStandardContextPacket
+from utils.difiVersionPacketClass import DifiVersionContextPacket
+
 DEBUG = False
+JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 
 def truncate_all_difi_files():
     try:

@@ -1,4 +1,4 @@
-from difiConstants import *
+from .difiConstants import *
 import json
 
 ############
