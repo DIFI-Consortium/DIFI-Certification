@@ -4,7 +4,11 @@ SPDX-License-Identifier: MIT
 
 ## Build and Run the Docker Image
 
-There are three server deployment options for the flask server when building the docker container: DEV, PROD, and PROD-GATEWAY.
+Note: This application starts a UDP socket server that listens for DIFI packets from a device, and starts a Flask server that listens for HTTP requests for API endpoints and GUI. There are three server deployment options for Flask when building the Docker container:
+
+1. DEV - Using Flask's built-in dev server, this is the simplest but not meant for production
+2. PROD - Using a uWSGI server that runs the Flask app
+3. PROD-GATEWAY - Using a NGINX server proxying to the uWSGI server hosting flask app
 
 ### DEV Deployment (simplest option)
 
