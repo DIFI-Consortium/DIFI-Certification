@@ -16,7 +16,7 @@ Each has a `--help` option for more info on running it directly
 
 See the [Docker README](docker/README.md) for instructions on running webgui.py in a containerized manner.
 
-# Running the example app
+# Basic Tutorial
 
 In one terminal, run the web GUI component:
 
