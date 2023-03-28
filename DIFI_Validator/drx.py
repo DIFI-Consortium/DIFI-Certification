@@ -42,6 +42,7 @@ import socket
 import getopt
 import os
 import threading
+import dpkt
 
 from utils.difiConstants import *
 from utils.customErrorTypes import *
@@ -72,12 +73,13 @@ MODE_SOCKET = "socket"   # constant
 MODE_ASYNCIO = "asyncio" # constant
 MODE_PCAP = "pcap"       # constant. pcap mode is currently disabled
 
-MODE = MODE_SOCKET # Define mode here (or through env var)
+MODE = MODE_PCAP # Define mode here (or through env var)
 if os.getenv("DIFI_RX_MODE"):
     MODE = os.getenv("DIFI_RX_MODE")
 
-#PCAP_FILE = "difi-compliant.pcap"
-
+PCAP_FILE = "example.pcap" # also include dir if its not in the dir you are currently running this script from
+if os.getenv("PCAP_FILE"):
+    PCAP_FILE = os.getenv("PCAP_FILE")
 
 ################
 # Process packet received
@@ -339,36 +341,31 @@ def main():
     #########
     # PCAP file mode
     #########
-    ''' CURRENTLY DISABLED
     elif MODE == MODE_PCAP:
-        from pypacker import ppcap
-        from pypacker.pypacker import byte2hex
-        from pypacker.layer12 import ethernet
-        from pypacker.layer3 import ip
-        from pypacker.layer4 import tcp
-        from pypacker.layer4 import udp
-        preader = ppcap.Reader(filename=PCAP_FILE)
+        print("Reading in all packets, may take some time")
+        f_in = open(PCAP_FILE, 'rb')
+        pcaps = dpkt.pcap.Reader(f_in).readpkts()
+        print("Found", len(pcaps), "packets")
+        for _, pkt in pcaps:
+            try:
+                eth=dpkt.ethernet.Ethernet(pkt)
+            except:
+                print("Error reading packet")
+                continue
 
-        for ts, buf in preader:
+            if eth.type!=dpkt.ethernet.ETH_TYPE_IP:
+                print("eth type is not IP, skipping")
+                continue
 
-            eth = ethernet.Ethernet(buf)
+            ip=eth.data
 
-            if eth[ethernet.Ethernet,ip.IP] is not None:
+            if ip.p==dpkt.ip.IP_PROTO_TCP:
+                print("Found TCP packet, skipping")
+                continue
 
-                #print("packet src\dest:  %s -> %s  [ts=%d]" % (eth[ip.IP].src_s, eth[ip.IP].dst_s, ts))
-                #print("full packet: %s" % (eth.bin().hex()))
+            if ip.p==dpkt.ip.IP_PROTO_UDP:
+                process_data(ip.data.data)
 
-                b = eth.bin()
-                stream = io.BytesIO(b)
-                eth_ip_udp_header = stream.read1(42)  #jump past: eth frame/ip hdr/udp hdr (42 bytes)
-                try:
-                    #print("proto: ", eth_ip_udp_header[23:24])
-                    #only UDP packets
-                    if eth_ip_udp_header[23:24] == UDP_PROTO:
-                        process_data(stream)
-                except Exception as e:
-                    pprint.pprint(e)
-    '''
 
 if __name__ == '__main__':
     main()
