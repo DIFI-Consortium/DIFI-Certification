@@ -1,4 +1,5 @@
 """
+# Copyright © `2023` `Microsoft Corporation`
 # Licensed under the MIT License.
 # SPDX-License-Identifier: MIT
 #
