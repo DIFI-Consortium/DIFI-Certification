@@ -1,43 +1,24 @@
 """
 # Copyright © `2022` `Kratos Technology & Training Solutions, Inc.`
+# Copyright © `2023` `Microsoft Corporation`
 # Licensed under the MIT License.
 # SPDX-License-Identifier: MIT
 
-#Flask http web server
-#
-#This server is the http web server that
-#hosts the http rest endpoints that are the
-#client API for the DIFI checker/decoder (drx.py).
-#
-#This Flask http server runs in the same
-#docker container, alongside the drx.py
-#socket server that is receiving the packet
-#data from the device.
-#
-#How to call from client:
-#[Example] curl -k http://<machine>:5000/api/v1/difi/compliant/standardcontext/00000001
-#[Example] curl -k http://<machine>:5000/api/v1/difi/compliant/versioncontext/00000001
-#[Example] curl -k http://<machine>:5000/api/v1/difi/compliant/data/00000001
-#[Example] curl -k http://<machine>:5000/api/v1/difi/compliant/count/00000001
-#[Example] curl -k http://<machine>:5000/api/v1/difi/noncompliant/00000001
-#[Example] curl -k http://<machine>:5000/api/v1/difi/noncompliant/count/00000001
-#[Example] curl -k http://<machine>:5000/api/v1/difi/help/api
-#[Example] curl -k http://<machine>:5000/api/v1/difi/version
-#
-#How to call from browser:
-#[Example] http://<machine>:5000/web/v1/difi/compliant/standardcontext/00000001
-#[Example] http://<machine>:5000/web/v1/difi/compliant/versioncontext/00000001
-#[Example] http://<machine>:5000/web/v1/difi/compliant/data/00000001
-#[Example] http://<machine>:5000/web/v1/difi/compliant/count/00000001
-#[Example] http://<machine>:5000/web/v1/difi/noncompliant/00000001
-#[Example] http://<machine>:5000/web/v1/difi/noncompliant/count/00000001
-#[Example] http://<machine>:5000/web/v1/difi/help/api
-#
-#To look at drx.py output result files inside docker
-#container at runtime (i.e. at the cmd prompt inside container):
-#docker ps  (to get container id)
-#docker exec -it 3f650613bf36 /bin/sh  (to get cmd prompt inside container)
-#
+This server is a Flask http web server that hosts the http rest endpoints that are the client API for the DIFI checker/decoder (drx.py)
+
+This Flask http server is meant to run alongside the drx.py, which is a socket server that receives and processes the packets
+
+You don't need to run the webgui to use the DIFI validator functionality, it simply adds a convinient web GUI interface for it
+
+API Examples:
+curl -k http://<machine>:5000/api/v1/difi/compliant/standardcontext/00000001
+curl -k http://<machine>:5000/api/v1/difi/compliant/versioncontext/00000001
+curl -k http://<machine>:5000/api/v1/difi/compliant/data/00000001
+curl -k http://<machine>:5000/api/v1/difi/compliant/count/00000001
+curl -k http://<machine>:5000/api/v1/difi/noncompliant/00000001
+curl -k http://<machine>:5000/api/v1/difi/noncompliant/count/00000001
+curl -k http://<machine>:5000/api/v1/difi/help/api
+curl -k http://<machine>:5000/api/v1/difi/version
 """
 
 from __future__ import annotations #takes care of forward declaration problem for type hints/annotations (so don't have to put quotes around types)
@@ -1267,16 +1248,16 @@ def difi_openapi_operations_health_clear():
 
 
 
-# to run standalone flask server for debug, run using:  python3 app.py
+# to run standalone flask server for debug, run using:  python3 webgui.py
 if __name__ == '__main__':
     app.run('0.0.0.0', debug=True, port=5000)
 
 # to run flask inside uwsgi server (like in a production environment) with flask app only visible as a unix socket for nginx acting as an 'application-gateway' server to communicate with,
-# cd to home/difi/docker/input where app.py is and run:
+# cd to home/difi/docker/input where webgui.py is and run:
 #  sudo uwsgi --mount /=app:app --socket /tmp/difi.sock --chown-socket=www-data:www-data --uid=www-data --gid=www-data --chmod-socket=700 --master --manage-script-name --processes 5 --vacuum --die-on-term
 # (notes about uwsgi args):
 # / = sets url to root (this way flask url's will be the same, if was /application there would be additional /application prepending all existing flask url's)
-# app = name of flask module file, without .py on end (i.e. app.py would be app)
+# app = name of flask module file, without .py on end (i.e. webgui.py would be app)
 # app = name of flask instance inside flask module file
 # www-data = user and group that's created for nginx from over at top of nginx.conf file (/etc/nginx/nginx.conf)
 # chown-socket = sets www-data to be owner of unix socket

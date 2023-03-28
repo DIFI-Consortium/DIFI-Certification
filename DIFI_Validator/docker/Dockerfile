@@ -1,60 +1,10 @@
 # Copyright © `2022` `Kratos Technology & Training Solutions, Inc.`
+# Copyright © `2023` `Microsoft Corporation`
 # Licensed under the MIT License.
 # SPDX-License-Identifier: MIT
 # syntax=docker/dockerfile:1
-#
-# cd to difi:
-# [Example] sudo docker build --no-cache --force-rm -f docker/Dockerfile -t difi:latest .
-#
-# To run in console and write output to console:
-# [Example] sudo docker run --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -i -t difi:latest
-# [Example] sudo docker run --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=asyncio -i -t difi:latest
-#
-# To run as daemon:
-# [Example] sudo docker run -d --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -i -t difi:latest
-#
-# To run in production (should add the restart on failure param):
-# [Example] sudo docker run -d --net=host --restart=on-failure -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -i -t difi:latest
-#
-# To run in each of the three server deployment options for flask:
-# DEV:
-# [Example] sudo docker build --force-rm -f docker/Dockerfile -t difi_one .
-# [Example] sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=dev difi_one
-#    (note: will be listening on port 5000)
-#
-# PROD:
-# [Example] sudo docker build --force-rm -f docker/Dockerfile -t difi_one .
-# [Example] sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod difi_one
-#    (note: will be listening on port 5000)
-# OR with proxy server:
-# [Example] sudo docker build --build-arg USER=nginx --build-arg GROUP=nginx --build-arg UID=2000 --build-arg GID=2000 --force-rm -f docker/Dockerfile -t difi_one .
-# [Example] sudo docker run -it --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod difi_one
-#    (note: will be listening on nginx port configured in nginx.conf, like port 80)
-#
-# PROD-GATEWAY (application-gateway):
-# [Example] sudo docker build --build-arg USER=nginx --build-arg GROUP=nginx --build-arg UID=2000 --build-arg GID=2000 --force-rm -f docker/Dockerfile -t difi_one .
-# [Example] sudo docker run -it --net=host -v /tmp:/tmp -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -e FLASK_DEPLOY_ENV=prod-gateway difi_one
-#    (note: will be listening on nginx port configured in nginx.conf, like port 80)
-#
-# To save the built docker container image as .tar.gz package:
-# [Example] sudo docker save difi:latest|gzip > difi.tar.gz
-#   (note: to see list of built images run: docker images)
-#
-# To look at console output inside docker container at runtime (i.e. at the cmd prompt inside container):
-# sudo docker ps  (to get container id)
-# sudo docker exec -it 3f650613bf36 /bin/sh  (to get cmd prompt inside container)
-#
-# To see container's user account and environment variables:
-# sudo docker images  (to get container image id)
-# sudo docker inspect c4f2dae2db1f
-#
 
-
-FROM python:3.7-alpine
-# newer versions also work
-#FROM python:3.9-alpine
-#FROM python:3.10-alpine
-
+FROM python:3.9-alpine
 
 ### Optional args that can be passed in on docker 'build' command:
 
@@ -104,7 +54,7 @@ ENV DIFI_RX_MODE=
 ENV DIFI_RX_HOST=0.0.0.0
 
 # flask http server settings
-ENV FLASK_APP=app.py
+ENV FLASK_APP=webgui.py
 ENV FLASK_RUN_HOST=0.0.0.0
 # change from default port 5000 to 6000
 #ENV FLASK_RUN_PORT=6000
@@ -122,44 +72,37 @@ WORKDIR $FOLDER
 RUN chown -R $USER:$GROUP $FOLDER; \
     chmod 700 $FOLDER 
 
-# switch to non-root user
-USER $USER
-
-# create python virtual environment, so can do pip installs of dependencies not as root 
-ENV VIRTUAL_ENV=$FOLDER/venv
-RUN python3 -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
 # upgrade pip
 RUN python3 -m pip install --upgrade pip;
 
+# install python dependencies
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+
+# switch to non-root user
+USER $USER
+
 # DIFI receiver
-COPY --chown=$USER:$GROUP python/drx.py drx.py
+COPY --chown=$USER:$GROUP drx.py drx.py
 RUN chmod 700 drx.py
 
 # DIFI senders
-COPY --chown=$USER:$GROUP python/dcs.py dcs.py
-COPY --chown=$USER:$GROUP python/dvs.py dvs.py
-COPY --chown=$USER:$GROUP python/dds.py dds.py
-COPY --chown=$USER:$GROUP python/dds_data.py dds_data.py
-COPY --chown=$USER:$GROUP python/dificommon.py dificommon.py
+COPY --chown=$USER:$GROUP dcs.py dcs.py
+COPY --chown=$USER:$GROUP dvs.py dvs.py
+COPY --chown=$USER:$GROUP dds.py dds.py
 
 # flask server
-COPY --chown=$USER:$GROUP docker/input/app.py app.py
+COPY --chown=$USER:$GROUP webgui.py webgui.py
 
 # flask html pages
-COPY --chown=$USER:$GROUP docker/input/templates/*.html templates/
+COPY --chown=$USER:$GROUP templates/*.html templates/
 
 # copy all local files to docker container
 #COPY --chown=$USER:$GROUP . .
 
-# install python dependencies
-COPY --chown=$USER:$GROUP docker/input/requirements.txt requirements.txt
-RUN pip install -r requirements.txt
-
-# starts flask server app.py - listening for http calls for gui
+# starts flask server webgui.py - listening for http calls for gui
 # starts socket server drx.py - listening for difi packets from device
-COPY --chown=$USER:$GROUP docker/input/start.sh start.sh
+COPY --chown=$USER:$GROUP docker/start.sh start.sh
 RUN chmod 700 start.sh
 CMD ./start.sh $FLASK_DEPLOY_ENV $USER $GROUP
 
