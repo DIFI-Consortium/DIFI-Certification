@@ -3,8 +3,8 @@ import struct
 from io import BytesIO
 import json
 
-from utils.difiConstants import *
-from utils.customErrorTypes import *
+from utils.difi_constants import *
+from utils.custom_error_types import *
 
 ##############################
 # standard context packet class - object that is filled from the decoded standard context packet stream

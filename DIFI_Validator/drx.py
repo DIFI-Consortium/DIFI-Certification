@@ -42,13 +42,13 @@ import os
 import threading
 import dpkt
 
-from utils.difiConstants import *
-from utils.customErrorTypes import *
-from utils.fileWriting import *
-from utils.nonCompliantClass import DifiInfo
-from utils.difiDataPacketClass import DifiDataPacket
-from utils.difiContextPacketClass import DifiStandardContextPacket
-from utils.difiVersionPacketClass import DifiVersionContextPacket
+from utils.difi_constants import *
+from utils.custom_error_types import *
+from utils.file_writing import *
+from utils.noncompliant_class import DifiInfo
+from utils.difi_data_packet_class import DifiDataPacket
+from utils.difi_context_packet_class import DifiStandardContextPacket
+from utils.difi_version_packet_class import DifiVersionContextPacket
 
 ##########
 # Settings
@@ -71,7 +71,7 @@ MODE_SOCKET = "socket"   # constant
 MODE_ASYNCIO = "asyncio" # constant
 MODE_PCAP = "pcap"       # constant. pcap mode is currently disabled
 
-MODE = MODE_PCAP # Define mode here (or through env var)
+MODE = MODE_SOCKET # Define mode here (or through env var)
 if os.getenv("DIFI_RX_MODE"):
     MODE = os.getenv("DIFI_RX_MODE")
 
