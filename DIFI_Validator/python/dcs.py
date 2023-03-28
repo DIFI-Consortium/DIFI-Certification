@@ -43,7 +43,8 @@ import time
 import getopt
 import asyncio
 
-import dificommon
+class InvalidArgs(Exception):
+    pass
 
 #   3                   2                   1                   0
 # 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
@@ -635,7 +636,7 @@ def main():
                         else:
                             STREAM_ID = int(arg,10) #base10
                     except ValueError:
-                        raise dificommon.InvalidArgs()  # pylint: disable=raise-missing-from
+                        raise InvalidArgs()  # pylint: disable=raise-missing-from
             elif opt == "--silent":
                 SILENT = (arg == "True")
             elif opt == "--debug":
@@ -655,17 +656,17 @@ def main():
                     SECONDS_BETWEEN_SENDS = float(arg)
 
             elif opt == "--help":
-                raise dificommon.InvalidArgs()
+                raise InvalidArgs()
 
         #check for required args
         if DESTINATION_IP is None:
             print("'--address' arg is required.")
-            raise dificommon.InvalidArgs()
+            raise InvalidArgs()
         if DESTINATION_PORT is None:
             print("'--port' arg is required.")
-            raise dificommon.InvalidArgs()
+            raise InvalidArgs()
 
-    except dificommon.InvalidArgs:
+    except InvalidArgs:
         print('usage: dcs.py\
 \r\n --address <destination address to send packets to>\
 \r\n --port <destination port to send packets to>\

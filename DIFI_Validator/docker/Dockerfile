@@ -141,8 +141,6 @@ RUN chmod 700 drx.py
 COPY --chown=$USER:$GROUP python/dcs.py dcs.py
 COPY --chown=$USER:$GROUP python/dvs.py dvs.py
 COPY --chown=$USER:$GROUP python/dds.py dds.py
-COPY --chown=$USER:$GROUP python/dds_data.py dds_data.py
-COPY --chown=$USER:$GROUP python/dificommon.py dificommon.py
 
 # flask server
 COPY --chown=$USER:$GROUP docker/input/app.py app.py
