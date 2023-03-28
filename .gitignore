@@ -21,3 +21,4 @@ DIFI_Validator/ci/common_env.sh
 DIFI_Validator/ci/run_in_docker.sh
 
 DIFI_Validator/difi-compliant*
+DIFI_Validator/difi-noncompliant*
