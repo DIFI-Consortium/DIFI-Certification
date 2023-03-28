@@ -142,6 +142,8 @@ def process_data(data: Union[bytes,BytesIO]):
         else:
             raise NoncompliantDifiPacket("non-compliant DIFI packet type [0x%1x]  (must be [0x%1x] standard context packet, [0x%1x] version context packet, or [0x%1x] data packet)" % (packet_type, DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID), DifiInfo(packet_type, stream_id=stream_id))
 
+        return pkt # drx.py doesnt use the return but external uses of this function might
+
     except NoncompliantDifiPacket as e:
         write_noncompliant_to_file(e) # update 'non-compliant' archive files
         if VERBOSE or DEBUG: print(e.message)
