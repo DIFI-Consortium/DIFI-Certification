@@ -1,44 +1,18 @@
-<strong><em>DIFI</em></strong>
+# Intro
 
-**DIFI** verification to aid with interoperability of DIFI sources and sinks.
+This directory contains a **DIFI** validation tool to aid with interoperability of DIFI sources and sinks.  For an introduction to DIFI, please see the [DIFI 101 tutorial](https://github.com/DIFI-Consortium/DIFI-Certification/blob/main/DIFI_101_Tutorial.md).  Note that the official DIFI specification document is located [here](https://dificonsortium.org/standards/) behind an IEEE download/registration page.  DIFI is a specific implementation/subset of the VITA 49.2 framework, and as such, knowledge of VITA 49 is helpful, see VITA Radio Transport (VRT) Standard, VITA-49.2 – 2017.
 
-References:  
-[DIFI Consortium](https://dificonsortium.org/)  
+This DIFI validation tool can be used as a stand-alone application that decodes and verifies whether packets in a packet stream are in compliance with the DIFI 1.0 or 1.1 standard, and can prepare and send DIFI compliant packets for testing purposes. It includes a Python package that can be imported into your own scripts/applications, as well as a top-level application that uses the package.
 
-01 SEPTEMBER 2021
-[IEEE difi-announcement](https://ieee-isto.org/press-releases/difi-announcement/)
+The source code is split into the following files:
 
-Digital signal processing (DSP) revolutionized acquisition and reproduction of analog data.  One format for signal data is known as 'digital radio' data.  The analog sources often convey radio (and intermediate) frequency data. That data is often required therefore corresponding metadata should also be communicated.  VITA defines the packet format for the digital transmission. The VITA 49.2 framework is flexible and there are many options for packing digital IF data over multiple transports. This flexibility requires that an additional layer of class documentation be provided in order to describe a specific implementation.  DIFI leverages the flexibility of VITA to specify a subset of the CIF and CIF 0 and simplifies the transport to UDP.
+- drx.py - Receives and decodes packets
+   - Note, the REST API/server code that utilitizes drx.py is in docker/input/app.py
+- dcs.py - Creates 'Standard Context' packets
+- dvs.py - Creates 'Version Context' packets
+- dds.py - Creates 'Data' packets
 
-
-This **DIFI** standard provides two independent data flows:   
-1. RF input to network output (RF-to-IP) 
-1. Network input to RF output (IP-to-RF)
-
-Both VITA and **DIFI** describe the data plane interface with the ability to transmit and receive digitized IF data and corresponding metadata over standard IP networks. DIFI is a specific framework implementation that is meant to interface in alignment with with the VITA 49.2 framework.
-
-Knowledge of related documents is helpful.
-___
-
-- VITA Radio Transport (VRT) Standard, VITA-49.0 – 2015
-- VITA Radio Transport (VRT) Standard, VITA-49.2 – 2017
-
-
-
-Note: This application can be used as a stand-alone application that decodes and verifies whether packets in a packet stream are in compliance with the DIFI 1.0 standard, and can prepare and send DIFI compliant packets for testing purposes. It is also import-able into your own scripts/applications that can be customized to provide additional functionality not covered in this application. i.e. you can re-use the packet classes and validation functions stand-alone, completely independent of this application, for higher throughput scenario's.
-
-- drx.py - receiver that decodes packets (note that the REST API/server code is in docker/input/app.py)
-- dcs.py - sends 'Standard Context' packet
-- dvs.py - sends 'Version Context' packet
-- dds.py - sends 'Data' packet
-
-all fields in all send packets are user-configurable\changeable into anything that fits application's needs, i.e. there's an arg for every field in the packet
-
-- import drx - to decode packets in byte stream into instances of DifiStandardContextPacket, DifiVersionContextPacket, and DifiDataPacket classes that can be serialized to JSON
-
-- import dcs - to send 'Standard Context' packet
-- import dvs - to send 'Version Context' packet
-- import dds - to send 'Data' packet
+# Run as a Containerized Webapp
 
 To run the containerized app using Docker,
 
