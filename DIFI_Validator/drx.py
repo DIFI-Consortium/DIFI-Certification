@@ -32,13 +32,11 @@ This code is structured so that functionality can also be imported into other Py
 from __future__ import annotations
 
 from typing import Union
-from datetime import timezone, datetime
 import asyncio
 import struct
 import io
 from io import BytesIO
 import sys
-import json
 import pprint
 import socket
 import getopt

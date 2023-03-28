@@ -1,16 +1,7 @@
-from typing import Union
 from datetime import timezone, datetime
-import asyncio
 import struct
-import io
 from io import BytesIO
-import sys
 import json
-import pprint
-import socket
-import getopt
-import os
-import threading
 
 from utils.difiConstants import *
 from utils.customErrorTypes import *
