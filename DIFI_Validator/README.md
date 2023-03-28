@@ -65,7 +65,7 @@ try:
     b = bytearray(b'<put full packet byte data here>')
     stream = io.BytesIO(b)
 
-    pkt = drx.decode_difi_vrt_packet(stream) # use this to read DIFI VRT packet from byte stream (can be any packet type)
+    pkt = drx.process_data(stream) # use this to read DIFI VRT packet from byte stream (can be any packet type)
     print(pkt)
     print(pkt.to_json())
     print(pkt.to_json(hex_values=True))

@@ -79,41 +79,6 @@ if os.getenv("DIFI_RX_MODE"):
 #PCAP_FILE = "difi-compliant.pcap"
 
 
-####################
-# Decode DIFI packet
-####################
-def decode_difi_vrt_packet(stream: BytesIO) -> Union[DifiStandardContextPacket,DifiVersionContextPacket,DifiDataPacket]:
-    """
-    Read DIFI VRT packet from byte stream, decode it and return class object filled with its data.
-    """
-
-    # packet type
-    tmpbuf = stream.read1(4)
-    if not tmpbuf:
-        return None
-    (value,) = struct.unpack(">I", tmpbuf)
-    packet_type = (value >> 28) & 0x0f   #(bit 28-31)
-
-    # stream id
-    tmpbuf = stream.read1(4)
-    (value,) = struct.unpack(">I", tmpbuf)
-    stream_id = value
-
-    stream.seek(0) #reset stream back to beginning
-
-    # create instance of packet class for packet type and parse packet
-    if packet_type == DIFI_STANDARD_FLOW_SIGNAL_CONTEXT:
-        return DifiStandardContextPacket(stream)
-    elif packet_type == DIFI_VERSION_FLOW_SIGNAL_CONTEXT:
-        return DifiVersionContextPacket(stream)
-    elif packet_type == DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID:
-        return DifiDataPacket(stream)
-    elif packet_type == DIFI_STANDARD_FLOW_SIGNAL_DATA_NO_STREAMID: # DIFI doesnt support this type of packet
-        raise NoncompliantDifiPacket("non-compliant DIFI data packet type [data packet without stream ID packet type: 0x%1x]  (must be [0x%1x] standard context packet, [0x%1x] version context packet, or [0x%1x] data packet)" % (packet_type, DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID), DifiInfo(packet_type=packet_type, stream_id=stream_id))
-    else:
-        raise NoncompliantDifiPacket("non-compliant DIFI packet type [0x%1x]  (must be [0x%1x] standard context packet, [0x%1x] version context packet, or [0x%1x] data packet)" % (packet_type, DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID), DifiInfo(packet_type, stream_id=stream_id))
-
-
 ###############
 # Recursive function to output estimated packets p/sec to console
 ##############
@@ -127,7 +92,7 @@ def estimate_pkts_per_sec(counts: list)->int:
 
 
 ################
-# Processing packet received
+# Process packet received
 ################
 def process_data(data: Union[bytes,BytesIO]):
     if data is None:
@@ -139,45 +104,43 @@ def process_data(data: Union[bytes,BytesIO]):
         else:
             stream = data
 
-        pkt = decode_difi_vrt_packet(stream) # parse data to create packet object
-        #print("type: %s" % (type(pkt).__name__))
+        # packet type
+        tmpbuf = stream.read1(4)
+        if not tmpbuf:
+            return None
+        (value,) = struct.unpack(">I", tmpbuf)
+        packet_type = (value >> 28) & 0x0f   #(bit 28-31)
 
-        # show resulting packet object in console
-        if type(pkt) is DifiStandardContextPacket:
-            if VERBOSE or DEBUG: print("\
------------------------------\r\n\
--- standard context packet --\r\n\
------------------------------\r\n\
-%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
+        # stream id
+        tmpbuf = stream.read1(4)
+        (value,) = struct.unpack(">I", tmpbuf)
+        stream_id = value
 
+        stream.seek(0) #reset stream back to beginning
+
+        # create instance of packet class for packet type and parse packet
+        if packet_type == DIFI_STANDARD_FLOW_SIGNAL_CONTEXT:
+            pkt = DifiStandardContextPacket(stream) # parse
+            if VERBOSE or DEBUG: print("-----------------------------\r\n-- standard context packet --\r\n-----------------------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
             write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
             if SAVE_LAST_GOOD_PACKET:
                 write_compliant_to_file(pkt)
-
-        elif type(pkt) is DifiVersionContextPacket:
-            if VERBOSE or DEBUG: print("\
-----------------------------\r\n\
--- version context packet --\r\n\
-----------------------------\r\n\
-%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
-
+        elif packet_type == DIFI_VERSION_FLOW_SIGNAL_CONTEXT:
+            pkt = DifiVersionContextPacket(stream)
+            if VERBOSE or DEBUG: print("----------------------------\r\n-- version context packet --\r\n----------------------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
             write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
             if SAVE_LAST_GOOD_PACKET:
                 write_compliant_to_file(pkt)
-
-        elif type(pkt) is DifiDataPacket:
-            if VERBOSE or DEBUG: print("\
------------------\r\n\
--- data packet --\r\n\
------------------\r\n\
-%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
-
+        elif packet_type == DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID:
+            pkt = DifiDataPacket(stream)
+            if VERBOSE or DEBUG: print("-----------------\r\n-- data packet --\r\n-----------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
             write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
             if SAVE_LAST_GOOD_PACKET:
                 write_compliant_to_file(pkt)
+        elif packet_type == DIFI_STANDARD_FLOW_SIGNAL_DATA_NO_STREAMID: # DIFI doesnt support this type of packet
+            raise NoncompliantDifiPacket("non-compliant DIFI data packet type [data packet without stream ID packet type: 0x%1x]  (must be [0x%1x] standard context packet, [0x%1x] version context packet, or [0x%1x] data packet)" % (packet_type, DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID), DifiInfo(packet_type=packet_type, stream_id=stream_id))
         else:
-            #ignore if not standard context, version context or data packet
-            pass
+            raise NoncompliantDifiPacket("non-compliant DIFI packet type [0x%1x]  (must be [0x%1x] standard context packet, [0x%1x] version context packet, or [0x%1x] data packet)" % (packet_type, DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID), DifiInfo(packet_type, stream_id=stream_id))
 
     except NoncompliantDifiPacket as e:
         write_noncompliant_to_file(e) # update 'non-compliant' archive files
@@ -363,7 +326,7 @@ def main():
         recv_count = 0
         while True:
             print('waiting to receive packet data...')
-            data, address = sock.recvfrom(9216) #max data packet 9000 bytes, per difi spec
+            data, address = sock.recvfrom(9216) # max data packet 9000 bytes, per difi spec
             recv_count += 1
             if SHOW_PKTS_PER_SEC: prev_curr_count[1] = recv_count
             print('received {} bytes from {}. [count={}]'.format(len(data), address, recv_count))
