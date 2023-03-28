@@ -4,141 +4,31 @@
 # Licensed under the MIT License.
 # SPDX-License-Identifier: MIT
 
-# drx.py
-#
-# Script that runs as socket server listening on port for DIFI packets being sent from a device.
-#
-# (Supports: DIFI 1.0 spec - "IEEE-ISTO Std4900-2021: Digital IF Interoperability Standard Version 1.0 August 18,2021")
-#
-# Currently can run in three modes:
-# 1) 'socket' -regular socket server listening (default if not supplied)
-# 2) 'asyncio' -asyncio socket server listening
-# 3) 'pcap' -pcap file decoder (this mode currently disabled)
-#
-# Can also supply port. (defaults to 4991 if not supplied)
-#
-# IP address automatically defaults to local machine's IP.
-#   ->if '--net=host' supplied in docker run command:
-#      -will be IP of host machine that's hosting docker container
-#   ->if '--net=host' NOT supplied in docker run command:
-#      -will be IP assigned to docker container when it started
-#
-#   [Example] docker run --net=host -i -t difi_one
-#
-#
-# Was designed to run inside docker container as a VNF.
-# [Example] docker build --no-cache --force-rm -f /sdk/DIFI/docker/Dockerfile -t difi_one .
-#
-# [Example] docker run --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -i -t difi_one
-# [Example] docker run --net=host -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=asyncio -i -t difi_one
-#
-# Can also be run as standalone script for troubleshooting purposes.
-# [Example] python3 drx.py   (defaults to: port 4991, socket mode, verbose, save last good packet)
-# [Example] python3 drx.py --port 4991
-# [Example] python3 drx.py --port 4991 --mode asyncio
-# [Example] python3 drx.py --port 4991 --mode socket --verbose True --debug True
-#
-# Saves results to files of whether packets received
-# from device are DIFI compliant. Results in the files
-# can then be retrieved via:
-# 1) Flask server rest endpoints as the public API.
-#     To get for 1 stream id:
-#     [Example] http://<machine>:5000/api/v1/difi/compliant/standardcontext/00000001
-#     [Example] http://<machine>:5000/api/v1/difi/compliant/versioncontext/00000001
-#     [Example] http://<machine>:5000/api/v1/difi/compliant/data/00000001
-#     [Example] http://<machine>:5000/api/v1/difi/compliant/count/00000001
-#     [Example] http://<machine>:5000/api/v1/difi/noncompliant/00000001
-#     [Example] http://<machine>:5000/api/v1/difi/noncompliant/count/00000001
-#     To get list of all available stream id's:
-#     [Example] http://<machine>:5000/api/v1/difi/compliant
-#     [Example] http://<machine>:5000/api/v1/difi/noncompliant
-#
-# 2) Flask server web interface endpoints as html gui's.
-#     [Example] http://<machine>:5000/web/v1/difi/compliant/standardcontext/00000001
-#     [Example] http://<machine>:5000/web/v1/difi/compliant/versioncontext/00000001
-#     [Example] http://<machine>:5000/web/v1/difi/compliant/data/00000001
-#     [Example] http://<machine>:5000/web/v1/difi/compliant/count/00000001
-#     [Example] http://<machine>:5000/web/v1/difi/noncompliant/00000001
-#     [Example] http://<machine>:5000/web/v1/difi/noncompliant/count/00000001
-#     [Example] http://<machine>:5000/web/v1/difi/help/api
-#
-# 3) tail command locally in console on any one of the result files.
-#     [Example] tail -f difi-compliant-standard-context-00000001.dat
-#     [Example] tail -f difi-compliant-standard-context-00000001.dat 2> >(grep -v truncated >&2)
-#
-#    (note: 00000001 is stream id)
-#
-# To look at drx.py output result files inside docker container
-# at runtime (i.e. at the cmd prompt inside container):
-# docker ps  (to get container id)
-# docker exec -it 3f650613bf36 /bin/sh  (to get cmd prompt inside container)
-#
-# Can also import into other projects:
-# [Example]
-# import drx
-# import sys
-# import io
-# from io import BytesIO
-# try:
-#     s = io.BytesIO()
-#
-#     #write a good packet header
-#     #s.write((1231028251).to_bytes(4, byteorder='big'))
-#     #s.write((3).to_bytes(4, byteorder='big'))
-#     #s.seek(0)
-#
-#     #write a bad packet header
-#     #s.write((1096810523).to_bytes(4, byteorder='big'))
-#     #s.write((3).to_bytes(4, byteorder='big'))
-#     #s.seek(0)
-#
-#     #write a good full data packet
-#     #b = bytearray(b'<put full packet byte data here>')
-#     #s.write(b)
-#     #s.seek(0)
-#
-#     #decode the packet
-#     #pkt = drx.decode_difi_vrt_packet(s)
-#     #print(type(pkt).__name__)
-#     #print(pkt)
-#
-#     #check if a packet header is valid
-#     pkt = drx.DifiStandardContextPacket
-#     #if pkt.is_difi10_standard_context_packet_header(pkt, packet_type=1, class_id=1, rsvd=0, tsm=1, tsf=2, packet_size=27) is True:
-#     if pkt.is_difi10_standard_context_packet_header(pkt,
-#         packet_type=drx.DIFI_STANDARD_FLOW_SIGNAL_CONTEXT,
-#         class_id=drx.DIFI_CLASSID,
-#         rsvd=drx.DIFI_RESERVED,
-#         tsm=drx.DIFI_TSM_GENERAL_TIMING,
-#         tsf=drx.DIFI_TSF_REALTIME_PICOSECONDS,
-#         packet_size=drx.DIFI_STANDARD_FLOW_SIGNAL_CONTEXT_SIZE) is True:
-#         print("valid...")
-#     else:
-#         print("not valid...")
-#
-#     #create a packet instance
-#     #drx.DEBUG = False
-#     #drx.VERBOSE = False
-#     #drx.SAVE_LAST_GOOD_PACKET = False
-#     #b = bytearray(b'<put full packet byte data here>')
-#     #stream = io.BytesIO(b)
-#     #pkt = drx.DifiDataPacket(stream)
-#     #print(pkt)
-#     #print(pkt.to_json())
-#     #print(pkt.to_json(hex_values=True))
-#
-#     #delete any output files
-#     #drx.delete_all_difi_files()
-#
-# except drx.NoncompliantDifiPacket as e:
-#     print("error: ", e.message)
-#     print("--> not DIFI compliant, packet not decoded:\r\n%s" % e.difi_info.to_json())
-# except Exception as e:
-#     print("error: ", e)
-# sys.exit(2)
+
+Script that runs as socket server listening on port for DIFI packets being sent from a device.
+
+(Supports: DIFI 1.0 spec - "IEEE-ISTO Std4900-2021: Digital IF Interoperability Standard Version 1.0 August 18,2021")
+
+Currently can run in three modes:
+1) 'socket' -regular socket server listening (default if not supplied)
+2) 'asyncio' -asyncio socket server listening
+3) 'pcap' -pcap file decoder (this mode currently disabled)
+
+Run using:
+    python3 drx.py   (defaults to: port 4991, local machine's IP, socket mode, verbose, save last good packet)
+    python3 drx.py --port 4991
+    python3 drx.py --port 4991 --mode asyncio
+    python3 drx.py --port 4991 --mode socket --verbose True --debug True
+
+It saves results of packets received to files, including compliant and metadata. 
+Tail command locally in console on any one of the result files:
+    tail -f difi-compliant-standard-context-00000001.dat
+    tail -f difi-compliant-standard-context-00000001.dat 2> >(grep -v truncated >&2)
+    (note: 00000001 is stream id in these examples)
+
+This code is structured so that functionality can also be imported into other Python scripts.
 """
 
-#takes care of forward declaration problem for type hints/annotations (so don't have to put quotes around types)
 from __future__ import annotations
 
 from typing import Union
