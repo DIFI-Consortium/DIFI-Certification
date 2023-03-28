@@ -12,19 +12,9 @@ The source code is split into the following files:
 - dvs.py - Creates 'Version Context' packets
 - dds.py - Creates 'Data' packets
 
-# Run as a Containerized Webapp
+See the [Docker README](docker/README.md) for instructions on running the docker container and web UI.
 
-To run the containerized app using Docker,
-
-```
-cd DIFI-Certification/DIFI_Validator
-docker build --force-rm -f docker/Dockerfile -t difi .
-docker run -it -e DIFI_RX_PORT=4991 -e DIFI_RX_MODE=socket -p 5000:5000 -e FLASK_DEPLOY_ENV=dev difi
-```
-
-and open a browser on the host machine to http://127.0.0.1:5000/, and you should see the following page:
-
-![](../images/difi_validator.png)
+# MOVE OR DELETE THE FOLLOWING
 
 Below are several quick hint examples for reference purposes:
 
