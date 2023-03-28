@@ -7,8 +7,6 @@
 
 Script that runs as socket server listening on port for DIFI packets being sent from a device.
 
-(Supports: DIFI 1.0 spec - "IEEE-ISTO Std4900-2021: Digital IF Interoperability Standard Version 1.0 August 18,2021")
-
 Currently can run in three modes:
 1) 'socket' -regular socket server listening (default if not supplied)
 2) 'asyncio' -asyncio socket server listening
