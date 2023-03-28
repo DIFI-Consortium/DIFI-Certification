@@ -87,13 +87,13 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN python3 -m pip install --upgrade pip;
 
 # DIFI receiver
-COPY --chown=$USER:$GROUP python/drx.py drx.py
+COPY --chown=$USER:$GROUP drx.py drx.py
 RUN chmod 700 drx.py
 
 # DIFI senders
-COPY --chown=$USER:$GROUP python/dcs.py dcs.py
-COPY --chown=$USER:$GROUP python/dvs.py dvs.py
-COPY --chown=$USER:$GROUP python/dds.py dds.py
+COPY --chown=$USER:$GROUP dcs.py dcs.py
+COPY --chown=$USER:$GROUP dvs.py dvs.py
+COPY --chown=$USER:$GROUP dds.py dds.py
 
 # flask server
 COPY --chown=$USER:$GROUP docker/input/app.py app.py
