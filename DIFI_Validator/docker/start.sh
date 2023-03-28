@@ -78,7 +78,7 @@ else
     #echo "running default 'dev' flask server"
 
     flask run &   #if run this way it will use the flask environment variables in the Dockerfile to run the flask server
-    #python3 app.py &   #if run this way it will use the settings in the "if __name__ == '__main__':" block at bottom of app.py file to run the flask server
+    #python3 webgui.py &   #if run this way it will use the settings in the "if __name__ == '__main__':" block at bottom of webgui.py file to run the flask server
 fi
 
 
