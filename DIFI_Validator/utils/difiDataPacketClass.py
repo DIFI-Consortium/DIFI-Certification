@@ -64,109 +64,106 @@ class DifiDataPacket():
         if DEBUG: print("pkt size: %d" % (self.pkt_size)) #packet_size
         if DEBUG: print("---")
 
-        #only allow if data packet type
-        if self.pkt_type == DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID:
-
-            #only decode if header is valid
-            if self.is_difi10_data_packet_header(self.pkt_type, self.class_id, self.reserved, self.tsm, self.tsf):
-                packet_size_in_bytes = (self.pkt_size - 1) * 4  #less header (-1)
-                context_data = stream.read1(packet_size_in_bytes)
-                self._decode_standard_flow_signal_data_with_streamid(context_data)
-            else:
-                raise NoncompliantDifiPacket("non-compliant DIFI data packet header [packet type: 0x%1x]" % self.pkt_type, DifiInfo(packet_type=self.pkt_type, stream_id=self.stream_id, class_id=self.class_id, reserved=self.reserved, tsm=self.tsm, tsf=self.tsf))
-        else:
+        if self.pkt_type != DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID:
             raise NoncompliantDifiPacket("non-compliant packet type [0x%1x] for DIFI data packet  (must be [0x%1x] standard context packet, [0x%1x] version context packet, or [0x%1x] data packet)" % (self.pkt_type, DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID), DifiInfo(packet_type=self.pkt_type, stream_id=self.stream_id, class_id=self.class_id, reserved=self.reserved, tsm=self.tsm, tsf=self.tsf))
 
+        #only decode if header is valid
+        if self.is_difi10_data_packet_header(self.pkt_type, self.class_id, self.reserved, self.tsm, self.tsf):
+            packet_size_in_bytes = (self.pkt_size - 1) * 4  #less header (-1)
+            context_data = stream.read1(packet_size_in_bytes)
 
-    #function to decode data packet type
-    def _decode_standard_flow_signal_data_with_streamid(self, data):
+            if DEBUG: print("Decoding.....")
+            try:
+                #######################
+                # Stream ID (5.1.2)
+                #######################
+                if DEBUG: print(context_data[0:4].hex())
+                #already unpacked in constructor __init__
+                #(value,) = struct.unpack(">I", context_data[0:4])
+                #if DEBUG: print(" Stream ID = 0x%08x (ID)" % (value))
+                #self.stream_id = value
+                if DEBUG: print(" Stream ID = 0x%08x (ID)" % (self.stream_id))
 
-        if DEBUG: print("Decoding.....")
-        #print(data.hex())
+                ##########################
+                # OUI (5.1.3)
+                ##########################
+                if DEBUG: print(context_data[4:8].hex())
+                #h = b'\x00\x7C\x38\x6C'
+                #h = b'\x00\x00\x12\xa2'
+                (value,) = struct.unpack(">I", context_data[4:8])
+                value = value & 0x00FFFFFF
+                if DEBUG: print(" OUI = 0x%06x" % (value))
+                self.oui = value
 
-        try:
-            #######################
-            # Stream ID (5.1.2)
-            #######################
-            if DEBUG: print(data[0:4].hex())
-            #already unpacked in constructor __init__
-            #(value,) = struct.unpack(">I", data[0:4])
-            #if DEBUG: print(" Stream ID = 0x%08x (ID)" % (value))
-            #self.stream_id = value
-            if DEBUG: print(" Stream ID = 0x%08x (ID)" % (self.stream_id))
+                #########################
+                # Information Class Code / Packet Class Code (5.1.3)
+                ########################
+                if DEBUG: print(context_data[8:12].hex())
+                #h = b'\x00\x00\x00\x00'
+                (icc,pcc) = struct.unpack(">HH", context_data[8:12])
+                if DEBUG: print(" Information Class Code = 0x%04x - Packet Class Code = 0x%04x" % (icc, pcc))
+                self.information_class_code = icc
+                self.packet_class_code = pcc
 
-            ##########################
-            # OUI (5.1.3)
-            ##########################
-            if DEBUG: print(data[4:8].hex())
-            #h = b'\x00\x7C\x38\x6C'
-            #h = b'\x00\x00\x12\xa2'
-            (value,) = struct.unpack(">I", data[4:8])
-            value = value & 0x00FFFFFF
-            if DEBUG: print(" OUI = 0x%06x" % (value))
-            self.oui = value
+                #######################
+                # Integer-seconds Timestamp (5.1.4 and 5.1.5)
+                #######################
+                if DEBUG: print(context_data[12:16].hex())
+                (value,) = struct.unpack(">I", context_data[12:16])
+                if DEBUG: print(" Integer-seconds Timestamp (seconds since epoch) = %d (%s)" % (value, datetime.fromtimestamp(value, tz=timezone.utc).strftime('%m/%d/%Y %r %Z'))) #.strftime('%a, %d %b %Y %H:%M:%S +0000')))
+                self.integer_seconds_timestamp = value
+                self.integer_seconds_timestamp_display = datetime.fromtimestamp(value, tz=timezone.utc).strftime('%m/%d/%Y %r %Z')
 
-            #########################
-            # Information Class Code / Packet Class Code (5.1.3)
-            ########################
-            if DEBUG: print(data[8:12].hex())
-            #h = b'\x00\x00\x00\x00'
-            (icc,pcc) = struct.unpack(">HH", data[8:12])
-            if DEBUG: print(" Information Class Code = 0x%04x - Packet Class Code = 0x%04x" % (icc, pcc))
-            self.information_class_code = icc
-            self.packet_class_code = pcc
+                #######################
+                # Fractional-seconds Timestamp (5.1.4 and 5.1.5)
+                #######################
+                if DEBUG: print(context_data[16:24].hex())
+                (value,) = struct.unpack(">Q", context_data[16:24])
+                if DEBUG: print(" Fractional-seconds Timestamp (picoseconds past integer seconds) = %d" % (value))
+                self.fractional_seconds_timestamp = value
 
-            #######################
-            # Integer-seconds Timestamp (5.1.4 and 5.1.5)
-            #######################
-            if DEBUG: print(data[12:16].hex())
-            (value,) = struct.unpack(">I", data[12:16])
-            if DEBUG: print(" Integer-seconds Timestamp (seconds since epoch) = %d (%s)" % (value, datetime.fromtimestamp(value, tz=timezone.utc).strftime('%m/%d/%Y %r %Z')))
-            #if DEBUG: print(" Integer-seconds Timestamp (seconds since epoch) = %d (%s)" % (value, datetime.fromtimestamp(value, tz=timezone.utc).strftime('%a, %d %b %Y %H:%M:%S +0000')))
-            self.integer_seconds_timestamp = value
-            self.integer_seconds_timestamp_display = datetime.fromtimestamp(value, tz=timezone.utc).strftime('%m/%d/%Y %r %Z')
+                #######################
+                # Signal Data Payload
+                #######################
+                #payload size is size minus 28 bytes for difi headers
+                # (7 words * 4 bytes per word) = 28 bytes
+                #already removed 1st word of header earlier above
+                # (28 bytes - 4 bytes) = 24 bytes
+                self.payload_data_size_in_bytes = len(context_data) - 24
+                self.payload_data_num_32bit_words = (len(context_data) - 24) / 4
+                if DEBUG: print(". . .")
+                if DEBUG: print(" Payload Data Size = %d (bytes), %d (32-bit words)" % (self.payload_data_size_in_bytes, self.payload_data_num_32bit_words))
 
-            #######################
-            # Fractional-seconds Timestamp (5.1.4 and 5.1.5)
-            #######################
-            if DEBUG: print(data[16:24].hex())
-            (value,) = struct.unpack(">Q", data[16:24])
-            if DEBUG: print(" Fractional-seconds Timestamp (picoseconds past integer seconds) = %d" % (value))
-            self.fractional_seconds_timestamp = value
+                # Save IQ samples to a file if enabled
+                if False:
+                    import numpy as np
+                    data_type = np.int8 # CURRENTLY THIS HAS TO BE MANUALLY SET!
+                    f_out_name = '/tmp/samples.sigmf-data'
+                    signal_bytes = context_data[24:]
+                    samples =  np.frombuffer(signal_bytes, dtype=data_type) # MAKE SURE THIS MATCHES THE DATA ITEM SIZE FIELD IN TEH CONTEXT PACKET!
+                    f_out = open(f_out_name, 'ab') # APPEND, MAKE SURE TO DELETE OR RENAME THE FILE
+                    samples.tofile(f_out) # its creating a binary IQ file
+                    f_out.close()
 
-            #######################
-            # Signal Data Payload
-            #######################
-            #payload size is size minus 28 bytes for difi headers
-            # (7 words * 4 bytes per word) = 28 bytes
-            #already removed 1st word of header earlier above
-            # (28 bytes - 4 bytes) = 24 bytes
-            self.payload_data_size_in_bytes = len(data) - 24
-            self.payload_data_num_32bit_words = (len(data) - 24) / 4
-            if DEBUG: print(". . .")
-            if DEBUG: print(" Payload Data Size = %d (bytes), %d (32-bit words)" % (self.payload_data_size_in_bytes, self.payload_data_num_32bit_words))
+                #self.payload_raw_data = context_data[24:]  #str(context_data[24:]) for json
+                #self.payload_raw_hex_data = context_data[24:].hex()
+                #words_list = [context_data[24:].hex()[i:i+8] for i in range(0,len(context_data[24:].hex()),8)]
+                #print(type(words_list).__name__)
+                #print(len(words_list))
+                #print(words_list)
+                #self.payload_raw_data_as_word_list = words_list
+                #if DEBUG: print(" Payload Raw Data = %s" % (self.payload_raw_data))
+                #if DEBUG: print(" Payload Raw Hex Data = %s" % (self.payload_raw_hex_data))
+                #if DEBUG: print(" Payload Raw Data (list of words) = %s" % (self.payload_raw_data_as_word_list))
 
-            #self.payload_raw_data = data[24:]  #str(data[24:]) for json
-            #self.payload_raw_hex_data = data[24:].hex()
-            #words_list = [data[24:].hex()[i:i+8] for i in range(0,len(data[24:].hex()),8)]
-            #print(type(words_list).__name__)
-            #print(len(words_list))
-            #print(words_list)
-            #self.payload_raw_data_as_word_list = words_list
-            #if DEBUG: print(" Payload Raw Data = %s" % (self.payload_raw_data))
-            #if DEBUG: print(" Payload Raw Hex Data = %s" % (self.payload_raw_hex_data))
-            #if DEBUG: print(" Payload Raw Data (list of words) = %s" % (self.payload_raw_data_as_word_list))
+            except NoncompliantDifiPacket as e:
+                raise e
+            except Exception as e:
+                raise e
+            if DEBUG: print("Finished decoding.\r\n---\r\n")
 
-        except NoncompliantDifiPacket as e:
-            raise e
-        except Exception as e:
-            raise e
-
-        if DEBUG: print("Finished decoding.\r\n---\r\n")
-
-        #debug
-        #print("JSON dump object 'DifiDataPacket':\r\n\r\n", self.to_json())
-        #print("String dump object 'DifiDataPacket':\r\n", str(self))
+        else:
+            raise NoncompliantDifiPacket("non-compliant DIFI data packet header [packet type: 0x%1x]" % self.pkt_type, DifiInfo(packet_type=self.pkt_type, stream_id=self.stream_id, class_id=self.class_id, reserved=self.reserved, tsm=self.tsm, tsf=self.tsf))
 
 
     #json encoder to change applicable int's to hex string
