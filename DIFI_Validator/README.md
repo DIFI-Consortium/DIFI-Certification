@@ -2,7 +2,7 @@
 
 This directory contains a **DIFI** validation tool to aid with interoperability of DIFI sources and sinks.  For an introduction to DIFI, please see the [DIFI 101 tutorial](https://github.com/DIFI-Consortium/DIFI-Certification/blob/main/DIFI_101_Tutorial.md).  Note that the official DIFI specification document is located [here](https://dificonsortium.org/standards/) behind an IEEE download/registration page.  DIFI is a specific implementation/subset of the VITA 49.2 framework, and as such, knowledge of VITA 49 is helpful, see VITA Radio Transport (VRT) Standard, VITA-49.2 – 2017.
 
-This DIFI validation tool can be used as a stand-alone application that decodes and verifies whether packets in a packet stream are in compliance with the DIFI 1.0 or 1.1 standard, and can prepare and send DIFI compliant packets for testing purposes. It includes a Python package that can be imported into your own scripts/applications, as well as a top-level application that uses the package.
+This DIFI validation tool can be used as a stand-alone application that decodes and verifies whether packets in a packet stream are in compliance with the DIFI 1.0 or 1.1 standard, and can prepare and send DIFI compliant packets for testing purposes. The code consists of several Python modules, which you can import into your own scripts/applications.
 
 The source code is split into the following files:
 
