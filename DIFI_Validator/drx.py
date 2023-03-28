@@ -45,6 +45,10 @@ import getopt
 import os
 import threading
 
+from utils.difiConstants import *
+from utils.customErrorTypes import *
+from utils.nonCompliantClass import DifiInfo
+
 ##########
 # Settings
 ##########
@@ -71,106 +75,6 @@ if os.getenv("DIFI_RX_MODE"):
     MODE = os.getenv("DIFI_RX_MODE")
 
 #PCAP_FILE = "difi-compliant.pcap"
-
-
-################
-# DIFI Constants
-################
-
-DIFI_STANDARD_FLOW_SIGNAL_CONTEXT = 0x4
-DIFI_STANDARD_FLOW_SIGNAL_CONTEXT_SIZE = 27
-DIFI_VERSION_FLOW_SIGNAL_CONTEXT = 0x5
-DIFI_VERSION_FLOW_SIGNAL_CONTEXT_SIZE = 11
-DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID = 0x1
-DIFI_STANDARD_FLOW_SIGNAL_DATA_NO_STREAMID = 0x0
-
-# class id
-DIFI_CLASSID = 0x1 #01
-
-# reserved
-DIFI_RESERVED = 0x0 #00
-
-# tsm - data packets
-DIFI_TSM_DATA = 0x0 #00
-# tsm - standard context / version context
-DIFI_TSM_GENERAL_TIMING = 0x1 #01
-
-# tsi
-DIFI_TSI_NONE = 0x0  #00
-DIFI_TSI_UTC = 0x1   #01 (default, but can be any)
-DIFI_TSI_GPS = 0x2   #10
-DIFI_TSI_OTHER = 0x3 #11
-
-# tsf
-DIFI_TSF_NONE = 0x0 #00
-DIFI_TSF_SAMPLE_COUNT = 0x1 #01
-DIFI_TSF_REALTIME_PICOSECONDS = 0x2 #10
-DIFI_TSF_FREE_RUNNING_COUNT = 0x3 #11
-
-# icc/pcc - version context
-DIFI_INFORMATION_CLASS_CODE_VERSION_FLOW_CONTEXT = 0x1 #(DIFI must be this)
-DIFI_PACKET_CLASS_CODE_VERSION_FLOW_CONTEXT = 0x4 #(DIFI must be this)
-
-# cif0/cif1 - standard context
-DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT = 0xBB98000 #(DIFI must be this, which is ignoring 1st nibble)
-# cif0/cif1 - version context
-DIFI_CONTEXT_INDICATOR_FIELD_0_VERSION_FLOW_CONTEXT = 0x0000002 #(DIFI must be this, which is ignoring 1st nibble)
-DIFI_CONTEXT_INDICATOR_FIELD_1_VERSION_FLOW_CONTEXT = 0x0000000C #(DIFI must be this)
-
-# v49 spec - version context
-DIFI_V49_SPEC_VERSION_VERSION_FLOW_CONTEXT = 0x00000004 #(DIFI must be this)
-
-# not required for DIFI anymore
-#DIFI_REFERENCE_POINT = 0x00000064 #(DIFI must be this)
-
-# state/event indicators - standard context
-DIFI_STATE_EVENT_IND_FREQ_REF_LOCK_BIT = (1 << 17)
-DIFI_STATE_EVENT_IND_CALIBRATED_TIME_BIT = (1 << 19)
-
-# data packet payload format field - standard context
-DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_PACKING_METHOD = 1 #(DIFI must be this)
-DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_REAL_COMPLEX_TYPE = 1 #(DIFI must be this)
-DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT = 0 #(DIFI must be this)
-DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_SAMPLE_COMPONENT_REPEAT_IND = 0 #(DIFI must be this)
-DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_EVENT_TAG_SIZE = 0 #(DIFI must be this)
-DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_CHANNEL_TAG_SIZE = 0 #(DIFI must be this)
-
-# protocol
-UDP_PROTO = b'\x11' #(DIFI must be this)
-
-# output files
-DIFI_NONCOMPLIANT_FILE_PREFIX = "difi-noncompliant-"
-DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX = "difi-noncompliant-count-"
-
-DIFI_COMPLIANT_FILE_PREFIX = "difi-compliant-"
-DIFI_STANDARD_CONTEXT = "standard-context-"
-DIFI_VERSION_CONTEXT = "version-context-"
-DIFI_DATA = "data-"
-DIFI_COMPLIANT_COUNT_FILE_PREFIX = "difi-compliant-count-"
-
-DIFI_FILE_EXTENSION = ".dat"
-
-
-####################
-# Error Types
-####################
-class InvalidDataReceived(Exception):
-    pass
-
-class InvalidPacketType(Exception):
-    pass
-
-class NoncompliantDifiPacket(Exception):
-    def __init__(self, message, difi_info: DifiInfo=None):
-        super().__init__()
-        self.message = message
-        self.difi_info = difi_info
-
-    def __str__(self):
-        return str(self.message)
-
-class InvalidArgs(Exception): #command-line args error type
-    pass
 
 
 ################
@@ -312,113 +216,6 @@ def write_compliant_count_to_file(stream_id: int):
         pprint.pprint(e)
 
     if DEBUG: print("incremented entry in '%s'.\r\n" % (fname))
-
-
-############
-# class used to store non-compliance info for DIFI custom non-compliant exception and to write json object of info out to file
-############
-class DifiInfo():
-    def __init__(self, packet_type:int, stream_id:int=None, packet_size=None, class_id=None, reserved=None, tsm=None, tsf=None, icc=None, pcc=None, cif0=None, cif1=None, v49_spec=None, data_payload_fmt_pk_mh=None, data_payload_fmt_real_cmp_type=None, data_payload_fmt_data_item_fmt=None, data_payload_fmt_rpt_ind=None, data_payload_fmt_event_tag_size=None, data_payload_fmt_channel_tag_size=None):
-
-        #################
-        #standard context
-        #################
-        if packet_type == DIFI_STANDARD_FLOW_SIGNAL_CONTEXT:
-            #stream id
-            if stream_id is not None:
-                self.stream_id = stream_id
-            else:
-                self.stream_id = "no-stream-id"
-            #header
-            self.packet_type = ("0x%1x" % packet_type)
-            self.packet_type_display =  (("must be: 0x%1x, 0x%1x, 0x%1x -> was: 0x%1x" % (DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID, packet_type)), True)
-            if packet_size is not None: self.packet_size = (("must be: %d -> was: %d" % (DIFI_STANDARD_FLOW_SIGNAL_CONTEXT_SIZE, packet_size)), DIFI_STANDARD_FLOW_SIGNAL_CONTEXT_SIZE==packet_size)
-            if class_id is not None: self.class_id = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_CLASSID, class_id)), DIFI_CLASSID==class_id)
-            if reserved is not None: self.reserved = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_RESERVED, reserved)), DIFI_RESERVED==reserved)
-            if tsm is not None: self.tsm = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_TSM_GENERAL_TIMING, tsm)), DIFI_TSM_GENERAL_TIMING==tsm)
-            if tsf is not None: self.tsf = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_TSF_REALTIME_PICOSECONDS, tsf)), DIFI_TSF_REALTIME_PICOSECONDS==tsf)
-            #packet
-            if cif0 is not None: self.context_indicator_field_0 = (("must be: 0x%07x -> was: 0x%07x" % (DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT, cif0)), DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT==cif0)
-            if data_payload_fmt_pk_mh is not None: self.data_packet_payload_format_packing_method = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_PACKING_METHOD, data_payload_fmt_pk_mh)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_PACKING_METHOD==data_payload_fmt_pk_mh)
-            if data_payload_fmt_real_cmp_type is not None: self.data_packet_payload_format_real_complex_type = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_REAL_COMPLEX_TYPE, data_payload_fmt_real_cmp_type)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_REAL_COMPLEX_TYPE==data_payload_fmt_real_cmp_type)
-            if data_payload_fmt_data_item_fmt is not None: self.data_packet_payload_format_data_item_format = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT, data_payload_fmt_data_item_fmt)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT==data_payload_fmt_data_item_fmt)
-            if data_payload_fmt_rpt_ind is not None: self.data_packet_payload_format_repeat_indicator = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_SAMPLE_COMPONENT_REPEAT_IND, data_payload_fmt_rpt_ind)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_SAMPLE_COMPONENT_REPEAT_IND==data_payload_fmt_rpt_ind)
-            if data_payload_fmt_event_tag_size is not None: self.data_packet_payload_format_event_tag_size = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_EVENT_TAG_SIZE, data_payload_fmt_event_tag_size)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_EVENT_TAG_SIZE==data_payload_fmt_event_tag_size)
-            if data_payload_fmt_channel_tag_size is not None: self.data_packet_payload_format_channel_tag_size = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_CHANNEL_TAG_SIZE, data_payload_fmt_channel_tag_size)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_CHANNEL_TAG_SIZE==data_payload_fmt_channel_tag_size)
-
-        ################
-        #version context
-        ################
-        elif packet_type == DIFI_VERSION_FLOW_SIGNAL_CONTEXT:
-            #stream id
-            if stream_id is not None:
-                self.stream_id = stream_id
-            else:
-                self.stream_id = "no-stream-id"
-            #header
-            self.packet_type = ("0x%1x" % packet_type)
-            self.packet_type_display =  (("must be: 0x%1x, 0x%1x, 0x%1x -> was: 0x%1x" % (DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID, packet_type)), True)
-            if packet_size is not None: self.packet_size = (("must be: %d -> was: %d" % (DIFI_VERSION_FLOW_SIGNAL_CONTEXT_SIZE, packet_size)), DIFI_VERSION_FLOW_SIGNAL_CONTEXT_SIZE==packet_size)
-            if class_id is not None: self.class_id = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_CLASSID, class_id)), DIFI_CLASSID==class_id)
-            if reserved is not None: self.reserved = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_RESERVED, reserved)), DIFI_RESERVED==reserved)
-            if tsm is not None: self.tsm = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_TSM_GENERAL_TIMING, tsm)), DIFI_TSM_GENERAL_TIMING==tsm)
-            if tsf is not None: self.tsf = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_TSF_REALTIME_PICOSECONDS, tsf)), DIFI_TSF_REALTIME_PICOSECONDS==tsf)
-            #packet
-            if icc is not None: self.information_class_code = (("must be: 0x%04x -> was: 0x%04x" % (DIFI_INFORMATION_CLASS_CODE_VERSION_FLOW_CONTEXT, icc)), DIFI_INFORMATION_CLASS_CODE_VERSION_FLOW_CONTEXT==icc)
-            if pcc is not None: self.packet_class_code = (("must be: 0x%04x -> was: 0x%04x" % (DIFI_PACKET_CLASS_CODE_VERSION_FLOW_CONTEXT, pcc)), DIFI_PACKET_CLASS_CODE_VERSION_FLOW_CONTEXT==pcc)
-            if cif0 is not None: self.context_indicator_field_0 = (("must be: 0x%07x -> was: 0x%07x" % (DIFI_CONTEXT_INDICATOR_FIELD_0_VERSION_FLOW_CONTEXT, cif0)), DIFI_CONTEXT_INDICATOR_FIELD_0_VERSION_FLOW_CONTEXT==cif0)
-            if cif1 is not None: self.context_indicator_field_1 = (("must be: 0x%08x -> was: 0x%08x" % (DIFI_CONTEXT_INDICATOR_FIELD_1_VERSION_FLOW_CONTEXT, cif1)), DIFI_CONTEXT_INDICATOR_FIELD_1_VERSION_FLOW_CONTEXT==cif1)
-            if v49_spec is not None: self.v49_spec_version = (("must be: 0x%08x -> was: 0x%08x" % (DIFI_V49_SPEC_VERSION_VERSION_FLOW_CONTEXT, v49_spec)), DIFI_V49_SPEC_VERSION_VERSION_FLOW_CONTEXT==v49_spec)
-
-        ############
-        #data packet
-        ############
-        elif packet_type == DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID:
-            #stream id
-            if stream_id is not None:
-                self.stream_id = stream_id
-            else:
-                self.stream_id = "no-stream-id"
-            #header
-            self.packet_type = ("0x%1x" % packet_type)
-            self.packet_type_display =  (("must be: 0x%1x, 0x%1x, 0x%1x -> was: 0x%1x" % (DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID, packet_type)), True)
-            if class_id is not None: self.class_id = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_CLASSID, class_id)), DIFI_CLASSID==class_id)
-            if reserved is not None: self.reserved = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_RESERVED, reserved)), DIFI_RESERVED==reserved)
-            if tsm is not None: self.tsm = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_TSM_DATA, tsm)), DIFI_TSM_DATA==tsm)
-            if tsf is not None: self.tsf = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_TSF_REALTIME_PICOSECONDS, tsf)), DIFI_TSF_REALTIME_PICOSECONDS==tsf)
-            #packet
-
-        ############
-        #unknown packet type
-        ############
-        else:
-            #stream id
-            if stream_id is not None:
-                self.stream_id = stream_id
-            else:
-                self.stream_id = "no-stream-id"
-            #header
-            self.packet_type = ("0x%1x" % packet_type)
-            self.packet_type_display =  (("must be: 0x%1x, 0x%1x, 0x%1x -> was: 0x%1x" % (DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID, packet_type)), False)
-
-
-    #json encoder to change stream id to hex string
-    class DifiInfoJSONEncoder(json.JSONEncoder):
-
-        def encode(self, o):
-            d = o.copy()
-
-            if type(d["stream_id"]) is int:
-                d.update(stream_id = "0x%08x" % d["stream_id"])
-
-            return json.JSONEncoder.encode(self, d)
-
-    def to_json(self):
-        return json.dumps(self.__dict__, indent=4, cls=self.DifiInfoJSONEncoder)
-        #return json.dumps(self, default=lambda o: o.__dict__, indent=4)
-
-    def __str__(self):
-        return self.to_json()
 
 
 
