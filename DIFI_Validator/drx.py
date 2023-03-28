@@ -47,7 +47,11 @@ import threading
 
 from utils.difiConstants import *
 from utils.customErrorTypes import *
+from utils.fileWriting import *
 from utils.nonCompliantClass import DifiInfo
+from utils.difiDataPacketClass import DifiDataPacket
+from utils.difiContextPacketClass import DifiStandardContextPacket
+from utils.difiVersionPacketClass import DifiVersionContextPacket
 
 ##########
 # Settings
