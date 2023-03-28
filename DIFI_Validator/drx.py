@@ -79,18 +79,6 @@ if os.getenv("DIFI_RX_MODE"):
 #PCAP_FILE = "difi-compliant.pcap"
 
 
-###############
-# Recursive function to output estimated packets p/sec to console
-##############
-def estimate_pkts_per_sec(counts: list)->int:
-    per_sec_count = counts[0][1] - counts[0][0] # curr count - prev count
-    print("pkts p/sec: {}".format(per_sec_count))
-    timer = threading.Timer(1.0, estimate_pkts_per_sec, [counts])
-    counts[0][0] = counts[0][1] # change prev count to curr count
-    timer.daemon = True #allows timer to stop when main thread exits
-    timer.start()
-
-
 ################
 # Process packet received
 ################
@@ -161,6 +149,18 @@ def process_data(data: Union[bytes,BytesIO]):
         print("---------------")
         print("packet decode error --> {}".format(e))
         print("---------------")
+
+
+###############
+# Recursive function to output estimated packets p/sec to console
+##############
+def estimate_pkts_per_sec(counts: list)->int:
+    per_sec_count = counts[0][1] - counts[0][0] # curr count - prev count
+    print("pkts p/sec: {}".format(per_sec_count))
+    timer = threading.Timer(1.0, estimate_pkts_per_sec, [counts])
+    counts[0][0] = counts[0][1] # change prev count to curr count
+    timer.daemon = True #allows timer to stop when main thread exits
+    timer.start()
 
 
 #########################
