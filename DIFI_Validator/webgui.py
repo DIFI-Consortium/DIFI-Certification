@@ -771,7 +771,9 @@ def send_standard_context_packets():
 
         #attempt to pre-fill target host/port in html page with host/port of flask and drx.py servers
         params["send_host"] = None if request.headers.get("Host") is None else request.headers.get("Host").split(':')[0]
-        params["send_port"] = os.getenv("DIFI_RX_PORT")
+        params["send_port"] = 4991
+        if os.getenv("DIFI_RX_PORT"):
+            params["send_port"] = os.getenv("DIFI_RX_PORT")
         return render_template('send_standard_context.html', **params)
 
         #if redirect back to form, then store previous form in session
@@ -830,7 +832,9 @@ def send_version_context_packets():
 
         #attempt to pre-fill target host/port in html page with host/port of flask and drx.py servers
         params["send_host"] = None if request.headers.get("Host") is None else request.headers.get("Host").split(':')[0]
-        params["send_port"] = os.getenv("DIFI_RX_PORT")
+        params["send_port"] = 4991
+        if os.getenv("DIFI_RX_PORT"):
+            params["send_port"] = os.getenv("DIFI_RX_PORT")
         return render_template('send_version_context.html', **params)
 
         #if redirect back to form, then store previous form in session
@@ -889,7 +893,9 @@ def send_signal_data_packets():
 
         #attempt to pre-fill target host/port in html page with host/port of flask and drx.py servers
         params["send_host"] = None if request.headers.get("Host") is None else request.headers.get("Host").split(':')[0]
-        params["send_port"] = os.getenv("DIFI_RX_PORT")
+        params["send_port"] = 4991
+        if os.getenv("DIFI_RX_PORT"):
+            params["send_port"] = os.getenv("DIFI_RX_PORT")
         return render_template('send_signal_data.html', **params)
 
         #if redirect back to form, then store previous form in session
