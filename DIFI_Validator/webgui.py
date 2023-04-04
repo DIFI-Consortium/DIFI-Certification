@@ -35,6 +35,8 @@ from flask import Flask, jsonify, request, redirect, render_template, Response, 
 from urllib.parse import urlparse
 from datetime import timezone, datetime
 
+from utils.difi_constants import *
+
 app = Flask(__name__)
 
 ###########
@@ -71,19 +73,6 @@ class InvalidStreamId(Exception):
 class StreamIdListFailure(Exception):
     pass
 
-##################
-#constants
-##################
-DIFI_NONCOMPLIANT_FILE_PREFIX = "difi-noncompliant-"
-DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX = "difi-noncompliant-count-"
-
-DIFI_COMPLIANT_FILE_PREFIX = "difi-compliant-"
-DIFI_STANDARD_CONTEXT = "standard-context-"
-DIFI_VERSION_CONTEXT = "version-context-"
-DIFI_DATA = "data-"
-DIFI_COMPLIANT_COUNT_FILE_PREFIX = "difi-compliant-count-"
-
-DIFI_FILE_EXTENSION = ".dat"
 
 ##################
 #helper functions
@@ -362,9 +351,10 @@ def get_difi_noncompliant(stream_id):
         validate_stream_id(stream_id)
 
         data = read_noncompliant_from_file(stream_id)
-
+        data_dict = json.loads(data)
+        data_most_recent = data_dict[-1] # pull out most recent packet
         if is_template_route(request.url_rule):
-            return render_template('noncompliant.html', **json.loads(data))
+            return render_template('noncompliant.html', **data_most_recent)
         else:
             return jsonify(json.loads(data)), 200
 
@@ -428,11 +418,11 @@ def get_difi_noncompliant_count(stream_id):
             return jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, str(e))), 500
 
 
-@app.route('/api/v1/difi/compliant/standardcontext/<string:stream_id>', methods=['GET'])
-@template_route('/web/v1/difi/compliant/standardcontext/<string:stream_id>', methods=['GET'])
-def get_difi_compliant_standard_context(stream_id):
+@app.route('/api/v1/difi/compliant/<string:packet_type>/<string:stream_id>', methods=['GET'])
+@template_route('/web/v1/difi/compliant/<string:packet_type>/<string:stream_id>', methods=['GET'])
+def get_difi_compliant_packet(stream_id, packet_type):
 
-    """Gets the last compliant 'standard context' packet archived for the specified stream id.
+    """Gets the most recent compliant packet_type archived for the specified stream id
     \n:Returns:
     \n* api route--> returns JSON document
     \n* web route--> returns HTML web page
@@ -440,91 +430,25 @@ def get_difi_compliant_standard_context(stream_id):
 
     try:
         validate_stream_id(stream_id)
-
-        data = read_compliant_standard_context_from_file(stream_id)
-
-        if is_template_route(request.url_rule):
-            return render_template('compliant.html', **json.loads(data))
+        if packet_type == 'standardcontext':
+            data = read_compliant_standard_context_from_file(stream_id)
+        elif packet_type == 'versioncontext':
+            data = read_compliant_version_context_from_file(stream_id)
+        elif packet_type == 'data':
+            data = read_compliant_data_from_file(stream_id)
         else:
-            return jsonify(json.loads(data)), 200
-
-    except InvalidStreamId as e:
+            e = 'bad URL'
+            if is_template_route(request.url_rule):
+                return render_template('msg.html', message=Markup("[%s] %s\r\n" % (type(e).__name__, str(e))))
+            else:
+                return jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, str(e))), 500
+            
+        data_dict = json.loads(data)
+        data_most_recent = data_dict[-1] # pull out most recent packet
         if is_template_route(request.url_rule):
-            return render_template('msg.html', message=Markup("%s\r\n" % e.message))
+            return render_template('compliant.html', **data_most_recent)
         else:
-            return jsonify(error_code=500, message=e.message), 500
-    except FileNotFoundError as e:
-        if is_template_route(request.url_rule):
-            return render_template('msg.html', message="No data found for stream id [%s]." % (stream_id))
-        else:
-            return jsonify(message="No data found for stream id [%s]." % (stream_id)), 200
-    #except TemplateNotFound as e:
-    #    return render_template('msg.html', message="No html template page found on server. [%s]" % (str(e)))
-    except Exception as e:
-        if is_template_route(request.url_rule):
-            return render_template('msg.html', message=Markup("[%s] %s\r\n" % (type(e).__name__, str(e))))
-        else:
-            return jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, str(e))), 500
-
-
-@app.route('/api/v1/difi/compliant/versioncontext/<string:stream_id>', methods=['GET'])
-@template_route('/web/v1/difi/compliant/versioncontext/<string:stream_id>', methods=['GET'])
-def get_difi_compliant_version_context(stream_id):
-
-    """Gets the last compliant 'version context' packet archived for the specified stream id.
-    \n:Returns:
-    \n* api route--> returns JSON document
-    \n* web route--> returns HTML web page
-    """
-
-    try:
-        validate_stream_id(stream_id)
-
-        data = read_compliant_version_context_from_file(stream_id)
-
-        if is_template_route(request.url_rule):
-            return render_template('compliant.html', **json.loads(data))
-        else:
-            return jsonify(json.loads(data)), 200
-
-    except InvalidStreamId as e:
-        if is_template_route(request.url_rule):
-            return render_template('msg.html', message=Markup("%s\r\n" % e.message))
-        else:
-            return jsonify(error_code=500, message=e.message), 500
-    except FileNotFoundError as e:
-        if is_template_route(request.url_rule):
-            return render_template('msg.html', message="No data found for stream id [%s]." % (stream_id))
-        else:
-            return jsonify(message="No data found for stream id [%s]." % (stream_id)), 200
-    #except TemplateNotFound as e:
-    #    return render_template('msg.html', message="No html template page found on server. [%s]" % (str(e)))
-    except Exception as e:
-        if is_template_route(request.url_rule):
-            return render_template('msg.html', message=Markup("[%s] %s\r\n" % (type(e).__name__, str(e))))
-        else:
-            return jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, str(e))), 500
-
-
-@app.route('/api/v1/difi/compliant/data/<string:stream_id>', methods=['GET'])
-@template_route('/web/v1/difi/compliant/data/<string:stream_id>', methods=['GET'])
-def get_difi_compliant_data(stream_id):
-
-    """Gets the last compliant 'data' packet archived for the specified stream id.
-    \n:Returns:
-    \n* api route--> returns JSON document
-    \n* web route--> returns HTML web page
-    """
-
-    try:
-        validate_stream_id(stream_id)
-
-        data = read_compliant_data_from_file(stream_id)
-
-        if is_template_route(request.url_rule):
-            return render_template('compliant.html', **json.loads(data))
-        else:
-            return jsonify(json.loads(data)), 200
+            return jsonify(json.loads(data)[-1]), 200
 
     except InvalidStreamId as e:
         if is_template_route(request.url_rule):

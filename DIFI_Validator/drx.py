@@ -291,7 +291,8 @@ def main():
     #print("show pkts p/sec: ", SHOW_PKTS_PER_SEC)
     #sys.exit(0)
 
-    clear_all_difi_files() # clear out contents of all difi output files on startup
+    #clear_all_difi_files() # clear out contents of all difi output files on startup
+    delete_all_difi_files() # deleting feels cleaner, that way we can check if the file exists yet when writing a new item into it
 
     ##########
     # Asyncio udp socket server mode, listening for packets to decode
