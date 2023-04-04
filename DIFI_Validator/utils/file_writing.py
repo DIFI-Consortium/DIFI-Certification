@@ -12,37 +12,6 @@ from utils.difi_version_packet_class import DifiVersionContextPacket
 DEBUG = False
 JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 
-def truncate_all_difi_files():
-    try:
-        with os.scandir() as directory:
-            for entry in directory:
-                if entry.is_file():
-                    if entry.name.startswith(DIFI_COMPLIANT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
-                        os.truncate(entry.path, 0)
-                    elif entry.name.startswith(DIFI_NONCOMPLIANT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
-                        os.truncate(entry.path, 0)
-    except Exception as e:
-        print("error truncating DIFI output files -->")
-        pprint.pprint(e)
-
-    if DEBUG: print("truncated all difi output files...")
-
-
-def delete_all_difi_files():
-    try:
-        with os.scandir() as directory:
-            for entry in directory:
-                if entry.is_file():
-                    if entry.name.startswith(DIFI_COMPLIANT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
-                        os.remove(entry.path)
-                    elif entry.name.startswith(DIFI_NONCOMPLIANT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
-                        os.remove(entry.path)
-    except Exception as e:
-        print("error deleting DIFI output files -->")
-        pprint.pprint(e)
-
-    if DEBUG: print("deleted all difi output files...")
-
 
 def write_noncompliant_to_file(e: NoncompliantDifiPacket):
     #TODO: in the future switch to write to kafka or database here instead...
@@ -148,3 +117,34 @@ def write_compliant_count_to_file(stream_id: int):
         pprint.pprint(e)
 
     if DEBUG: print("incremented entry in '%s'.\r\n" % (fname))
+
+def clear_all_difi_files():
+    try:
+        with os.scandir() as directory:
+            for entry in directory:
+                if entry.is_file():
+                    if entry.name.startswith(DIFI_COMPLIANT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
+                        os.truncate(entry.path, 0)
+                    elif entry.name.startswith(DIFI_NONCOMPLIANT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
+                        os.truncate(entry.path, 0)
+    except Exception as e:
+        print("error truncating DIFI output files -->")
+        pprint.pprint(e)
+
+    if DEBUG: print("truncated all difi output files...")
+
+
+def delete_all_difi_files():
+    try:
+        with os.scandir() as directory:
+            for entry in directory:
+                if entry.is_file():
+                    if entry.name.startswith(DIFI_COMPLIANT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
+                        os.remove(entry.path)
+                    elif entry.name.startswith(DIFI_NONCOMPLIANT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
+                        os.remove(entry.path)
+    except Exception as e:
+        print("error deleting DIFI output files -->")
+        pprint.pprint(e)
+
+    if DEBUG: print("deleted all difi output files...")

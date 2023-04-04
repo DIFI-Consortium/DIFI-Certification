@@ -291,9 +291,7 @@ def main():
     #print("show pkts p/sec: ", SHOW_PKTS_PER_SEC)
     #sys.exit(0)
 
-    truncate_all_difi_files() # truncate all difi output files on startup
-    #delete all difi output files on startup
-    #delete_all_difi_files()
+    clear_all_difi_files() # clear out contents of all difi output files on startup
 
     ##########
     # Asyncio udp socket server mode, listening for packets to decode
