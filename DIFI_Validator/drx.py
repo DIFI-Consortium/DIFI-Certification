@@ -43,6 +43,7 @@ import threading
 import dpkt
 import time
 import yaml
+import csv
 
 from utils.difi_constants import *
 from utils.custom_error_types import *
@@ -84,7 +85,7 @@ if os.getenv("PCAP_FILE"):
 ################
 # Process packet received
 ################
-def process_data(data: Union[bytes,BytesIO], timestamp=None):
+def process_data(data: Union[bytes,BytesIO], timestamp=None, count=None):
     if data is None:
         print("packet received, but data empty.")
         return
@@ -122,6 +123,7 @@ def process_data(data: Union[bytes,BytesIO], timestamp=None):
 
         # Set timestamp
         pkt.packet_timestamp = timestamp
+        pkt.pcap_index = count
 
         if VERBOSE or DEBUG: print("-----------------\r\n-- packet --\r\n-----------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
         write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
@@ -341,6 +343,7 @@ def main():
         f_in = open(PCAP_FILE, 'rb')
         pcaps = dpkt.pcap.Reader(f_in).readpkts()
         print("Found", len(pcaps), "packets")
+        count = 0
         for ts, pkt in pcaps:
             try:
                 eth=dpkt.ethernet.Ethernet(pkt)
@@ -359,11 +362,13 @@ def main():
                 continue
 
             if ip.p==dpkt.ip.IP_PROTO_UDP:
-                process_data(ip.data.data, timestamp=ts)
+                process_data(ip.data.data, timestamp=ts, count=count)
+                count += 1
 
 
         # Pull results from files
         report = {} # gets dumped to yaml at the end as a form of report
+        csv_data = []
 
         # Pull out counts from file
         report["compliant-count"] = 0
@@ -371,14 +376,14 @@ def main():
             with open("difi-compliant-count-00000000.dat", 'r', encoding="utf-8") as f:
                 buf = f.read()
                 if len(buf) > 0:
-                    report["compliant-count"] = buf.split("#", 1)[0]
+                    report["compliant-count"] = int(buf.split("#", 1)[0])
 
         report["noncompliant-count"] = 0
         if os.path.exists("difi-noncompliant-count-00000000.dat"):
             with open("difi-noncompliant-count-00000000.dat", 'r', encoding="utf-8") as f:
                 buf = f.read()
                 if len(buf) > 0:
-                    report["noncompliant-count"] = buf.split("#", 1)[0]
+                    report["noncompliant-count"] = int(buf.split("#", 1)[0])
 
         ###################
         # Post-processing #
@@ -401,6 +406,12 @@ def main():
                     if not (seq_num == 0 and last_seq_num == 15):
                         error_count += 1
                 last_seq_num = seq_num
+                csv_data.append([packet.get("pcap_index", ""),
+                                 packet.get("pkt_type", ""),
+                                 packet.get("seq_num", ""),
+                                 packet.get("packet_timestamp", ""),
+                                 packet.get("integer_seconds_timestamp", ""),
+                                 packet.get("fractional_seconds_timestamp", "")])
             print(error_count, "out of", len(data_packets), "packets had erroneous sequence numbers")
 
             # Analyze packet timestamps
@@ -434,11 +445,34 @@ def main():
                 context_packets = json.load(f)
             report["data-context-count"] = len(context_packets)
 
+            # Find avg time between context packets
+            start_t = context_packets[0]["packet_timestamp"] # UTC seconds float
+            time_log = []
+            for packet in context_packets:
+                packet_t = packet["packet_timestamp"]
+                diff = (packet_t - start_t)*1e3 # ms
+                time_log.append(diff)
+                csv_data.append([packet.get("pcap_index", ""),
+                                 packet.get("pkt_type", ""),
+                                 packet.get("seq_num", ""),
+                                 packet.get("packet_timestamp", ""),
+                                 packet.get("integer_seconds_timestamp", ""),
+                                 packet.get("fractional_seconds_timestamp", "")])
+            report["avg-time-betwee-context-packets-in-ms"] = float(np.mean(time_log))
+
         report["pass"] = (report["noncompliant-count"] == 0)
 
         print(report)
         with open('report.yaml', 'w+') as f:
             yaml.dump(report, f, allow_unicode=True)
+
+        # Make CSV file
+        with open('log.csv', 'w') as f:
+            f.write('pcap index,packet type,seq num,packet timestamp,int seconds,frac seconds\n')
+            writer = csv.writer(f)
+            for row in csv_data:
+                writer.writerow(row)
+
 
 
 if __name__ == '__main__':
