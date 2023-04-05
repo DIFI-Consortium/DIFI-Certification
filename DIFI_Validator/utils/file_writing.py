@@ -14,18 +14,26 @@ DEBUG = False
 JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 
 def append_item_to_json_file(fname, entry):
-    a = []
     if not os.path.isfile(fname):
+        a = []
         a.append(entry)
         with open(fname, mode='w', encoding="utf-8") as f:
             f.write(json.dumps(a, default=lambda o: o.__dict__, indent=4))
     else:
-        with open(fname, encoding="utf-8") as feedsjson:
-            feeds = json.load(feedsjson)
+        # Remove last line of file, which should contain the closing brackets
+        with open(fname, "r+", encoding = "utf-8") as f:
+            f.seek(0, os.SEEK_END) # Move the pointer (similar to a cursor in a text editor) to the end of the file
+            pos = f.tell() - 1 # skip to the very last character in the file 
+            while pos > 0 and f.read(1) != "\n":
+                pos -= 1
+                f.seek(pos, os.SEEK_SET)
+            # delete all characters ahead of this point
+            f.seek(pos, os.SEEK_SET)
+            f.truncate()
 
-        feeds.append(entry)
-        with open(fname, mode='w', encoding="utf-8") as f:
-            f.write(json.dumps(feeds, default=lambda o: o.__dict__, indent=4))
+            # now add the new entry
+            new_item = json.dumps(entry, default=lambda o: o.__dict__, indent=4) # NOT as an array
+            f.write(',\n' + new_item + '\n]') # the last \n] is what we'll remove the next time we go to add something
 
 def write_compliant_to_file(packet: Union[DifiStandardContextPacket, DifiVersionContextPacket, DifiDataPacket]):
     if type(packet) not in (DifiStandardContextPacket, DifiVersionContextPacket, DifiDataPacket):
