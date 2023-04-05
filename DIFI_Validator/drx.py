@@ -56,7 +56,7 @@ from utils.difi_version_packet_class import DifiVersionContextPacket
 ##########
 VERBOSE = True  #prints fully decoded packets to console
 DEBUG = False  #prints packet data and additional debugging info to console
-SAVE_LAST_GOOD_PACKET = True  #saves last decoded 'compliant' packet to file
+LOG_PACKET = True  #saves decoded 'compliant' packet to file
 JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 SHOW_PKTS_PER_SEC = False  #outputs estimated packets p/sec to console for debugging purposes
 
@@ -83,7 +83,7 @@ if os.getenv("PCAP_FILE"):
 ################
 # Process packet received
 ################
-def process_data(data: Union[bytes,BytesIO]):
+def process_data(data: Union[bytes,BytesIO], timestamp=None):
     if data is None:
         print("packet received, but data empty.")
         return
@@ -110,26 +110,22 @@ def process_data(data: Union[bytes,BytesIO]):
         # create instance of packet class for packet type and parse packet
         if packet_type == DIFI_STANDARD_FLOW_SIGNAL_CONTEXT:
             pkt = DifiStandardContextPacket(stream) # parse
-            if VERBOSE or DEBUG: print("-----------------------------\r\n-- standard context packet --\r\n-----------------------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
-            write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
-            if SAVE_LAST_GOOD_PACKET:
-                write_compliant_to_file(pkt)
         elif packet_type == DIFI_VERSION_FLOW_SIGNAL_CONTEXT:
             pkt = DifiVersionContextPacket(stream)
-            if VERBOSE or DEBUG: print("----------------------------\r\n-- version context packet --\r\n----------------------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
-            write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
-            if SAVE_LAST_GOOD_PACKET:
-                write_compliant_to_file(pkt)
         elif packet_type == DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID:
             pkt = DifiDataPacket(stream)
-            if VERBOSE or DEBUG: print("-----------------\r\n-- data packet --\r\n-----------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
-            write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
-            if SAVE_LAST_GOOD_PACKET:
-                write_compliant_to_file(pkt)
         elif packet_type == DIFI_STANDARD_FLOW_SIGNAL_DATA_NO_STREAMID: # DIFI doesnt support this type of packet
             raise NoncompliantDifiPacket("non-compliant DIFI data packet type [data packet without stream ID packet type: 0x%1x]  (must be [0x%1x] standard context packet, [0x%1x] version context packet, or [0x%1x] data packet)" % (packet_type, DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID), DifiInfo(packet_type=packet_type, stream_id=stream_id))
         else:
             raise NoncompliantDifiPacket("non-compliant DIFI packet type [0x%1x]  (must be [0x%1x] standard context packet, [0x%1x] version context packet, or [0x%1x] data packet)" % (packet_type, DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID), DifiInfo(packet_type, stream_id=stream_id))
+
+        # Set timestamp
+        pkt.packet_timestamp = timestamp
+
+        if VERBOSE or DEBUG: print("-----------------\r\n-- packet --\r\n-----------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
+        write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
+        if LOG_PACKET:
+            write_compliant_to_file(pkt)
 
         return pkt # drx.py doesnt use the return but external uses of this function might
 
@@ -223,7 +219,7 @@ def main():
     #constants in settings section at beginning of file
     global VERBOSE
     global DEBUG
-    global SAVE_LAST_GOOD_PACKET
+    global LOG_PACKET
     global JSON_AS_HEX
     global SHOW_PKTS_PER_SEC
     global DIFI_RECEIVER_ADDRESS
@@ -264,7 +260,7 @@ def main():
             elif opt == "--verbose":
                 VERBOSE = (arg == "True")
             elif opt == "--save-last-good-packet":
-                SAVE_LAST_GOOD_PACKET = (arg == "True")
+                LOG_PACKET = (arg == "True")
             elif opt == "--json-as-hex":
                 JSON_AS_HEX = (arg == "True")
             elif opt == "--debug":
@@ -287,7 +283,7 @@ def main():
     #print("mode: ", MODE)
     #print("verbose: ", VERBOSE)
     #print("debug: ", DEBUG)
-    #print("save last good packet: ", SAVE_LAST_GOOD_PACKET)
+    #print("save last good packet: ", LOG_PACKET)
     #print("json as hex: ", JSON_AS_HEX)
     #print("show pkts p/sec: ", SHOW_PKTS_PER_SEC)
     #sys.exit(0)
@@ -344,7 +340,7 @@ def main():
         f_in = open(PCAP_FILE, 'rb')
         pcaps = dpkt.pcap.Reader(f_in).readpkts()
         print("Found", len(pcaps), "packets")
-        for _, pkt in pcaps:
+        for ts, pkt in pcaps:
             try:
                 eth=dpkt.ethernet.Ethernet(pkt)
             except:
@@ -362,7 +358,7 @@ def main():
                 continue
 
             if ip.p==dpkt.ip.IP_PROTO_UDP:
-                process_data(ip.data.data)
+                process_data(ip.data.data, timestamp=ts)
 
         ###################
         # Post-processing #
@@ -383,7 +379,24 @@ def main():
                     error_count += 1
             last_seq_num = seq_num
         print(error_count, "out of", len(data_packets), "packets had erroneous sequence numbers")
-            
+
+        # Analyze packet timestamps
+        start_t = data_packets[0]["packet_timestamp"] # UTC seconds float
+        time_log = []
+        for packet in data_packets:
+            packet_t = packet["packet_timestamp"]
+            diff = (packet_t - start_t)*1e3 # ms
+            time_log.append(diff)
+        import matplotlib.pyplot as plt
+        import numpy as np
+        plt.hist(time_log, bins=20)
+        plt.xlabel("Time Packets Arrived [ms]")
+        plt.ylabel("Histogram")
+        plt.show()
+        plt.hist(np.diff(time_log), bins=20)
+        plt.xlabel("Time Between Packets [ms]")
+        plt.ylabel("Histogram")
+        plt.show()
        
 
 

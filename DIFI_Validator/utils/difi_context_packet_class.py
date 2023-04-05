@@ -21,6 +21,8 @@ class DifiStandardContextPacket():
     """
 
     def __init__(self, stream: BytesIO):
+        # Non-DIFI Stuff
+        self.packet_timestamp = None
 
         ##############################
         # decode 32bit header (4 bytes)
