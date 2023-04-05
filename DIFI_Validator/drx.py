@@ -42,6 +42,7 @@ import os
 import threading
 import dpkt
 import time
+import yaml
 
 from utils.difi_constants import *
 from utils.custom_error_types import *
@@ -360,44 +361,84 @@ def main():
             if ip.p==dpkt.ip.IP_PROTO_UDP:
                 process_data(ip.data.data, timestamp=ts)
 
+
+        # Pull results from files
+        report = {} # gets dumped to yaml at the end as a form of report
+
+        # Pull out counts from file
+        report["compliant-count"] = 0
+        if os.path.exists('difi-compliant-count-00000000.dat'):
+            with open("difi-compliant-count-00000000.dat", 'r', encoding="utf-8") as f:
+                buf = f.read()
+                if len(buf) > 0:
+                    report["compliant-count"] = buf.split("#", 1)[0]
+
+        report["noncompliant-count"] = 0
+        if os.path.exists("difi-noncompliant-count-00000000.dat"):
+            with open("difi-noncompliant-count-00000000.dat", 'r', encoding="utf-8") as f:
+                buf = f.read()
+                if len(buf) > 0:
+                    report["noncompliant-count"] = buf.split("#", 1)[0]
+
         ###################
         # Post-processing #
         ###################
 
-        time.sleep(10) # time to mess with log file
+        #time.sleep(10) # time to mess with log file
 
-        # Check if sequence numbers were all in order
+        # Check if sequence numbers were all in order for data packets
         print("Analyzing Sequence Numbers")
-        with open('difi-compliant-data-00000000.dat') as f:
-            data_packets = json.load(f)
-        last_seq_num = -1
-        error_count = 0
-        for packet in data_packets:
-            seq_num = packet.get("seq_num", -1)
-            if last_seq_num != -1 and seq_num != (last_seq_num+1):
-                if not (seq_num == 0 and last_seq_num == 15):
-                    error_count += 1
-            last_seq_num = seq_num
-        print(error_count, "out of", len(data_packets), "packets had erroneous sequence numbers")
+        report["data-packet-count"] = 0
+        if os.path.exists('difi-compliant-data-00000000.dat'):
+            with open('difi-compliant-data-00000000.dat') as f:
+                data_packets = json.load(f)
+            report["data-packet-count"] = len(data_packets)
+            last_seq_num = -1
+            error_count = 0
+            for packet in data_packets:
+                seq_num = packet.get("seq_num", -1)
+                if last_seq_num != -1 and seq_num != (last_seq_num+1):
+                    if not (seq_num == 0 and last_seq_num == 15):
+                        error_count += 1
+                last_seq_num = seq_num
+            print(error_count, "out of", len(data_packets), "packets had erroneous sequence numbers")
 
-        # Analyze packet timestamps
-        start_t = data_packets[0]["packet_timestamp"] # UTC seconds float
-        time_log = []
-        for packet in data_packets:
-            packet_t = packet["packet_timestamp"]
-            diff = (packet_t - start_t)*1e3 # ms
-            time_log.append(diff)
-        import matplotlib.pyplot as plt
-        import numpy as np
-        plt.hist(time_log, bins=20)
-        plt.xlabel("Time Packets Arrived [ms]")
-        plt.ylabel("Histogram")
-        plt.show()
-        plt.hist(np.diff(time_log), bins=20)
-        plt.xlabel("Time Between Packets [ms]")
-        plt.ylabel("Histogram")
-        plt.show()
-       
+            # Analyze packet timestamps
+            start_t = data_packets[0]["packet_timestamp"] # UTC seconds float
+            time_log = []
+            for packet in data_packets:
+                packet_t = packet["packet_timestamp"]
+                diff = (packet_t - start_t)*1e3 # ms
+                time_log.append(diff)
+            import matplotlib.pyplot as plt
+            import numpy as np
+
+            plt.figure(0)
+            plt.hist(time_log, bins=20)
+            plt.xlabel("Time Packets Arrived [ms]")
+            plt.ylabel("Histogram")
+            plt.savefig('packet_histogram.png', bbox_inches='tight')
+            #plt.show()
+
+            plt.figure(1)
+            plt.hist(np.diff(time_log), bins=20)
+            plt.xlabel("Time Between Packets [ms]")
+            plt.ylabel("Histogram")
+            plt.savefig('packet_diff_histogram.png', bbox_inches='tight')
+            #plt.show()
+
+        # Check context packets
+        report["data-context-count"] = 0
+        if os.path.exists('difi-compliant-context-00000000.dat'):
+            with open('difi-compliant-context-00000000.dat') as f:
+                context_packets = json.load(f)
+            report["data-context-count"] = len(context_packets)
+
+        report["pass"] = (report["noncompliant-count"] == 0)
+
+        print(report)
+        with open('report.yaml', 'w+') as f:
+            yaml.dump(report, f, allow_unicode=True)
 
 
 if __name__ == '__main__':
