@@ -41,6 +41,7 @@ import getopt
 import os
 import threading
 import dpkt
+import time
 
 from utils.difi_constants import *
 from utils.custom_error_types import *
@@ -362,6 +363,28 @@ def main():
 
             if ip.p==dpkt.ip.IP_PROTO_UDP:
                 process_data(ip.data.data)
+
+        ###################
+        # Post-processing #
+        ###################
+
+        time.sleep(10) # time to mess with log file
+
+        # Check if sequence numbers were all in order
+        print("Analyzing Sequence Numbers")
+        with open('difi-compliant-data-00000000.dat') as f:
+            data_packets = json.load(f)
+        last_seq_num = -1
+        error_count = 0
+        for packet in data_packets:
+            seq_num = packet.get("seq_num", -1)
+            if last_seq_num != -1 and seq_num != (last_seq_num+1):
+                if not (seq_num == 0 and last_seq_num == 15):
+                    error_count += 1
+            last_seq_num = seq_num
+        print(error_count, "out of", len(data_packets), "packets had erroneous sequence numbers")
+            
+       
 
 
 if __name__ == '__main__':
