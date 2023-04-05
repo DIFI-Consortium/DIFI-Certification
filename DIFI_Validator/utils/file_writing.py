@@ -14,11 +14,11 @@ DEBUG = False
 JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 
 def append_item_to_json_file(fname, entry):
+    new_item = entry.to_json(hex_values=True) # does json dumps, using hex for the fields that are better in hex
+
     if not os.path.isfile(fname):
-        a = []
-        a.append(entry)
         with open(fname, mode='w', encoding="utf-8") as f:
-            f.write(json.dumps(a, default=lambda o: o.__dict__, indent=4))
+            f.write('[\n' + new_item + '\n]')
     else:
         # Remove last line of file, which should contain the closing brackets
         with open(fname, "r+", encoding = "utf-8") as f:
@@ -32,8 +32,7 @@ def append_item_to_json_file(fname, entry):
             f.truncate()
 
             # now add the new entry
-            new_item = json.dumps(entry, default=lambda o: o.__dict__, indent=4) # NOT as an array
-            f.write(',\n' + new_item + '\n]') # the last \n] is what we'll remove the next time we go to add something
+            f.write(',\n' + new_item + '\n]')
 
 def write_compliant_to_file(packet: Union[DifiStandardContextPacket, DifiVersionContextPacket, DifiDataPacket]):
     if type(packet) not in (DifiStandardContextPacket, DifiVersionContextPacket, DifiDataPacket):
