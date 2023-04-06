@@ -41,6 +41,9 @@ import getopt
 import os
 import threading
 import dpkt
+import time
+import yaml
+import csv
 
 from utils.difi_constants import *
 from utils.custom_error_types import *
@@ -55,7 +58,7 @@ from utils.difi_version_packet_class import DifiVersionContextPacket
 ##########
 VERBOSE = True  #prints fully decoded packets to console
 DEBUG = False  #prints packet data and additional debugging info to console
-SAVE_LAST_GOOD_PACKET = True  #saves last decoded 'compliant' packet to file
+LOG_PACKET = True  #saves decoded 'compliant' packet to file
 JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 SHOW_PKTS_PER_SEC = False  #outputs estimated packets p/sec to console for debugging purposes
 
@@ -82,7 +85,7 @@ if os.getenv("PCAP_FILE"):
 ################
 # Process packet received
 ################
-def process_data(data: Union[bytes,BytesIO]):
+def process_data(data: Union[bytes,BytesIO], timestamp=None, count=None):
     if data is None:
         print("packet received, but data empty.")
         return
@@ -109,26 +112,23 @@ def process_data(data: Union[bytes,BytesIO]):
         # create instance of packet class for packet type and parse packet
         if packet_type == DIFI_STANDARD_FLOW_SIGNAL_CONTEXT:
             pkt = DifiStandardContextPacket(stream) # parse
-            if VERBOSE or DEBUG: print("-----------------------------\r\n-- standard context packet --\r\n-----------------------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
-            write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
-            if SAVE_LAST_GOOD_PACKET:
-                write_compliant_to_file(pkt)
         elif packet_type == DIFI_VERSION_FLOW_SIGNAL_CONTEXT:
             pkt = DifiVersionContextPacket(stream)
-            if VERBOSE or DEBUG: print("----------------------------\r\n-- version context packet --\r\n----------------------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
-            write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
-            if SAVE_LAST_GOOD_PACKET:
-                write_compliant_to_file(pkt)
         elif packet_type == DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID:
             pkt = DifiDataPacket(stream)
-            if VERBOSE or DEBUG: print("-----------------\r\n-- data packet --\r\n-----------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
-            write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
-            if SAVE_LAST_GOOD_PACKET:
-                write_compliant_to_file(pkt)
         elif packet_type == DIFI_STANDARD_FLOW_SIGNAL_DATA_NO_STREAMID: # DIFI doesnt support this type of packet
             raise NoncompliantDifiPacket("non-compliant DIFI data packet type [data packet without stream ID packet type: 0x%1x]  (must be [0x%1x] standard context packet, [0x%1x] version context packet, or [0x%1x] data packet)" % (packet_type, DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID), DifiInfo(packet_type=packet_type, stream_id=stream_id))
         else:
             raise NoncompliantDifiPacket("non-compliant DIFI packet type [0x%1x]  (must be [0x%1x] standard context packet, [0x%1x] version context packet, or [0x%1x] data packet)" % (packet_type, DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID), DifiInfo(packet_type, stream_id=stream_id))
+
+        # Set timestamp
+        pkt.packet_timestamp = timestamp
+        pkt.pcap_index = count
+
+        if VERBOSE or DEBUG: print("-----------------\r\n-- packet --\r\n-----------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
+        write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
+        if LOG_PACKET:
+            write_compliant_to_file(pkt)
 
         return pkt # drx.py doesnt use the return but external uses of this function might
 
@@ -222,7 +222,7 @@ def main():
     #constants in settings section at beginning of file
     global VERBOSE
     global DEBUG
-    global SAVE_LAST_GOOD_PACKET
+    global LOG_PACKET
     global JSON_AS_HEX
     global SHOW_PKTS_PER_SEC
     global DIFI_RECEIVER_ADDRESS
@@ -263,7 +263,7 @@ def main():
             elif opt == "--verbose":
                 VERBOSE = (arg == "True")
             elif opt == "--save-last-good-packet":
-                SAVE_LAST_GOOD_PACKET = (arg == "True")
+                LOG_PACKET = (arg == "True")
             elif opt == "--json-as-hex":
                 JSON_AS_HEX = (arg == "True")
             elif opt == "--debug":
@@ -286,14 +286,13 @@ def main():
     #print("mode: ", MODE)
     #print("verbose: ", VERBOSE)
     #print("debug: ", DEBUG)
-    #print("save last good packet: ", SAVE_LAST_GOOD_PACKET)
+    #print("save last good packet: ", LOG_PACKET)
     #print("json as hex: ", JSON_AS_HEX)
     #print("show pkts p/sec: ", SHOW_PKTS_PER_SEC)
     #sys.exit(0)
 
-    truncate_all_difi_files() # truncate all difi output files on startup
-    #delete all difi output files on startup
-    #delete_all_difi_files()
+    #clear_all_difi_files() # clear out contents of all difi output files on startup
+    delete_all_difi_files() # deleting feels cleaner, that way we can check if the file exists yet when writing a new item into it
 
     ##########
     # Asyncio udp socket server mode, listening for packets to decode
@@ -344,7 +343,8 @@ def main():
         f_in = open(PCAP_FILE, 'rb')
         pcaps = dpkt.pcap.Reader(f_in).readpkts()
         print("Found", len(pcaps), "packets")
-        for _, pkt in pcaps:
+        count = 0
+        for ts, pkt in pcaps:
             try:
                 eth=dpkt.ethernet.Ethernet(pkt)
             except:
@@ -362,7 +362,117 @@ def main():
                 continue
 
             if ip.p==dpkt.ip.IP_PROTO_UDP:
-                process_data(ip.data.data)
+                process_data(ip.data.data, timestamp=ts, count=count)
+                count += 1
+
+
+        # Pull results from files
+        report = {} # gets dumped to yaml at the end as a form of report
+        csv_data = []
+
+        # Pull out counts from file
+        report["compliant-count"] = 0
+        if os.path.exists('difi-compliant-count-00000000.dat'):
+            with open("difi-compliant-count-00000000.dat", 'r', encoding="utf-8") as f:
+                buf = f.read()
+                if len(buf) > 0:
+                    report["compliant-count"] = int(buf.split("#", 1)[0])
+
+        report["noncompliant-count"] = 0
+        if os.path.exists("difi-noncompliant-count-00000000.dat"):
+            with open("difi-noncompliant-count-00000000.dat", 'r', encoding="utf-8") as f:
+                buf = f.read()
+                if len(buf) > 0:
+                    report["noncompliant-count"] = int(buf.split("#", 1)[0])
+
+        ###################
+        # Post-processing #
+        ###################
+
+        #time.sleep(10) # time to mess with log file
+
+        # Check if sequence numbers were all in order for data packets
+        print("Analyzing Sequence Numbers")
+        report["data-packet-count"] = 0
+        if os.path.exists('difi-compliant-data-00000000.dat'):
+            with open('difi-compliant-data-00000000.dat') as f:
+                data_packets = json.load(f)
+            report["data-packet-count"] = len(data_packets)
+            last_seq_num = -1
+            error_count = 0
+            for packet in data_packets:
+                seq_num = packet.get("seq_num", -1)
+                if last_seq_num != -1 and seq_num != (last_seq_num+1):
+                    if not (seq_num == 0 and last_seq_num == 15):
+                        error_count += 1
+                last_seq_num = seq_num
+                csv_data.append([packet.get("pcap_index", ""),
+                                 packet.get("pkt_type", ""),
+                                 packet.get("seq_num", ""),
+                                 packet.get("packet_timestamp", ""),
+                                 packet.get("integer_seconds_timestamp", ""),
+                                 packet.get("fractional_seconds_timestamp", "")])
+            print(error_count, "out of", len(data_packets), "packets had erroneous sequence numbers")
+
+            # Analyze packet timestamps
+            start_t = data_packets[0]["packet_timestamp"] # UTC seconds float
+            time_log = []
+            for packet in data_packets:
+                packet_t = packet["packet_timestamp"]
+                diff = (packet_t - start_t)*1e3 # ms
+                time_log.append(diff)
+            import matplotlib.pyplot as plt
+            import numpy as np
+
+            plt.figure(0)
+            plt.hist(time_log, bins=20)
+            plt.xlabel("Time Packets Arrived [ms]")
+            plt.ylabel("Histogram")
+            plt.savefig('packet_histogram.png', bbox_inches='tight')
+            #plt.show()
+
+            plt.figure(1)
+            plt.hist(np.diff(time_log), bins=20)
+            plt.xlabel("Time Between Packets [ms]")
+            plt.ylabel("Histogram")
+            plt.savefig('packet_diff_histogram.png', bbox_inches='tight')
+            #plt.show()
+
+        # Check context packets
+        report["data-context-count"] = 0
+        if os.path.exists('difi-compliant-context-00000000.dat'):
+            with open('difi-compliant-context-00000000.dat') as f:
+                context_packets = json.load(f)
+            report["data-context-count"] = len(context_packets)
+
+            # Find avg time between context packets
+            start_t = context_packets[0]["packet_timestamp"] # UTC seconds float
+            time_log = []
+            for packet in context_packets:
+                packet_t = packet["packet_timestamp"]
+                diff = (packet_t - start_t)*1e3 # ms
+                time_log.append(diff)
+                csv_data.append([packet.get("pcap_index", ""),
+                                 packet.get("pkt_type", ""),
+                                 packet.get("seq_num", ""),
+                                 packet.get("packet_timestamp", ""),
+                                 packet.get("integer_seconds_timestamp", ""),
+                                 packet.get("fractional_seconds_timestamp", "")])
+            report["avg-time-betwee-context-packets-in-ms"] = float(np.mean(time_log))
+
+        report["pass"] = (report["noncompliant-count"] == 0)
+
+        print(report)
+        with open('report.yaml', 'w+') as f:
+            yaml.dump(report, f, allow_unicode=True)
+
+        # Make CSV file
+        with open('log.csv', 'w') as f:
+            f.write('pcap index,packet type,seq num,packet timestamp,int seconds,frac seconds\n')
+            writer = csv.writer(f)
+            for row in csv_data:
+                writer.writerow(row)
+
 
 
 if __name__ == '__main__':
