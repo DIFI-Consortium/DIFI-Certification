@@ -126,7 +126,7 @@ def process_data(data: Union[bytes,BytesIO], timestamp=None, count=None):
         pkt.pcap_index = count
 
         if VERBOSE or DEBUG: print("-----------------\r\n-- packet --\r\n-----------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
-        write_compliant_count_to_file(pkt.stream_id) # update 'compliant' archive files
+        write_compliant_count_to_file() # update 'compliant' archive files
         if LOG_PACKET:
             write_compliant_to_file(pkt)
 
@@ -136,7 +136,7 @@ def process_data(data: Union[bytes,BytesIO], timestamp=None, count=None):
         write_noncompliant_to_file(e) # update 'non-compliant' archive files
         if VERBOSE or DEBUG: print(e.message)
         if VERBOSE or DEBUG: print("--> not DIFI compliant, packet not decoded:\r\n%s" % e.difi_info.to_json())
-        write_noncompliant_count_to_file(e.difi_info.stream_id)
+        write_noncompliant_count_to_file()
     except InvalidDataReceived as e:
         print("---------------")
         pprint.pprint(e)
@@ -357,9 +357,13 @@ def main():
 
             ip=eth.data
 
+            #print(ip.data.sport)
+            #print(ip.data.dport)
+
             if ip.p==dpkt.ip.IP_PROTO_TCP:
-                print("Found TCP packet, skipping")
-                continue
+                #print(ip.data.data[0:80].hex())
+                process_data(ip.data.data, timestamp=ts, count=count)
+                count += 1
 
             if ip.p==dpkt.ip.IP_PROTO_UDP:
                 process_data(ip.data.data, timestamp=ts, count=count)

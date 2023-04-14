@@ -65,13 +65,13 @@ UDP_PROTO = b'\x11'
 
 # file stuff
 DIFI_COMPLIANT_FILE_PREFIX = "difi-compliant-"
-DIFI_NONCOMPLIANT_FILE_PREFIX = "difi-noncompliant-"
+DIFI_NONCOMPLIANT_FILE_PREFIX = "difi-noncompliant"
 
-DIFI_COMPLIANT_COUNT_FILE_PREFIX = "difi-compliant-count-"
-DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX = "difi-noncompliant-count-"
+DIFI_COMPLIANT_COUNT_FILE_PREFIX = "difi-compliant-count"
+DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX = "difi-noncompliant-count"
 
-DIFI_STANDARD_CONTEXT = "context-"
-DIFI_VERSION_CONTEXT = "version-"
-DIFI_DATA = "data-"
+DIFI_STANDARD_CONTEXT = "context"
+DIFI_VERSION_CONTEXT = "version"
+DIFI_DATA = "data"
 
 DIFI_FILE_EXTENSION = ".dat"

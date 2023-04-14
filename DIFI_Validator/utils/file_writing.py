@@ -40,11 +40,11 @@ def write_compliant_to_file(packet: Union[DifiStandardContextPacket, DifiVersion
         return
     try:
         if type(packet) is DifiStandardContextPacket:
-            fname = "%s%s%08x%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_STANDARD_CONTEXT, packet.stream_id, DIFI_FILE_EXTENSION)
+            fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_STANDARD_CONTEXT, DIFI_FILE_EXTENSION)
         elif type(packet) is DifiVersionContextPacket:
-            fname = "%s%s%08x%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_VERSION_CONTEXT, packet.stream_id, DIFI_FILE_EXTENSION)
+            fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_VERSION_CONTEXT, DIFI_FILE_EXTENSION)
         elif type(packet) is DifiDataPacket:
-            fname = "%s%s%08x%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_DATA, packet.stream_id, DIFI_FILE_EXTENSION)
+            fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_DATA, DIFI_FILE_EXTENSION)
         else:
             raise Exception("context packet type unknown")
 
@@ -62,9 +62,9 @@ def write_compliant_to_file(packet: Union[DifiStandardContextPacket, DifiVersion
     if DEBUG: print("added last decoded '%s' to '%s'.\r\n" % (type(packet).__name__, fname))
 
 
-def write_compliant_count_to_file(stream_id: int):
+def write_compliant_count_to_file():
     try:
-        fname = "%s%08x%s" % (DIFI_COMPLIANT_COUNT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
+        fname = "%s%s" % (DIFI_COMPLIANT_COUNT_FILE_PREFIX, DIFI_FILE_EXTENSION)
         with open(fname, 'a+', encoding="utf-8") as f:
             f.seek(0)
             c = 0
@@ -87,10 +87,7 @@ def write_compliant_count_to_file(stream_id: int):
 
 def write_noncompliant_to_file(e: NoncompliantDifiPacket):
     try:
-        if type(e.difi_info.stream_id) is str:
-            fname = "%s%s%s" % (DIFI_NONCOMPLIANT_FILE_PREFIX, e.difi_info.stream_id, DIFI_FILE_EXTENSION)
-        else:
-            fname = "%s%08x%s" % (DIFI_NONCOMPLIANT_FILE_PREFIX, e.difi_info.stream_id, DIFI_FILE_EXTENSION)
+        fname = "%s%s" % (DIFI_NONCOMPLIANT_FILE_PREFIX, DIFI_FILE_EXTENSION)
 
         #last_modified = datetime.fromtimestamp(os.stat(fname).st_mtime, tz=timezone.utc).strftime('%m/%d/%Y %r %Z')
 
@@ -107,12 +104,9 @@ def write_noncompliant_to_file(e: NoncompliantDifiPacket):
     if DEBUG: print("added entry to '%s' [%s]\r\n%s" % (fname, e, e.difi_info.to_json()))
 
 
-def write_noncompliant_count_to_file(stream_id: Union[int,str]):
+def write_noncompliant_count_to_file():
     try:
-        if type(stream_id) is str:
-            fname = "%s%s%s" % (DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
-        else:
-            fname = "%s%08x%s" % (DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
+        fname = "%s%s" % (DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX, DIFI_FILE_EXTENSION)
         with open(fname, 'a+', encoding="utf-8") as f:
             f.seek(0)
             c = 0
