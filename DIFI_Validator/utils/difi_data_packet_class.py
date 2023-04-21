@@ -2,6 +2,7 @@ from datetime import timezone, datetime
 import struct
 from io import BytesIO
 import json
+import os
 
 from utils.difi_constants import *
 from utils.custom_error_types import *
@@ -11,6 +12,11 @@ from utils.custom_error_types import *
 ##################
 
 DEBUG = False
+
+if os.getenv("SAVE_IQ"):
+    SAVE_IQ = True
+else:
+    SAVE_IQ = False
 
 class DifiDataPacket():
     """
@@ -135,10 +141,10 @@ class DifiDataPacket():
                 if DEBUG: print(" Payload Data Size = %d (bytes), %d (32-bit words)" % (self.payload_data_size_in_bytes, self.payload_data_num_32bit_words))
 
                 # Save IQ samples to a file if enabled
-                if False:
+                if SAVE_IQ:
                     import numpy as np
                     data_type = np.int8 # CURRENTLY THIS HAS TO BE MANUALLY SET!
-                    f_out_name = '/tmp/samples.sigmf-data'
+                    f_out_name = '/tmp/samples.iq'
                     signal_bytes = context_data[24:]
                     samples =  np.frombuffer(signal_bytes, dtype=data_type) # MAKE SURE THIS MATCHES THE DATA ITEM SIZE FIELD IN TEH CONTEXT PACKET!
                     f_out = open(f_out_name, 'ab') # APPEND, MAKE SURE TO DELETE OR RENAME THE FILE

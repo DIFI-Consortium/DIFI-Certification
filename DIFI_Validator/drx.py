@@ -44,6 +44,7 @@ import dpkt
 import time
 import yaml
 import csv
+from scapy.all import *
 
 from utils.difi_constants import *
 from utils.custom_error_types import *
@@ -335,40 +336,22 @@ def main():
             process_data(data)
 
 
-    #########
+    ################
     # PCAP file mode
-    #########
+    ################
     elif MODE == MODE_PCAP:
         print("Reading in all packets, may take some time")
-        f_in = open(PCAP_FILE, 'rb')
-        pcaps = dpkt.pcap.Reader(f_in).readpkts()
-        print("Found", len(pcaps), "packets")
         count = 0
-        for ts, pkt in pcaps:
-            try:
-                eth=dpkt.ethernet.Ethernet(pkt)
-            except:
-                print("Error reading packet")
-                continue
-
-            if eth.type!=dpkt.ethernet.ETH_TYPE_IP:
-                print("eth type is not IP, skipping")
-                continue
-
-            ip=eth.data
-
-            #print(ip.data.sport)
-            #print(ip.data.dport)
-
-            if ip.p==dpkt.ip.IP_PROTO_TCP:
-                #print(ip.data.data[0:80].hex())
-                process_data(ip.data.data, timestamp=ts, count=count)
+        for packet in PcapReader(PCAP_FILE):
+            ts = float(packet.time)
+            if UDP in packet:
+                #print(packet[UDP].dport)
+                #print(packet[UDP].sport)
+                payload = bytes(packet[UDP].payload)
+                process_data(payload, timestamp=ts, count=count)
                 count += 1
-
-            if ip.p==dpkt.ip.IP_PROTO_UDP:
-                process_data(ip.data.data, timestamp=ts, count=count)
-                count += 1
-
+            elif TCP in packet:
+                pass # TODO
 
         # Pull results from files
         report = {} # gets dumped to yaml at the end as a form of report
@@ -376,15 +359,15 @@ def main():
 
         # Pull out counts from file
         report["compliant-count"] = 0
-        if os.path.exists('difi-compliant-count-00000000.dat'):
-            with open("difi-compliant-count-00000000.dat", 'r', encoding="utf-8") as f:
+        if os.path.exists('difi-compliant-count.dat'):
+            with open("difi-compliant-count.dat", 'r', encoding="utf-8") as f:
                 buf = f.read()
                 if len(buf) > 0:
                     report["compliant-count"] = int(buf.split("#", 1)[0])
 
         report["noncompliant-count"] = 0
-        if os.path.exists("difi-noncompliant-count-00000000.dat"):
-            with open("difi-noncompliant-count-00000000.dat", 'r', encoding="utf-8") as f:
+        if os.path.exists("difi-noncompliant-count.dat"):
+            with open("difi-noncompliant-count.dat", 'r', encoding="utf-8") as f:
                 buf = f.read()
                 if len(buf) > 0:
                     report["noncompliant-count"] = int(buf.split("#", 1)[0])
@@ -398,8 +381,8 @@ def main():
         # Check if sequence numbers were all in order for data packets
         print("Analyzing Sequence Numbers")
         report["data-packet-count"] = 0
-        if os.path.exists('difi-compliant-data-00000000.dat'):
-            with open('difi-compliant-data-00000000.dat') as f:
+        if os.path.exists('difi-compliant-data.dat'):
+            with open('difi-compliant-data.dat') as f:
                 data_packets = json.load(f)
             report["data-packet-count"] = len(data_packets)
             last_seq_num = -1
@@ -444,8 +427,8 @@ def main():
 
         # Check context packets
         report["data-context-count"] = 0
-        if os.path.exists('difi-compliant-context-00000000.dat'):
-            with open('difi-compliant-context-00000000.dat') as f:
+        if os.path.exists('difi-compliant-context.dat'):
+            with open('difi-compliant-context.dat') as f:
                 context_packets = json.load(f)
             report["data-context-count"] = len(context_packets)
 
