@@ -77,22 +77,22 @@ class StreamIdListFailure(Exception):
 ##################
 #helper functions
 ##################
-def read_noncompliant_from_file(stream_id: str):
+def read_noncompliant_from_file():
     
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-noncompliant-00000001.dat"
-    fname = "%s%s%s" % (DIFI_NONCOMPLIANT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
+    fname = "%s%s" % (DIFI_NONCOMPLIANT_FILE_PREFIX, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         buf = f.read()
         return buf
 
-def read_noncompliant_count_from_file(stream_id: str):
+def read_noncompliant_count_from_file():
     
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-noncompliant-count-00000001.dat"
-    fname = "%s%s%s" % (DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
+    fname = "%s%s" % (DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         d = {}
         d["count"] = 0
@@ -105,42 +105,42 @@ def read_noncompliant_count_from_file(stream_id: str):
                 d["updated"] = entry[1]
         return d
 
-def read_compliant_standard_context_from_file(stream_id):
+def read_compliant_standard_context_from_file():
 
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-compliant-standard-context-00000001.dat"
-    fname = "%s%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_STANDARD_CONTEXT, stream_id, DIFI_FILE_EXTENSION)
+    fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_STANDARD_CONTEXT, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         buf = f.read()
         return buf
 
-def read_compliant_version_context_from_file(stream_id):
+def read_compliant_version_context_from_file():
 
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-compliant-version-context-00000001.dat"
-    fname = "%s%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_VERSION_CONTEXT, stream_id, DIFI_FILE_EXTENSION)
+    fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_VERSION_CONTEXT, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         buf = f.read()
         return buf
 
-def read_compliant_data_from_file(stream_id):
+def read_compliant_data_from_file():
 
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-compliant-data-00000001.dat"
-    fname = "%s%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_DATA, stream_id, DIFI_FILE_EXTENSION)
+    fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_DATA, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         buf = f.read()
         return buf
 
-def read_compliant_count_from_file(stream_id: str):
+def read_compliant_count_from_file():
     
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-compliant-count-00000001.dat"
-    fname = "%s%s%s" % (DIFI_COMPLIANT_COUNT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
+    fname = "%s%s" % (DIFI_COMPLIANT_COUNT_FILE_PREFIX, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         d = {}
         d["count"] = 0
@@ -350,7 +350,7 @@ def get_difi_noncompliant(stream_id):
     try:
         validate_stream_id(stream_id)
 
-        data = read_noncompliant_from_file(stream_id)
+        data = read_noncompliant_from_file()
         data_dict = json.loads(data)
         data_most_recent = data_dict[-1] # pull out most recent packet
         if is_template_route(request.url_rule):
@@ -390,7 +390,7 @@ def get_difi_noncompliant_count(stream_id):
     try:
         validate_stream_id(stream_id)
 
-        data = read_noncompliant_count_from_file(stream_id)
+        data = read_noncompliant_count_from_file()
 
         if is_template_route(request.url_rule):
             data["stream_id"] = stream_id
@@ -431,11 +431,11 @@ def get_difi_compliant_packet(stream_id, packet_type):
     try:
         validate_stream_id(stream_id)
         if packet_type == 'standardcontext':
-            data = read_compliant_standard_context_from_file(stream_id)
+            data = read_compliant_standard_context_from_file()
         elif packet_type == 'versioncontext':
-            data = read_compliant_version_context_from_file(stream_id)
+            data = read_compliant_version_context_from_file()
         elif packet_type == 'data':
-            data = read_compliant_data_from_file(stream_id)
+            data = read_compliant_data_from_file()
         else:
             e = 'bad URL'
             if is_template_route(request.url_rule):
@@ -482,7 +482,7 @@ def get_difi_compliant_count(stream_id):
     try:
         validate_stream_id(stream_id)
 
-        data = read_compliant_count_from_file(stream_id)
+        data = read_compliant_count_from_file()
 
         if is_template_route(request.url_rule):
             data["stream_id"] = stream_id
