@@ -305,5 +305,5 @@ while True:
 ## External References
 
 - [DIFI Consortium](https://dificonsortium.org/)
-- For a primer on DSP and SDR, check out [www.pysdr.org](www.pysdr.org)
+- For a primer on DSP and SDR, check out [www.pysdr.org](https://pysdr.org)
 - [GNU Radio Tutorials](https://wiki.gnuradio.org/index.php/Tutorials)
