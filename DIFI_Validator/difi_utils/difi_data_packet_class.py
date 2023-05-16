@@ -4,8 +4,8 @@ from io import BytesIO
 import json
 import os
 
-from utils.difi_constants import *
-from utils.custom_error_types import *
+from difi_utils.difi_constants import *
+from difi_utils.custom_error_types import *
 
 ##################
 # data packet class - object that is filled from the decoded data packet stream

@@ -2,7 +2,7 @@
 # Error Types
 ####################
 
-from utils.noncompliant_class import DifiInfo
+from difi_utils.noncompliant_class import DifiInfo
 
 class InvalidDataReceived(Exception):
     pass

@@ -4,11 +4,11 @@ from datetime import timezone, datetime
 from typing import Union
 import json
 
-from utils.difi_constants import *
-from utils.custom_error_types import *
-from utils.difi_data_packet_class import DifiDataPacket
-from utils.difi_context_packet_class import DifiStandardContextPacket
-from utils.difi_version_packet_class import DifiVersionContextPacket
+from difi_utils.difi_constants import *
+from difi_utils.custom_error_types import *
+from difi_utils.difi_data_packet_class import DifiDataPacket
+from difi_utils.difi_context_packet_class import DifiStandardContextPacket
+from difi_utils.difi_version_packet_class import DifiVersionContextPacket
 
 DEBUG = False
 JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings

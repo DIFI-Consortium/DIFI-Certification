@@ -35,7 +35,7 @@ from flask import Flask, jsonify, request, redirect, render_template, Response, 
 from urllib.parse import urlparse
 from datetime import timezone, datetime
 
-from utils.difi_constants import *
+from difi_utils.difi_constants import *
 
 app = Flask(__name__)
 

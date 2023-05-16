@@ -3,8 +3,8 @@ import struct
 from io import BytesIO
 import json
 
-from utils.difi_constants import *
-from utils.custom_error_types import *
+from difi_utils.difi_constants import *
+from difi_utils.custom_error_types import *
 
 #############################
 # version context packet class - object that is filled from the decoded version context packet stream
