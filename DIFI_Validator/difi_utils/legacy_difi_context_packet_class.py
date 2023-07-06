@@ -57,7 +57,7 @@ class DifiStandardContextPacket():
             # at this point, the first 4 bytes of data are the streamid
 
             (cif,) = struct.unpack(">I", data[12:16])
-            cif = (cif & 0x0FFFFFF0) # NOTE THAT 0 THAT WAS ADDED TO LEAST SIG PART FOR LEGACY
+            cif = (cif & 0xFFFF0000) # NOTE THE 0's THAT WAS ADDED TO LEAST SIG BYTE FOR LEGACY
             (value1, value2) = struct.unpack(">II", data[60:68]) # Data packet payload format (8 bytes)
             data_payload_fmt_pk_mh = (value1 >> 31) & 0x01  #bit31
             data_payload_fmt_real_cmp_type = (value1 >> 29) & 0x03  #bit29-30
@@ -160,21 +160,7 @@ class DifiStandardContextPacket():
                     ,"repeat_count" : (value2 >> 16) & 0xFFFF  #bit16-31
                     ,"vector_size" : (value2 >> 0) & 0xFFFF  #bit0-15
                     }
-
-            #bit layout (value1 and value2)
-            #[31]     Packing Method (1)
-            #[30..29] Real/Complex Type (2)
-            #[28..24] Data Item Format (5)
-            #[23]     Sample-Component Repeat Indicator (1)
-            #[22..20] Event-Tag Size (3)
-            #[19..16] Channel-Tag Size (4)
-            #[15..12] Data Item Fraction Size (4)
-            #[11..6]  Item Packing Field Size (6)
-            #[5..0]   Data Item Size (6)
-            #--------
-            #[31..16] Repeat Count (16)
-            #[15..0]  Vector Size (16)
-
+            
         except NoncompliantDifiPacket as e:
             raise e
         except Exception as e:

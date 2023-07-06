@@ -38,8 +38,8 @@ DIFI_INFORMATION_CLASS_CODE_VERSION_FLOW_CONTEXT = 0x1
 DIFI_PACKET_CLASS_CODE_VERSION_FLOW_CONTEXT = 0x4 
 
 # cif0/cif1 - standard context
-DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT = 0xBB98000 #(DIFI must be this, which is ignoring 1st nibble)
-DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT_LEGACY = 0x4A64850 # ignore first and last nybble.  also saw a pcap with 39a18000
+DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT = 0xBB98000 # which is ignoring most sig nibble
+DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT_LEGACY = 0x64A60000 # ignore least 2 sig bytes for now.  also saw a pcap with 39A18000...
 
 # cif0/cif1 - version context
 DIFI_CONTEXT_INDICATOR_FIELD_0_VERSION_FLOW_CONTEXT = 0x0000002 #(DIFI must be this, which is ignoring 1st nibble)
