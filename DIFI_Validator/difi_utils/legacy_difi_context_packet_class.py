@@ -57,7 +57,7 @@ class DifiStandardContextPacket():
             # at this point, the first 4 bytes of data are the streamid
 
             (cif,) = struct.unpack(">I", data[12:16])
-            cif = (cif & 0x0FFFFFFF)
+            cif = (cif & 0x0FFFFFF0) # NOTE THAT 0 THAT WAS ADDED TO LEAST SIG PART FOR LEGACY
             (value1, value2) = struct.unpack(">II", data[60:68]) # Data packet payload format (8 bytes)
             data_payload_fmt_pk_mh = (value1 >> 31) & 0x01  #bit31
             data_payload_fmt_real_cmp_type = (value1 >> 29) & 0x03  #bit29-30
@@ -67,7 +67,7 @@ class DifiStandardContextPacket():
             data_payload_fmt_channel_tag_size = (value1 >> 16) & 0x0F  #bit16-19
 
             #only fully decode if DIFI compliant
-            if not self.is_difi10_standard_context_packet(cif, data_payload_fmt_pk_mh, data_payload_fmt_real_cmp_type, data_payload_fmt_data_item_fmt, data_payload_fmt_rpt_ind, data_payload_fmt_event_tag_size, data_payload_fmt_channel_tag_size):
+            if not self.is_difi10_standard_context_packet(cif, data_payload_fmt_data_item_fmt, data_payload_fmt_rpt_ind, data_payload_fmt_event_tag_size, data_payload_fmt_channel_tag_size):
                 raise NoncompliantDifiPacket("non-compliant DIFI standard context packet.", DifiInfo(packet_type=self.pkt_type, stream_id=self.stream_id, packet_size=self.pkt_size, class_id=self.class_id, reserved=self.reserved, tsm=self.tsm, tsf=self.tsf, cif0=cif, data_payload_fmt_pk_mh=data_payload_fmt_pk_mh, data_payload_fmt_real_cmp_type=data_payload_fmt_real_cmp_type, data_payload_fmt_data_item_fmt=data_payload_fmt_data_item_fmt, data_payload_fmt_rpt_ind=data_payload_fmt_rpt_ind, data_payload_fmt_event_tag_size=data_payload_fmt_event_tag_size, data_payload_fmt_channel_tag_size=data_payload_fmt_channel_tag_size))
 
             ##########################
@@ -228,17 +228,15 @@ class DifiStandardContextPacket():
     #standard context packet header
     def is_difi10_standard_context_packet_header(self, packet_type, packet_size, class_id, rsvd, tsm, tsf):
         return (packet_type == DIFI_STANDARD_FLOW_SIGNAL_CONTEXT
-            and packet_size == 18
+            and packet_size == DIFI_STANDARD_FLOW_SIGNAL_CONTEXT_SIZE_LEGACY
             and class_id == DIFI_CLASSID
             and rsvd == DIFI_RESERVED
             and tsm == DIFI_TSM_GENERAL_TIMING
             and tsf == DIFI_TSF_REALTIME_PICOSECONDS)
 
     #standard context packet
-    def is_difi10_standard_context_packet(self, cif, data_payload_fmt_pk_mh, data_payload_fmt_real_cmp_type, data_payload_fmt_data_item_fmt, data_payload_fmt_rpt_ind, data_payload_fmt_event_tag_size, data_payload_fmt_channel_tag_size):
-        return (data_payload_fmt_pk_mh == DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_PACKING_METHOD
-            and cif == 0x39a18000
-            and data_payload_fmt_real_cmp_type == DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_REAL_COMPLEX_TYPE
+    def is_difi10_standard_context_packet(self, cif, data_payload_fmt_data_item_fmt, data_payload_fmt_rpt_ind, data_payload_fmt_event_tag_size, data_payload_fmt_channel_tag_size):
+        return (cif == DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT_LEGACY
             and data_payload_fmt_data_item_fmt == DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT
             and data_payload_fmt_rpt_ind == DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_SAMPLE_COMPONENT_REPEAT_IND
             and data_payload_fmt_event_tag_size == DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_EVENT_TAG_SIZE
