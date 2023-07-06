@@ -95,11 +95,12 @@ def write_noncompliant_to_file(e: NoncompliantDifiPacket):
         #add date timestamp to difi info object before writing to file
         now = datetime.now(timezone.utc).strftime("%m/%d/%Y %r %Z")
         setattr(e.difi_info, "archive_date", now)
+
         append_item_to_json_file(fname, e.difi_info)
 
-    except Exception as e:
+    except Exception as err:
         print("error writing to non-compliant file [%s] -->" % fname)
-        pprint.pprint(e)
+        pprint.pprint(err)
 
     if DEBUG: print("added entry to '%s' [%s]\r\n%s" % (fname, e, e.difi_info.to_json()))
 
