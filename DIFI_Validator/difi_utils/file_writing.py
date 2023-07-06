@@ -14,7 +14,8 @@ DEBUG = False
 JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 
 def append_item_to_json_file(fname, entry):
-    new_item = entry.to_json(hex_values=True) # does json dumps, using hex for the fields that are better in hex
+    #new_item = entry.to_json(hex_values=True) # does json dumps, using hex for the fields that are better in hex
+    new_item = entry.to_json()
 
     if not os.path.isfile(fname):
         with open(fname, mode='w', encoding="utf-8") as f:
@@ -94,10 +95,9 @@ def write_noncompliant_to_file(e: NoncompliantDifiPacket):
         #add date timestamp to difi info object before writing to file
         now = datetime.now(timezone.utc).strftime("%m/%d/%Y %r %Z")
         setattr(e.difi_info, "archive_date", now)
-
         append_item_to_json_file(fname, e.difi_info)
 
-    except Exception:
+    except Exception as e:
         print("error writing to non-compliant file [%s] -->" % fname)
         pprint.pprint(e)
 
