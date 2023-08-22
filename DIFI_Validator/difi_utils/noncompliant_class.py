@@ -1,5 +1,6 @@
 from .difi_constants import *
 import json
+import os
 
 ############
 # class used to store non-compliance info for DIFI custom non-compliant exception and to write json object of info out to file
@@ -28,7 +29,7 @@ class DifiInfo():
         #################
         #standard context
         #################
-        if packet_type == DIFI_STANDARD_FLOW_SIGNAL_CONTEXT:
+        if packet_type == DIFI_STANDARD_FLOW_SIGNAL_CONTEXT and not os.getenv("LEGACY_MODE"):
             #stream id
             if stream_id is not None:
                 self.stream_id = stream_id
@@ -46,6 +47,30 @@ class DifiInfo():
             if cif0 is not None: self.context_indicator_field_0 = (("must be: 0x%07x -> was: 0x%07x" % (DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT, cif0)), DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT==cif0)
             if data_payload_fmt_pk_mh is not None: self.data_packet_payload_format_packing_method = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_PACKING_METHOD, data_payload_fmt_pk_mh)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_PACKING_METHOD==data_payload_fmt_pk_mh)
             if data_payload_fmt_real_cmp_type is not None: self.data_packet_payload_format_real_complex_type = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_REAL_COMPLEX_TYPE, data_payload_fmt_real_cmp_type)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_REAL_COMPLEX_TYPE==data_payload_fmt_real_cmp_type)
+            if data_payload_fmt_data_item_fmt is not None: self.data_packet_payload_format_data_item_format = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT, data_payload_fmt_data_item_fmt)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT==data_payload_fmt_data_item_fmt)
+            if data_payload_fmt_rpt_ind is not None: self.data_packet_payload_format_repeat_indicator = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_SAMPLE_COMPONENT_REPEAT_IND, data_payload_fmt_rpt_ind)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_SAMPLE_COMPONENT_REPEAT_IND==data_payload_fmt_rpt_ind)
+            if data_payload_fmt_event_tag_size is not None: self.data_packet_payload_format_event_tag_size = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_EVENT_TAG_SIZE, data_payload_fmt_event_tag_size)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_EVENT_TAG_SIZE==data_payload_fmt_event_tag_size)
+            if data_payload_fmt_channel_tag_size is not None: self.data_packet_payload_format_channel_tag_size = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_CHANNEL_TAG_SIZE, data_payload_fmt_channel_tag_size)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_CHANNEL_TAG_SIZE==data_payload_fmt_channel_tag_size)
+
+        #################
+        #standard context LEGACY
+        #################
+        if packet_type == DIFI_STANDARD_FLOW_SIGNAL_CONTEXT and os.getenv("LEGACY_MODE"):
+            #stream id
+            if stream_id is not None:
+                self.stream_id = stream_id
+            else:
+                self.stream_id = "no-stream-id"
+            #header
+            self.packet_type = ("0x%1x" % packet_type)
+            self.packet_type_display =  (("must be: 0x%1x, 0x%1x, 0x%1x -> was: 0x%1x" % (DIFI_STANDARD_FLOW_SIGNAL_CONTEXT, DIFI_VERSION_FLOW_SIGNAL_CONTEXT, DIFI_STANDARD_FLOW_SIGNAL_DATA_WITH_STREAMID, packet_type)), True)
+            if packet_size is not None: self.packet_size = (("must be: %d -> was: %d" % (DIFI_STANDARD_FLOW_SIGNAL_CONTEXT_SIZE_LEGACY, packet_size)), DIFI_STANDARD_FLOW_SIGNAL_CONTEXT_SIZE_LEGACY==packet_size)
+            if class_id is not None: self.class_id = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_CLASSID, class_id)), DIFI_CLASSID==class_id)
+            if reserved is not None: self.reserved = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_RESERVED, reserved)), DIFI_RESERVED==reserved)
+            if tsm is not None: self.tsm = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_TSM_GENERAL_TIMING, tsm)), DIFI_TSM_GENERAL_TIMING==tsm)
+            if tsf is not None: self.tsf = (("must be: 0x%1x -> was: 0x%1x" % (DIFI_TSF_REALTIME_PICOSECONDS, tsf)), DIFI_TSF_REALTIME_PICOSECONDS==tsf)
+            #packet
+            if cif0 is not None: self.context_indicator_field_0 = (("must be: 0x%07x -> was: 0x%07x" % (DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT_LEGACY, cif0)), DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT_LEGACY==cif0)
             if data_payload_fmt_data_item_fmt is not None: self.data_packet_payload_format_data_item_format = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT, data_payload_fmt_data_item_fmt)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT==data_payload_fmt_data_item_fmt)
             if data_payload_fmt_rpt_ind is not None: self.data_packet_payload_format_repeat_indicator = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_SAMPLE_COMPONENT_REPEAT_IND, data_payload_fmt_rpt_ind)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_SAMPLE_COMPONENT_REPEAT_IND==data_payload_fmt_rpt_ind)
             if data_payload_fmt_event_tag_size is not None: self.data_packet_payload_format_event_tag_size = (("must be: %d -> was: %d" % (DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_EVENT_TAG_SIZE, data_payload_fmt_event_tag_size)), DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_EVENT_TAG_SIZE==data_payload_fmt_event_tag_size)

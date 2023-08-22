@@ -51,7 +51,12 @@ from difi_utils.custom_error_types import *
 from difi_utils.file_writing import *
 from difi_utils.noncompliant_class import DifiInfo
 from difi_utils.difi_data_packet_class import DifiDataPacket
-from difi_utils.difi_context_packet_class import DifiStandardContextPacket
+if os.getenv("LEGACY_MODE"):
+    print("Running in Legacy Mode!")
+    time.sleep(1)
+    from difi_utils.legacy_difi_context_packet_class import DifiStandardContextPacket
+else:
+    from difi_utils.difi_context_packet_class import DifiStandardContextPacket
 from difi_utils.difi_version_packet_class import DifiVersionContextPacket
 
 ##########

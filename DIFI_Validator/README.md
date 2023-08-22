@@ -18,11 +18,23 @@ See the [Docker README](docker/README.md) for instructions on running webgui.py 
 
 For questions/comments on the Validator tool, reach out to Marc.
 
+# Running a PCAP through the Validator
+
+```bash
+cd DIFI_Validator
+sudo pip install -r requirements.txt
+export DIFI_RX_MODE=pcap
+export PCAP_FILE=/path/to/your/pcap/filename.pcap
+python drx.py
+```
+
+Optionally, `export LEGACY_MODE=True`
+
 # Basic Tutorial
 
 In one terminal, run the web GUI component:
 
-```
+```bash
 cd DIFI_Validator
 sudo pip install -r requirements.txt
 python webgui.py
@@ -34,7 +46,7 @@ Now open a browser to http://127.0.0.1:5000 and you should see the web UI:
 
 In a second terminal, run the drx.py component:
 
-```
+```bash
 cd DIFI_Validator
 python drx.py
 ```
