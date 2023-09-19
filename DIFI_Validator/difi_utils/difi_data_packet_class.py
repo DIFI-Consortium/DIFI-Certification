@@ -3,6 +3,7 @@ import struct
 from io import BytesIO
 import json
 import os
+import numpy as np
 
 from difi_utils.difi_constants import *
 from difi_utils.custom_error_types import *
@@ -18,6 +19,7 @@ if os.getenv("SAVE_IQ"):
 else:
     SAVE_IQ = False
 
+
 class DifiDataPacket():
     """
     DIFI Data Packet.
@@ -26,7 +28,7 @@ class DifiDataPacket():
     :param stream: raw data stream of bytes to decode
     """
 
-    def __init__(self, stream: BytesIO):
+    def __init__(self, stream: BytesIO, return_iq=False):
 
         ##############################
         # decode 32bit header (4 bytes)
@@ -142,7 +144,6 @@ class DifiDataPacket():
 
                 # Save IQ samples to a file if enabled
                 if SAVE_IQ:
-                    import numpy as np
                     data_type = np.int8 # CURRENTLY THIS HAS TO BE MANUALLY SET!
                     f_out_name = '/tmp/samples.iq'
                     signal_bytes = context_data[24:]
@@ -150,6 +151,12 @@ class DifiDataPacket():
                     f_out = open(f_out_name, 'ab') # APPEND, MAKE SURE TO DELETE OR RENAME THE FILE
                     samples.tofile(f_out) # its creating a binary IQ file
                     f_out.close()
+
+                # Added for the streaming functionality
+                if return_iq:
+                    data_type = np.int8 # CURRENTLY THIS HAS TO BE MANUALLY SET!
+                    self.samples = np.frombuffer(context_data[24:], dtype=data_type) # MAKE SURE THIS MATCHES THE DATA ITEM SIZE FIELD IN TEH CONTEXT PACKET!
+
 
                 #self.payload_raw_data = context_data[24:]  #str(context_data[24:]) for json
                 #self.payload_raw_hex_data = context_data[24:].hex()

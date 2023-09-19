@@ -222,10 +222,10 @@ class DifiStandardContextPacket():
 
     #standard context packet
     def is_difi10_standard_context_packet(self, cif, data_payload_fmt_data_item_fmt, data_payload_fmt_rpt_ind, data_payload_fmt_event_tag_size, data_payload_fmt_channel_tag_size):
-        return (cif == DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT_LEGACY
-            and data_payload_fmt_data_item_fmt == DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT
+        return (data_payload_fmt_data_item_fmt == DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_DATA_ITEM_FORMAT
             and data_payload_fmt_rpt_ind == DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_SAMPLE_COMPONENT_REPEAT_IND
             and data_payload_fmt_event_tag_size == DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_EVENT_TAG_SIZE
             and data_payload_fmt_channel_tag_size == DIFI_DATA_PACKET_PAYLOAD_FORMAT_FIELD_CHANNEL_TAG_SIZE)
+            # and cif == DIFI_CONTEXT_INDICATOR_FIELD_STANDARD_FLOW_CONTEXT_LEGACY)
 
 
