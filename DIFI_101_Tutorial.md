@@ -2,7 +2,7 @@
 
 ## What is DIFI
 
-The DIFI Packet Protocol, technically referred to as "IEEE-ISTO Std 4900-2021:  Digital IF Interoperability Standard", defines a data plane interface meant for transmitting and receive digitized IF data (such as IQ samples) and corresponding metadata over standard IP networks. Even though it is called an IF standard, IQ samples at baseband can also be streamed with DIFI.  The DIFI interface is designed to be fully compliant with the widely used VITA 49.2 standard, VITA 49 is a very flexible standard, and DIFI is a specific VITA 49 schema.  By creating a specific schema of VITA 49.2, interoperability between devices and software is more achievable.  The primary use-case of DIFI packets is to create an interface between satellite ground station digitizers (transceivers) and software modems, enabling interoperability and combatting vendor lock-in that has plagued the satellite industry for decades.  The DIFI packet protocol can also be used for other purposes, including applications that don't involve satellites or even hardware, such as streaming an RF signal between different software applications.  The DIFI standard is currently being created by the [DIFI Consortium](https://dificonsortium.org/), although version 1 of the standard has been locked in, and contains all of the functionality we will discuss in this tutorial. 
+The DIFI Packet Protocol, technically referred to as "IEEE-ISTO Std 4900-2021:  Digital IF Interoperability Standard", defines a data plane interface meant for transmitting and receiving digitized IF data (such as IQ samples) and corresponding metadata over standard IP networks. Even though it is called an IF standard, IQ samples at baseband can also be streamed with DIFI.  The DIFI interface is designed to be fully compliant with the widely used VITA 49.2 standard, VITA 49 is a very flexible standard, and DIFI is a specific VITA 49 schema.  By creating a specific schema of VITA 49.2, interoperability between devices and software is more achievable.  The primary use-case of DIFI packets is to create an interface between satellite ground station digitizers (transceivers) and software modems, enabling interoperability and combatting vendor lock-in that has plagued the satellite industry for decades.  The DIFI packet protocol can also be used for other purposes, including applications that don't involve satellites or even hardware, such as streaming an RF signal between different software applications.  The DIFI standard is currently being created by the [DIFI Consortium](https://dificonsortium.org/), although version 1 of the standard has been locked in, and contains all of the functionality we will discuss in this tutorial. 
 
 ![](images/difi-consortium-logo.png)
 
@@ -24,7 +24,7 @@ There are multiple ways you can use DIFI in your application.  If you are using 
 
 We will now create an example DIFI signal data packet in Python, without requiring any dependencies other than numpy and matplotlib, to demonstrate how it works.
 
-For reference, and because the DIFI specifications are behind a pay-wall, the signal data packet structure is depicted below, using 4 bytes per line:
+For reference, the signal data packet structure is depicted below, using 4 bytes per line:
 
 ```
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -35,6 +35,32 @@ For reference, and because the DIFI specifications are behind a pay-wall, the si
 |    Pad  |  Res|                      OUI                      |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |           Info Class          |          Packet Class         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      Integer Sec Timestamp                    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                  Fractional-Seconds Timestamp                 |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+|                                                               |
+|                                                               |
+|       Signal Data Payload Complex 4-16 bit signed N Words     |
+|                                                               |
+|                                                               |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+And according to version 1.1, this is how a valid DIFI signal data packet should look like:
+```
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|0 0 0 1|1|0 0 0|TSI|1 0|Seq Num|    Packet Size = N+7 Words    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      Stream ID = variable                     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| 0 0 0 0 0 0 0 0 |                 OUI = 0x6A621E              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     Info Class = 0x0000     |      Packet Class = 0x0000      |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                      Integer Sec Timestamp                    |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -102,7 +128,7 @@ difi_packet.extend(bytearray.fromhex(packet_timestamp))
 
 difi_packet.extend(bytearray.fromhex("0000000000000001")) # Fractional Timestamp
 
-for _ in range(0,201-7): # header is 7 words
+for _ in range(0, 201-7): # header is 7 words
     difi_packet.extend(bytearray(b'\xFF\xFF')) # 16 bits of ones
     difi_packet.extend(bytearray(b'\x00\x00')) # 16 bits of zeros
 
