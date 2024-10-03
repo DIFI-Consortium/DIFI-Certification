@@ -15,7 +15,7 @@ The Packet validator is a collection of [Python](https://www.python.org/ "Python
 The [GNU Radio](https://www.gnuradio.org/ "GNU Radio") out of tree blocks consist of a "Data" packet Source and Sink blocks and can be found in [gr-difi](https://github.com/DIFI-Consortium/gr-difi "gr-difi"). The collection of GNU Radio blocks were part of [gr-azure](https://github.com/microsoft/gr-azure "gr-azure") and released as open source by [Microsoft](https://www.Microsoft.com/ "Microsoft") to the DIFI Consortium.
 
 ### DIFI Wireshark Dissector 
-The DIFI Wireshark Dissector is a LUA plugin created for [Wireshark](https://www.wireshark.org/ "Wireshark") that allows for packet inspection of DIFI Standard Context, Standard Data and Version Context packets. The plug-in was created by [Johanna Rivera](https://github.com/jo-rivera).
+The DIFI Wireshark Dissector is a LUA plugin created for [Wireshark](https://www.wireshark.org/ "Wireshark") that allows for packet inspection of DIFI Standard Context, Standard Data and Version Context packets. The plug-in was created by [Johanna Rivera](https://github.com/jo-rivera). The dissector supports DIFI 1.2 (2024).
 
 ### DIFI Tutorial ([DIFI 101](https://github.com/DIFI-Consortium/DIFI-Certification/blob/main/DIFI_101_Tutorial.md "DIFI 101"))
 The tutorial section is a collection of educational material that describe DIFI packets and include hands on examples to familiarize the reader with DIFI.  
