@@ -20,9 +20,6 @@ The DIFI Wireshark Dissector is a LUA plugin created for [Wireshark](https://www
 ### DIFI Tutorial ([DIFI 101](https://github.com/DIFI-Consortium/DIFI-Certification/blob/main/DIFI_101_Tutorial.md "DIFI 101"))
 The tutorial section is a collection of educational material that describe DIFI packets and include hands on examples to familiarize the reader with DIFI.  
 
-### DIFI Certification software (Coming soon)
-DIFI Certification software is a container based tool suite that allows for 1P & 3P certification of DIFI compliant devices and software.
-
 ## Using Git and GitHub
 
 GitHub is a code hosting platform, great for version control and collaboration.  It uses Git under the hood, but you don't have to be an expert in Git to make changes to a page.
