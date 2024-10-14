@@ -92,6 +92,7 @@ if os.getenv("PCAP_FILE"):
 # Process packet received
 ################
 def process_data(data: Union[bytes,BytesIO], timestamp=None, count=None):
+    stream_id = ""
     if data is None:
         print("packet received, but data empty.")
         return
@@ -132,17 +133,17 @@ def process_data(data: Union[bytes,BytesIO], timestamp=None, count=None):
         pkt.pcap_index = count
 
         if VERBOSE or DEBUG: print("-----------------\r\n-- packet --\r\n-----------------\r\n%s\r\n\r\n%s" % (pkt.to_json(JSON_AS_HEX), str(pkt)))
-        write_compliant_count_to_file() # update 'compliant' archive files
+        write_compliant_count_to_file(stream_id) # update 'compliant' archive files
         if LOG_PACKET:
-            write_compliant_to_file(pkt)
+            write_compliant_to_file(stream_id, pkt)
 
         return pkt # drx.py doesnt use the return but external uses of this function might
 
     except NoncompliantDifiPacket as e:
-        write_noncompliant_to_file(e) # update 'non-compliant' archive files
+        write_noncompliant_to_file(stream_id, e) # update 'non-compliant' archive files
         if VERBOSE or DEBUG: print(e.message)
         if VERBOSE or DEBUG: print("--> not DIFI compliant, packet not decoded:\r\n%s" % e.difi_info.to_json())
-        write_noncompliant_count_to_file()
+        write_noncompliant_count_to_file(stream_id)
     except InvalidDataReceived as e:
         print("---------------")
         pprint.pprint(e)

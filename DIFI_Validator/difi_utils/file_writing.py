@@ -16,6 +16,19 @@ from difi_utils.difi_version_packet_class import DifiVersionContextPacket
 DEBUG = False
 JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 
+DIFI_CACHE_HOME = "./"
+if os.getenv("DIFI_CACHE_HOME") != "":
+    DIFI_CACHE_HOME = os.getenv("DIFI_CACHE_HOME") + "/"
+
+def format_stream_id(stream_id):
+    if os.getenv("FILES_INCLUDE_STREAMID"):
+        if str(stream_id) == "":
+            return "no-stream-id"
+        else:
+            return "%08x" % stream_id
+    else:
+        return ""
+
 def append_item_to_json_file(fname, entry):
     #new_item = entry.to_json(hex_values=True) # does json dumps, using hex for the fields that are better in hex
     new_item = entry.to_json()
@@ -38,23 +51,23 @@ def append_item_to_json_file(fname, entry):
             # now add the new entry
             f.write(',\n' + new_item + '\n]')
 
-def write_compliant_to_file(packet: Union[DifiStandardContextPacket, DifiVersionContextPacket, DifiDataPacket]):
+def write_compliant_to_file(stream_id, packet: Union[DifiStandardContextPacket, DifiVersionContextPacket, DifiDataPacket]):
     if type(packet) not in (DifiStandardContextPacket, DifiVersionContextPacket, DifiDataPacket):
         print("packet type '%s' not allowed.\r\n" % (type(packet).__name__))
         return
     try:
         if type(packet) is DifiStandardContextPacket:
-            fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_STANDARD_CONTEXT, DIFI_FILE_EXTENSION)
+            fname = "%s%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_COMPLIANT_FILE_PREFIX, DIFI_STANDARD_CONTEXT, format_stream_id(stream_id), DIFI_FILE_EXTENSION)
         elif type(packet) is DifiVersionContextPacket:
-            fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_VERSION_CONTEXT, DIFI_FILE_EXTENSION)
+            fname = "%s%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_COMPLIANT_FILE_PREFIX, DIFI_VERSION_CONTEXT, format_stream_id(stream_id), DIFI_FILE_EXTENSION)
         elif type(packet) is DifiDataPacket:
-            fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_DATA, DIFI_FILE_EXTENSION)
+            fname = "%s%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_COMPLIANT_FILE_PREFIX, DIFI_DATA, format_stream_id(stream_id), DIFI_FILE_EXTENSION)
         else:
             raise Exception("context packet type unknown")
 
         
         #add date timestamp to packet object before writing to file
-        now = datetime.now(timezone.utc).strftime("%m/%d/%Y %r %Z")
+        now = datetime.now(timezone.utc).isoformat()
         setattr(packet, "archive_date", now)
 
         append_item_to_json_file(fname, packet)
@@ -66,9 +79,9 @@ def write_compliant_to_file(packet: Union[DifiStandardContextPacket, DifiVersion
     if DEBUG: print("added last decoded '%s' to '%s'.\r\n" % (type(packet).__name__, fname))
 
 
-def write_compliant_count_to_file():
+def write_compliant_count_to_file(stream_id):
     try:
-        fname = "%s%s" % (DIFI_COMPLIANT_COUNT_FILE_PREFIX, DIFI_FILE_EXTENSION)
+        fname = "%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_COMPLIANT_COUNT_FILE_PREFIX, format_stream_id(stream_id), DIFI_FILE_EXTENSION)
         with open(fname, 'a+', encoding="utf-8") as f:
             f.seek(0)
             c = 0
@@ -78,7 +91,7 @@ def write_compliant_count_to_file():
                 c = int(entry[0])
             c = c + 1
             #add date timestamp when writing to file
-            now = datetime.now(timezone.utc).strftime("%m/%d/%Y %r %Z")
+            now = datetime.now(timezone.utc).isoformat()
             out = "%s#%s" % (str(c), now)
             f.seek(0)
             f.truncate()
@@ -89,14 +102,14 @@ def write_compliant_count_to_file():
 
     if DEBUG: print("incremented entry in '%s'.\r\n" % (fname))
 
-def write_noncompliant_to_file(e: NoncompliantDifiPacket):
+def write_noncompliant_to_file(stream_id, e: NoncompliantDifiPacket):
     try:
-        fname = "%s%s" % (DIFI_NONCOMPLIANT_FILE_PREFIX, DIFI_FILE_EXTENSION)
+        fname = "%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_NONCOMPLIANT_FILE_PREFIX, format_stream_id(stream_id), DIFI_FILE_EXTENSION)
 
-        #last_modified = datetime.fromtimestamp(os.stat(fname).st_mtime, tz=timezone.utc).strftime('%m/%d/%Y %r %Z')
+        #last_modified = datetime.fromtimestamp(os.stat(fname).st_mtime, tz=timezone.utc).isoformat()
 
         #add date timestamp to difi info object before writing to file
-        now = datetime.now(timezone.utc).strftime("%m/%d/%Y %r %Z")
+        now = datetime.now(timezone.utc).isoformat()
         setattr(e.difi_info, "archive_date", now)
 
         append_item_to_json_file(fname, e.difi_info)
@@ -108,9 +121,9 @@ def write_noncompliant_to_file(e: NoncompliantDifiPacket):
     if DEBUG: print("added entry to '%s' [%s]\r\n%s" % (fname, e, e.difi_info.to_json()))
 
 
-def write_noncompliant_count_to_file():
+def write_noncompliant_count_to_file(stream_id):
     try:
-        fname = "%s%s" % (DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX, DIFI_FILE_EXTENSION)
+        fname = "%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX, format_stream_id(stream_id), DIFI_FILE_EXTENSION)
         with open(fname, 'a+', encoding="utf-8") as f:
             f.seek(0)
             c = 0
@@ -120,7 +133,7 @@ def write_noncompliant_count_to_file():
                 c = int(entry[0])
             c = c + 1
             #add date timestamp when writing to file
-            now = datetime.now(timezone.utc).strftime("%m/%d/%Y %r %Z")
+            now = datetime.now(timezone.utc).isoformat()
             out = "%s#%s" % (str(c), now)
             f.seek(0)
             f.truncate()
@@ -134,7 +147,7 @@ def write_noncompliant_count_to_file():
 
 def clear_all_difi_files():
     try:
-        with os.scandir() as directory:
+        with os.scandir(path=DIFI_CACHE_HOME) as directory:
             for entry in directory:
                 if entry.is_file():
                     if entry.name.startswith(DIFI_COMPLIANT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
@@ -150,7 +163,7 @@ def clear_all_difi_files():
 
 def delete_all_difi_files():
     try:
-        with os.scandir() as directory:
+        with os.scandir(path=DIFI_CACHE_HOME) as directory:
             for entry in directory:
                 if entry.is_file():
                     if entry.name.startswith(DIFI_COMPLIANT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):

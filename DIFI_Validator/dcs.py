@@ -135,6 +135,16 @@ FIELDS={}
 
 
 ###########
+# helper functions
+###########
+def boolean_value(MAP, field_name):
+    res = "0"
+    if field_name in MAP:
+        if MAP[field_name] == "1" or MAP[field_name] == "true" or MAP[field_name] == "True" or MAP[field_name] == True:
+            res = "1"
+    return res
+
+###########
 # primary function
 ###########
 def send_difi_compliant_standard_context_packet(count: int = 0):
@@ -309,14 +319,14 @@ def send_difi_compliant_standard_context_packet(count: int = 0):
     # 29 17 Reference Lock Indicator
     # "000A0000"
     sei_bits = "000000000000%s%s%s%s%s%s%s%s000000000000" % (
-            "1" if "--sei-bit19" in FIELDS else "0",
-            "1" if "--sei-bit18" in FIELDS else "0",
-            "1" if "--sei-bit17" in FIELDS else "0",
-            "1" if "--sei-bit16" in FIELDS else "0",
-            "1" if "--sei-bit15" in FIELDS else "0",
-            "1" if "--sei-bit14" in FIELDS else "0",
-            "1" if "--sei-bit13" in FIELDS else "0",
-            "1" if "--sei-bit12" in FIELDS else "0")
+            boolean_value(FIELDS, "--sei-bit19"),
+            boolean_value(FIELDS, "--sei-bit18"),
+            boolean_value(FIELDS, "--sei-bit17"),
+            boolean_value(FIELDS, "--sei-bit16"),
+            boolean_value(FIELDS, "--sei-bit15"),
+            boolean_value(FIELDS, "--sei-bit14"),
+            boolean_value(FIELDS, "--sei-bit13"),
+            boolean_value(FIELDS, "--sei-bit12"))
     packetchunk = bytearray.fromhex("{0:08x}".format(int(sei_bits,2)) if sei_bits != "00000000000000000000000000000000" else "000A0000")
     # State and Event Indicators
     difi_packet.extend(packetchunk)
@@ -386,15 +396,18 @@ def send_difi_compliant_standard_context_packet(count: int = 0):
     # Debug output hex
     if not SILENT and DEBUG:
         a_string = difi_packet.hex()
+        print("Packet output: ", end='')
 
         #split_strings = []
         n  = 8
         for index in range(0, len(a_string), n):
-            print(a_string[index : index + n])
+            print(a_string[index : index + n], end='')
             #split_strings.append(a_string[index : index + n])
 
         # Debug Hex
         #print(split_strings)
+
+        print()
 
 
 async def _send_loop():
@@ -560,14 +573,14 @@ def main():
 \r\n --ts-calibration <0-4294967296 (32bit unsigned int) representing seconds>\
 \
 \r\n\r\n State and Event Indicators packet field values:\
-\r\n --sei-bit19 <1=indicated, 0=not indicated> (Calibrated Time Indicator)\
-\r\n --sei-bit18 <1=indicated, 0=not indicated> (Valid Data Indicator)\
-\r\n --sei-bit17 <1=indicated, 0=not indicated> (Reference Lock Indicator)\
-\r\n --sei-bit16 <1=indicated, 0=not indicated> (AGC/MGC Indicator)\
-\r\n --sei-bit15 <1=indicated, 0=not indicated> (Detected Signal Indicator)\
-\r\n --sei-bit14 <1=indicated, 0=not indicated> (Spectral Inversion Indicator)\
-\r\n --sei-bit13 <1=indicated, 0=not indicated> (Over-range Indicator)\
-\r\n --sei-bit12 <1=indicated, 0=not indicated> (Sample Loss Indicator)\
+\r\n --sei-bit19 <1/true=indicated, 0/false=not indicated> (Calibrated Time Indicator)\
+\r\n --sei-bit18 <1/true=indicated, 0/false=not indicated> (Valid Data Indicator)\
+\r\n --sei-bit17 <1/true=indicated, 0/false=not indicated> (Reference Lock Indicator)\
+\r\n --sei-bit16 <1/true=indicated, 0/false=not indicated> (AGC/MGC Indicator)\
+\r\n --sei-bit15 <1/true=indicated, 0/false=not indicated> (Detected Signal Indicator)\
+\r\n --sei-bit14 <1/true=indicated, 0/false=not indicated> (Spectral Inversion Indicator)\
+\r\n --sei-bit13 <1/true=indicated, 0/false=not indicated> (Over-range Indicator)\
+\r\n --sei-bit12 <1/true=indicated, 0/false=not indicated> (Sample Loss Indicator)\
 \r\n   note: bit17 and bit19 default to indicated if none are supplied\
 \
 \r\n\r\n Data Packet Payload Format packet field values:\

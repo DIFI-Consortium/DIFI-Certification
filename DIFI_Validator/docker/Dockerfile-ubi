@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 # syntax=docker/dockerfile:1
 
-ARG DISTRO=python:3.9-alpine
+ARG DISTRO=redhat/ubi8-minimal:8.10
 
 FROM $DISTRO
 
@@ -57,8 +57,12 @@ ENV FLASK_APP=webgui.py
 ENV FLASK_RUN_HOST=0.0.0.0
 
 # install in docker container
-RUN apk add --no-cache gcc g++ make musl-dev linux-headers ca-certificates bash && \
-    adduser --disabled-password --gecos "" --home=/home/difi --uid $UID $USER
+RUN microdnf update -y --nodocs && \
+    microdnf install -y --nodocs python39 python39-devel shadow-utils gcc && \
+    microdnf clean all && \
+    rm -rf /var/cache/dnf && \
+    mkdir -p /local/wheels && \
+    useradd -c "" -d /home/difi --uid $UID $USER
 
 # set working dir
 ENV FOLDER=/code

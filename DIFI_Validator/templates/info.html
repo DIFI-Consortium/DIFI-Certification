@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<title>DIFI Packet Checker</title>
+		<title>DIFI Validator</title>
 
 		<style>
 			/* tr */
@@ -73,7 +73,7 @@
 				<th class="h">Name</th><th class="h">Description</th><th class="h">Start Time</th><th class="h">Version</th>
 				
 				<tr class="r">
-					<td class="d"><b>{{info["name"]}}</b></td><td class="d">{{info["description"]}}</td><td class="d">{{info["startTime"]}}</td><td class="d">{{info["version"]["major"]}}.{{info["version"]["minor"]}}.{{info["version"]["patch"]}}.{{info["version"]["build"]}}</td>
+					<td class="d"><b>{{info["name"]}}</b></td><td class="d">{{info["description"]}}</td><td class="d localtime">{{info["startTime"]}}</td><td class="d">{{info["version"]["major"]}}.{{info["version"]["minor"]}}.{{info["version"]["patch"]}}.{{info["version"]["build"]}}</td>
 				</tr>
 			</table>
 
