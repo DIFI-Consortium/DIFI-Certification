@@ -87,5 +87,5 @@ COPY --chown=0:0 templates/*.html templates/
 # starts socket server drx.py - listening for difi packets from device
 RUN chmod 555 start.sh drx.py
 USER $UID
-CMD ./start.sh $FLASK_DEPLOY_ENV
+CMD ["./start.sh", "$FLASK_DEPLOY_ENV"]
 
