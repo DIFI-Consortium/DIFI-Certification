@@ -93,6 +93,9 @@ if os.getenv("PCAP_FILE"):
 ################
 def process_data(data: Union[bytes,BytesIO], timestamp=None, count=None):
     stream_id = ""
+    if is_receive_enabled() == False:
+        print("received packet while receive is disabled.")
+        return
     if data is None:
         print("packet received, but data empty.")
         return

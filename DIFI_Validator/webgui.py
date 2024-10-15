@@ -730,6 +730,8 @@ def send_standard_context_packets():
                 data = request.get_json();
 
                 settings_data = get_settings()
+                if settings_data["transmitEnabled"] == False:
+                    return jsonify(error_code=400, message="Unable to submit packet while transmit is disabled."), 400
                 if not "address" in data:
                     data["address"] = settings_data["transmitHost"];
                 if not "port" in data:
@@ -824,6 +826,8 @@ def send_version_context_packets():
                 data = request.get_json();
 
                 settings_data = get_settings()
+                if settings_data["transmitEnabled"] == False:
+                    return jsonify(error_code=400, message="Unable to submit packet while transmit is disabled."), 400
                 if not "address" in data:
                     data["address"] = settings_data["transmitHost"];
                 if not "port" in data:
@@ -920,6 +924,8 @@ def send_signal_data_packets():
                 data = request.get_json();
 
                 settings_data = get_settings()
+                if settings_data["transmitEnabled"] == False:
+                    return jsonify(error_code=400, message="Unable to submit packet while transmit is disabled."), 400
                 if not "address" in data:
                     data["address"] = settings_data["transmitHost"];
                 if not "port" in data:
@@ -1229,6 +1235,8 @@ def get_difi_openapi_settings():
     """
 
     settings_data = get_settings()
+    receiveEnabled = settings_data["receiveEnabled"];
+    transmitEnabled = settings_data["transmitEnabled"];
     transmitHost = settings_data["transmitHost"];
     transmitPort = settings_data["transmitPort"];
 
@@ -1263,6 +1271,7 @@ def get_difi_openapi_settings():
 
             data = {
                 "drx": {
+                    "difiRxEnabled": receiveEnabled,
                     "difiRxPort": drx_port,
                     "difiRxMode": drx_mode,
                     "difiRxHost": drx_host,
@@ -1276,6 +1285,7 @@ def get_difi_openapi_settings():
                     "runtimePort": flask_runtime_port
                     },
                 "transmit": {
+                    "difiTxEnabled": transmitEnabled,
                     "difiTxHost": transmitHost,
                     "difiTxPort": transmitPort
                     }
@@ -1317,7 +1327,14 @@ def get_difi_openapi_settings():
             changed = 0
 
             data = request.get_json();
+            if "drx" in data:
+                if "difiRxEnabled" in data["drx"]:
+                    settings_data["receiveEnabled"] = data["drx"]["difiRxEnabled"];
+                    changed = 1
             if "transmit" in data:
+                if "difiTxEnabled" in data["transmit"]:
+                    settings_data["transmitEnabled"] = data["transmit"]["difiTxEnabled"];
+                    changed = 1
                 if "difiTxHost" in data["transmit"]:
                     settings_data["transmitHost"] = data["transmit"]["difiTxHost"];
                     changed = 1

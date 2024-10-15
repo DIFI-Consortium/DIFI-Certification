@@ -16,9 +16,17 @@ from difi_utils.difi_version_packet_class import DifiVersionContextPacket
 DEBUG = False
 JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 
+CONFIG_SETTINGS = "config.json"
 DIFI_CACHE_HOME = "./"
 if os.getenv("DIFI_CACHE_HOME") != "":
     DIFI_CACHE_HOME = os.getenv("DIFI_CACHE_HOME") + "/"
+
+def is_receive_enabled():
+    fname = "%s%s" % (DIFI_CACHE_HOME, CONFIG_SETTINGS)
+    if os.path.isfile(fname):
+        with open(fname, 'r', encoding="utf-8") as f:
+            return json.load(f)["receiveEnabled"]
+    return True
 
 def format_stream_id(stream_id):
     if os.getenv("FILES_INCLUDE_STREAMID"):

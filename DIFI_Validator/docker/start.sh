@@ -14,7 +14,7 @@ HOME=/tmp; export HOME
 FILES_INCLUDE_STREAMID=yes; export FILES_INCLUDE_STREAMID
 
 # create starter config item
-echo '{"transmitHost":"localhost","transmitPort":4991}' > /tmp/config.json
+echo '{"transmitEnabled":true,"transmitHost":"localhost","transmitPort":4991,"receiveEnabled":true}' > /tmp/config.json
 
 # start difi receiver server
 python3 drx.py &
