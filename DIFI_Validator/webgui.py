@@ -48,6 +48,7 @@ DIFI_CACHE_HOME = "./"
 if os.getenv("DIFI_CACHE_HOME") != "":
     DIFI_CACHE_HOME = os.getenv("DIFI_CACHE_HOME") + "/"
 CONFIG_SETTINGS = "config.json"
+VERSION_INFO = "version-info.json"
 
 #openapi
 DIFI_NAME = "DIFI Validator"
@@ -198,6 +199,20 @@ def get_settings():
     fname = "%s%s" % (DIFI_CACHE_HOME, CONFIG_SETTINGS)
     with open(fname, 'r', encoding="utf-8") as f:
         return json.load(f)
+
+def get_version_info():
+    fname =VERSION_INFO
+    if os.path.isfile(fname):
+        with open(fname, 'r', encoding="utf-8") as f:
+            return json.load(f)
+
+    default_version = {
+        "major": DIFI_VERSION_MAJOR,
+        "minor": DIFI_VERSION_MINOR,
+        "patch": DIFI_VERSION_PATCH,
+        "build": DIFI_VERSION_BUILD
+    }
+    return default_version
 
 def get_difi_noncompliant_file_stream_ids() -> dict:
 
@@ -1028,11 +1043,7 @@ def get_difi_openapi_info():
         data = {
             "name": DIFI_NAME,
             "description": DIFI_DESCRIPTION,
-            "version": {
-                "major": DIFI_VERSION_MAJOR,
-                "minor": DIFI_VERSION_MINOR,
-                "patch": DIFI_VERSION_PATCH,
-                "build": DIFI_VERSION_BUILD}
+            "version": get_version_info()
         }
 
         if is_template_route(request.url_rule):

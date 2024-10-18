@@ -28,6 +28,10 @@ ARG USER=cnfuser
 ARG UID=1234
 ENV USER=$USER
 ENV UID=$UID
+ARG DIFI_VERSION_MAJOR=1
+ARG DIFI_VERSION_MINOR=1
+ARG DIFI_VERSION_PATCH=0
+ARG DIFI_VERSION_BUILD=0
 
 # store local cache in /tmp
 ENV DIFI_CACHE_HOME=/tmp
@@ -85,7 +89,8 @@ COPY --chown=0:0 templates/*.html templates/
 
 # starts flask server webgui.py - listening for http calls for gui
 # starts socket server drx.py - listening for difi packets from device
-RUN chmod 555 start.sh drx.py
+RUN chmod 555 start.sh drx.py && \
+/bin/echo "{\"major\":$DIFI_VERSION_MAJOR,\"minor\":$DIFI_VERSION_MINOR,\"patch\":$DIFI_VERSION_PATCH,\"build\":\"$DIFI_VERSION_BUILD\"}" > /code/version-info.json
 USER $UID
 CMD ["./start.sh", "$FLASK_DEPLOY_ENV"]
 
