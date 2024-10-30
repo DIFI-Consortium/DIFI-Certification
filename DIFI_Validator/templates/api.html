@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<title>DIFI Packet Checker</title>
+		<title>DIFI Validator</title>
 
 		<style>
 			/* tr */
@@ -60,7 +60,11 @@
 				<th class="h">Endpoint</th><th class="h">Description</th>
 				{% for key, value in api.items() %}
 				<tr class="r">
+					{% if '<' in key %}
 					<td class="dl"><b>{{key}}</b></td><td class="dl2">{{value}}</td>
+					{% else %}
+					<td class="dl"><b><a href="{{key}}">{{key}}</a></b></td><td class="dl2">{{value}}</td>
+					{% endif %}
 				</tr>
 				{% endfor %}
 			</table>

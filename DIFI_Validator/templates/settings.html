@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<title>DIFI Packet Checker</title>
+		<title>DIFI Validator</title>
 
 		<style>
 			/* tr */
@@ -73,13 +73,11 @@
 				
 				<th class="h">Setting</th><th class="h">Value</th>
 				
-				{% for item in value %}
-                    {% for key2, value2 in item.items() %}
+                    {% for key2, value2 in value.items() %}
                     <tr class="r">
                         <td class="dl"><b>{{key2}}</b></td><td class="d">{{value2}}</td>
                     </tr>
                     {% endfor %}
-				{% endfor %}
 			</table>
             <br/>
             {% endfor %}

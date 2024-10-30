@@ -259,15 +259,18 @@ def send_difi_compliant_version_context_packet(count: int = 0):
     # Debug output hex
     if not SILENT and DEBUG:
         a_string = difi_packet.hex()
+        print("Packet output: ", end='')
 
         #split_strings = []
         n  = 8
         for index in range(0, len(a_string), n):
-            print(a_string[index : index + n])
+            print(a_string[index : index + n], end='')
             #split_strings.append(a_string[index : index + n])
 
         # Debug Hex
         #print(split_strings)
+
+        print()
 
 
 async def _send_loop():
