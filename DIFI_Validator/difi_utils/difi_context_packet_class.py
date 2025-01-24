@@ -140,10 +140,10 @@ class DifiStandardContextPacket():
             #######################
             if DEBUG: print(data[12:16].hex())
             (value,) = struct.unpack(">I", data[12:16])
-            if DEBUG: print(" Integer-seconds Timestamp (seconds since epoch) = %d (%s)" % (value, datetime.fromtimestamp(value, tz=timezone.utc).strftime('%m/%d/%Y %r %Z')))
-            #if DEBUG: print(" Integer-seconds Timestamp (seconds since epoch) = %d (%s)" % (value, datetime.fromtimestamp(value, tz=timezone.utc).strftime('%a, %d %b %Y %H:%M:%S +0000')))
+            if DEBUG: print(" Integer-seconds Timestamp (seconds since epoch) = %d (%s)" % (value, datetime.fromtimestamp(value, tz=timezone.utc).isoformat()))
+            #if DEBUG: print(" Integer-seconds Timestamp (seconds since epoch) = %d (%s)" % (value, datetime.fromtimestamp(value, tz=timezone.utc).isoformat()))
             self.integer_seconds_timestamp = value
-            self.integer_seconds_timestamp_display = datetime.fromtimestamp(value, tz=timezone.utc).strftime('%m/%d/%Y %r %Z')
+            self.integer_seconds_timestamp_display = datetime.fromtimestamp(value, tz=timezone.utc).isoformat()
 
             #######################
             # Fractional-seconds Timestamp (5.1.4 and 5.1.5)
@@ -482,7 +482,7 @@ Data Packet Payload Format: %d (word1), %d (word2)\r\n\
     self.information_class_code,
     self.packet_class_code,
     self.integer_seconds_timestamp,
-    datetime.fromtimestamp(self.integer_seconds_timestamp, tz=timezone.utc).strftime('%m/%d/%Y %r %Z'),
+    datetime.fromtimestamp(self.integer_seconds_timestamp, tz=timezone.utc).isoformat(),
     self.fractional_seconds_timestamp,
     self.context_indicator_field_cif0,
     self.ref_point,

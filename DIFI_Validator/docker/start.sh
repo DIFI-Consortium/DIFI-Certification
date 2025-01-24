@@ -7,15 +7,26 @@
 
 #set -e
 
+# for python apps, use /tmp as home directory
+HOME=/tmp; export HOME
+
+# DIFI Validator utilizes streamids in filenames
+FILES_INCLUDE_STREAMID=yes; export FILES_INCLUDE_STREAMID
+
+# create starter config item
+echo '{"transmitEnabled":true,"transmitHost":"localhost","transmitPort":4991,"receiveEnabled":true}' > /tmp/config.json
 
 # start difi receiver server
 python3 drx.py &
-
 
 #start flask server (in one of threee modes: dev, prod (proxy), prod-gateway)
 #echo $1 #FLASK_DEPLOY_ENV
 #echo $2 #USER
 #echo $3 #GROUP
+
+APP_UID=`id -u`
+APP_GID=`id -g`
+
 if [ $1 = "prod-gateway" ]; then
 
     #echo "running 'prod-gateway' uwsgi flask server -> application gateway mode (unix domain file system socket)"
@@ -26,10 +37,10 @@ if [ $1 = "prod-gateway" ]; then
     # the 'application gateway' server like nginx is running under, or nginx will not have permission to talk to the unix socket and the server will not function properly)
     uwsgi --socket /tmp/difi.sock \
     --chmod-socket=600 \
-    --chown-socket=$2:$3 \
-    --mount /=app:app \
-    --uid=$2 \
-    --gid=$3 \
+    --chown-socket=$APP_UID:$APP_GID \
+    --mount /=webgui:webgui \
+    --uid=$APP_UID \
+    --gid=$APP_GID \
     --master \
     --processes=5 \
     --manage-script-name \
@@ -64,10 +75,10 @@ elif [ $1 = "prod" ]; then
     # (essentially all the flask endpoints can now be called on an internal port 5000, or by calling the endpoint in a proxy server like nginx listening on public port 80 that will proxy/pass http protocol request through to flask)
     uwsgi --http-socket 0.0.0.0:5000 \
     --chmod-socket=600 \
-    --chown-socket=$2:$3 \
-    --mount /=app:app \
-    --uid=$2 \
-    --gid=$3 \
+    --chown-socket=$APP_UID:$APP_GID \
+    --mount /=webgui:app \
+    --uid=$APP_UID \
+    --gid=$APP_GID \
     --master \
     --processes=5 \
     --manage-script-name \

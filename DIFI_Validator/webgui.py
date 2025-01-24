@@ -8,7 +8,7 @@ This server is a Flask http web server that hosts the http rest endpoints that a
 
 This Flask http server is meant to run alongside the drx.py, which is a socket server that receives and processes the packets
 
-You don't need to run the webgui to use the DIFI validator functionality, it simply adds a convinient web GUI interface for it
+You don't need to run the webgui to use the DIFI validator functionality, it simply adds a convenient web GUI interface for it
 
 API Examples:
 curl -k http://<machine>:5000/api/v1/difi/compliant/standardcontext/00000001
@@ -31,7 +31,8 @@ import os
 import pprint
 import psutil
 import re
-from flask import Flask, jsonify, request, redirect, render_template, Response, session, Markup, url_for
+from flask import Flask, jsonify, request, redirect, render_template, Response, session, url_for
+from markupsafe import Markup
 from urllib.parse import urlparse
 from datetime import timezone, datetime
 
@@ -43,15 +44,20 @@ app = Flask(__name__)
 #config
 ###########
 DIFI_VERSION_SUPPORTED = "v1"
+DIFI_CACHE_HOME = "./"
+if os.getenv("DIFI_CACHE_HOME") != "":
+    DIFI_CACHE_HOME = os.getenv("DIFI_CACHE_HOME") + "/"
+CONFIG_SETTINGS = "config.json"
+VERSION_INFO = "version-info.json"
 
 #openapi
-DIFI_NAME = "DIFI Checker"
-DIFI_DESCRIPTION = "DIFI packet decoder and sender."
+DIFI_NAME = "DIFI Validator"
+DIFI_DESCRIPTION = "DIFI packet decoder and sender"
 DIFI_VERSION_MAJOR = 1
 DIFI_VERSION_MINOR = 1
 DIFI_VERSION_PATCH = 0
 DIFI_VERSION_BUILD = "0"
-DIFI_START_TIME = datetime.now(timezone.utc).strftime("%m/%d/%Y %r %Z")
+DIFI_START_TIME = datetime.now(timezone.utc).isoformat()
 
 #makes json returned in responses pretty print with nice indenting, etc.
 #TODO: comment out in production
@@ -77,22 +83,53 @@ class StreamIdListFailure(Exception):
 ##################
 #helper functions
 ##################
-def read_noncompliant_from_file():
+def get_packet_hex(output):
+    res=""
+    output_line = output.find("Packet output: ")
+
+    if output_line != -1:
+        end_of_output = output.find("\n", output_line+1)
+        if end_of_output != -1:
+          res = output[output_line+15:end_of_output]
+
+    return res
+
+def shorten_packet_field(field_name):
+    if field_name == 'packet-type':
+        field_name = 'pkt-type'
+    elif field_name == 'sequence-number':
+        field_name = 'seqnum'
+    elif field_name == 'reserved':
+        field_name = 'rsvd'
+    elif field_name == 'packet-size':
+        field_name = 'pkt-size'
+    elif field_name == 'dpf-report-index':
+        field_name = 'dpf-rpt-ind'
+    elif field_name == 'reference-level':
+        field_name = 'ref-level'
+    elif field_name == 'rf-reference-frequency':
+        field_name = 'rf-ref-freq'
+    elif field_name == 'if-reference-frequency':
+        field_name = 'if-ref-freq'
+
+    return field_name
+
+def read_noncompliant_from_file(stream_id):
     
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-noncompliant-00000001.dat"
-    fname = "%s%s" % (DIFI_NONCOMPLIANT_FILE_PREFIX, DIFI_FILE_EXTENSION)
+    fname = "%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_NONCOMPLIANT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         buf = f.read()
         return buf
 
-def read_noncompliant_count_from_file():
+def read_noncompliant_count_from_file(stream_id):
     
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-noncompliant-count-00000001.dat"
-    fname = "%s%s" % (DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX, DIFI_FILE_EXTENSION)
+    fname = "%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         d = {}
         d["count"] = 0
@@ -100,47 +137,47 @@ def read_noncompliant_count_from_file():
         buf = f.read()
         if len(buf) > 0:
             entry = buf.split("#", 1)
-            d["count"] = entry[0]
+            d["count"] = int(entry[0])
             if len(entry) > 1:
                 d["updated"] = entry[1]
         return d
 
-def read_compliant_standard_context_from_file():
+def read_compliant_standard_context_from_file(stream_id):
 
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-compliant-standard-context-00000001.dat"
-    fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_STANDARD_CONTEXT, DIFI_FILE_EXTENSION)
+    fname = "%s%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_COMPLIANT_FILE_PREFIX, DIFI_STANDARD_CONTEXT, stream_id, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         buf = f.read()
         return buf
 
-def read_compliant_version_context_from_file():
+def read_compliant_version_context_from_file(stream_id):
 
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-compliant-version-context-00000001.dat"
-    fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_VERSION_CONTEXT, DIFI_FILE_EXTENSION)
+    fname = "%s%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_COMPLIANT_FILE_PREFIX, DIFI_VERSION_CONTEXT, stream_id, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         buf = f.read()
         return buf
 
-def read_compliant_data_from_file():
+def read_compliant_data_from_file(stream_id):
 
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-compliant-data-00000001.dat"
-    fname = "%s%s%s" % (DIFI_COMPLIANT_FILE_PREFIX, DIFI_DATA, DIFI_FILE_EXTENSION)
+    fname = "%s%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_COMPLIANT_FILE_PREFIX, DIFI_DATA, stream_id, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         buf = f.read()
         return buf
 
-def read_compliant_count_from_file():
+def read_compliant_count_from_file(stream_id):
     
     #TODO: in the future switch to read from kafka or database here instead...
 
     #fname = "difi-compliant-count-00000001.dat"
-    fname = "%s%s" % (DIFI_COMPLIANT_COUNT_FILE_PREFIX, DIFI_FILE_EXTENSION)
+    fname = "%s%s%s%s" % (DIFI_CACHE_HOME, DIFI_COMPLIANT_COUNT_FILE_PREFIX, stream_id, DIFI_FILE_EXTENSION)
     with open(fname, 'r', encoding="utf-8") as f:
         d = {}
         d["count"] = 0
@@ -148,10 +185,34 @@ def read_compliant_count_from_file():
         buf = f.read()
         if len(buf) > 0:
             entry = buf.split("#", 1)
-            d["count"] = entry[0]
+            d["count"] = int(entry[0])
             if len(entry) > 1:
                 d["updated"] = entry[1]
         return d
+
+def put_settings(data):
+    fname = "%s%s" % (DIFI_CACHE_HOME, CONFIG_SETTINGS)
+    with open(fname, 'w', encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+def get_settings():
+    fname = "%s%s" % (DIFI_CACHE_HOME, CONFIG_SETTINGS)
+    with open(fname, 'r', encoding="utf-8") as f:
+        return json.load(f)
+
+def get_version_info():
+    fname =VERSION_INFO
+    if os.path.isfile(fname):
+        with open(fname, 'r', encoding="utf-8") as f:
+            return json.load(f)
+
+    default_version = {
+        "major": DIFI_VERSION_MAJOR,
+        "minor": DIFI_VERSION_MINOR,
+        "patch": DIFI_VERSION_PATCH,
+        "build": DIFI_VERSION_BUILD
+    }
+    return default_version
 
 def get_difi_noncompliant_file_stream_ids() -> dict:
 
@@ -160,7 +221,7 @@ def get_difi_noncompliant_file_stream_ids() -> dict:
     d = {}
     try:
         l = []
-        with os.scandir(path='.') as directory:
+        with os.scandir(path=DIFI_CACHE_HOME) as directory:
             for entry in directory:
                 if entry.is_file():
                     if entry.name.startswith(DIFI_NONCOMPLIANT_COUNT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
@@ -183,7 +244,7 @@ def get_difi_compliant_file_stream_ids() -> dict:
     d = {}
     try:
         l = []
-        with os.scandir(path='.') as directory:
+        with os.scandir(path=DIFI_CACHE_HOME) as directory:
             for entry in directory:
                 if entry.is_file():
                     if entry.name.startswith(DIFI_COMPLIANT_COUNT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
@@ -320,14 +381,14 @@ def hex(value, digits: str, validate=True):
 #custom decorator for html template route
 def template_route(route, **options):
     def decorator(f):
+        if os.getenv("DIFI_UI") != "disable":
+            app.add_url_rule(route, view_func=f, **options)
 
-        app.add_url_rule(route, view_func=f, **options)
-
-        #adds item to rule object indicating this rule is an html template route
-        for rule in app.url_map.iter_rules():
-            if rule.rule == route:
-                setattr(rule, "is_template_route", True)
-                break
+            #adds item to rule object indicating this rule is an html template route
+            for rule in app.url_map.iter_rules():
+                if rule.rule == route:
+                    setattr(rule, "is_template_route", True)
+                    break
 
         return f
     return decorator
@@ -350,7 +411,7 @@ def get_difi_noncompliant(stream_id):
     try:
         validate_stream_id(stream_id)
 
-        data = read_noncompliant_from_file()
+        data = read_noncompliant_from_file(stream_id)
         data_dict = json.loads(data)
         data_most_recent = data_dict[-1] # pull out most recent packet
         if is_template_route(request.url_rule):
@@ -390,7 +451,7 @@ def get_difi_noncompliant_count(stream_id):
     try:
         validate_stream_id(stream_id)
 
-        data = read_noncompliant_count_from_file()
+        data = read_noncompliant_count_from_file(stream_id)
 
         if is_template_route(request.url_rule):
             data["stream_id"] = stream_id
@@ -431,11 +492,11 @@ def get_difi_compliant_packet(stream_id, packet_type):
     try:
         validate_stream_id(stream_id)
         if packet_type == 'standardcontext':
-            data = read_compliant_standard_context_from_file()
+            data = read_compliant_standard_context_from_file(stream_id)
         elif packet_type == 'versioncontext':
-            data = read_compliant_version_context_from_file()
+            data = read_compliant_version_context_from_file(stream_id)
         elif packet_type == 'data':
-            data = read_compliant_data_from_file()
+            data = read_compliant_data_from_file(stream_id)
         else:
             e = 'bad URL'
             if is_template_route(request.url_rule):
@@ -482,7 +543,7 @@ def get_difi_compliant_count(stream_id):
     try:
         validate_stream_id(stream_id)
 
-        data = read_compliant_count_from_file()
+        data = read_compliant_count_from_file(stream_id)
 
         if is_template_route(request.url_rule):
             data["stream_id"] = stream_id
@@ -614,9 +675,9 @@ def get_difi_api_routes():
                         comment = ''.join(("JSON document response: ", comment))
 
                 if methods == "":
-                    routes[str(rule)] = "%s" % comment
+                    routes[str(rule)] = "%s" % comment.strip()
                 else:
-                    routes[str(rule)] = "[%s] %s" % (methods, comment)
+                    routes[str(rule)] = "[%s] %s" % (methods, comment.strip())
 
         if is_template_route(request.url_rule):
             return render_template('api.html', api={key : routes[key] for key in sorted(routes)})
@@ -637,7 +698,7 @@ def get_difi_api_routes():
 @app.route('/', methods=['GET'])
 def get_home_page():
 
-    """Home page - DIFI Console."""
+    """Home page - DIFI Validator."""
 
     try:
         o = urlparse(request.base_url)
@@ -646,15 +707,22 @@ def get_home_page():
             porta=os.getenv("DIFI_RX_PORT")
         else:
             porta=4991
-        return render_template('index.html', ip=o.hostname, port=porta)
+
+        if os.getenv("DIFI_UI") != "disable":
+            return render_template('index.html', ip=o.hostname, port=porta)
+        else:
+            return jsonify(error_code=500, message="User interface not available"), 500
     except Exception as e:
         return render_template('msg.html', message=Markup("[%s] %s\r\n" % (type(e).__name__, str(e))))
 
 
 @app.route('/web/v1/difi/send/standard-context', methods=['GET', 'POST'])
+@app.route('/api/v1/difi/send/standard-context', methods=['POST'])
 def send_standard_context_packets():
 
     """HTML web page used to send 'Standard Context' packets to a target IP address."""
+
+    is_json = request.content_type.find("application/json") if request.content_type else False
 
     try:
         #if 'POST'
@@ -663,20 +731,46 @@ def send_standard_context_packets():
             cmd = []
             cmd.append("python3")
             cmd.append("dcs.py")
-            for key,value in request.form.items():
+            if is_json == -1:
+                for key,value in request.form.items():
 
-                if value is not None and value != "" and key.lower().startswith("--"):
-                    #key is expected to have '--' on front,
-                    #html elements named the same as dcs.py script args
-                    #even though is brittle in order to help make it
-                    #easier to spot when missing or incorrect
-                    cmd.append(key)
-                    cmd.append(value)
+                    if value is not None and value != "" and key.lower().startswith("--"):
+                        #key is expected to have '--' on front,
+                        #html elements named the same as dcs.py script args
+                        #even though is brittle in order to help make it
+                        #easier to spot when missing or incorrect
+                        cmd.append(key)
+                        cmd.append(value)
+            else:
+                data = request.get_json();
 
-            #will raise CalledProcessError if sub process has non-zero exit code, instead of sucess message below
-            subprocess.check_output(cmd, stderr=subprocess.PIPE)
+                settings_data = get_settings()
+                if settings_data["transmitEnabled"] == False:
+                    return jsonify(error_code=400, message="Unable to submit packet while transmit is disabled."), 400
+                if not "address" in data:
+                    data["address"] = settings_data["transmitHost"];
+                if not "port" in data:
+                    data["port"] = settings_data["transmitPort"];
+                for key, value in data.items():
+                    cmd.append("--" + shorten_packet_field(key))
+                    cmd.append(str(value))
 
-            return render_template('msg.html', message=Markup("Successfully sent DIFI packet.  <i>(To send more using the same field values, press 'Back' arrow in browser to return to the send page.)</i>"))
+            # turn on debug
+            cmd.append("--debug")
+            cmd.append("True")
+
+            #will raise CalledProcessError if sub process has non-zero exit code, instead of success message below
+            output = subprocess.check_output(cmd, stderr=subprocess.PIPE).decode("utf-8")
+
+            if is_json != -1:
+                packet = get_packet_hex(output)
+                if packet != '':
+                    data["packet"] = packet
+
+            if is_json == -1:
+                return render_template('msg.html', message=Markup("Successfully sent DIFI packet.  <i>(To send more using the same field values, press 'Back' arrow in browser to return to the send page.)</i>"))
+            else:
+                return jsonify(data), 200
 
             #if redirect back to form, then store previous form in session
             #session["form_data"] = request.form
@@ -707,15 +801,24 @@ def send_standard_context_packets():
         #<input value="{{form["--bandwidth"]|default('0.00000095')}}"...
 
     except CalledProcessError as e:
-        return render_template('msg.html', message=Markup("Failed to send packet. Make sure all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, highlight_bad_field_in_exception(e.stderr.decode(sys.getfilesystemencoding()), e))))
+        if is_json == -1:
+            return render_template('msg.html', message=Markup("Failed to send packet. Make sure all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, highlight_bad_field_in_exception(e.stderr.decode(sys.getfilesystemencoding()), e))))
+        else:
+            return  jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, highlight_bad_field_in_exception(e.stderr.decode(sys.getfilesystemencoding()), e))), 500
     except Exception as e:
-        return render_template('msg.html', message=Markup("Failed to send packet. Make sure you entered an IP address and port and that all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, str(e))))
+        if is_json == -1:
+            return render_template('msg.html', message=Markup("Failed to send packet. Make sure you entered an IP address and port and that all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, str(e))))
+        else:
+            return jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, str(e))), 500
 
 
 @app.route('/web/v1/difi/send/version-context', methods=['GET', 'POST'])
+@app.route('/api/v1/difi/send/version-context', methods=['POST'])
 def send_version_context_packets():
 
     """HTML web page used to send 'Version Context' packets to a target IP address."""
+
+    is_json = request.content_type.find("application/json") if request.content_type else False
 
     try:
         #if 'POST'
@@ -724,20 +827,46 @@ def send_version_context_packets():
             cmd = []
             cmd.append("python3")
             cmd.append("dvs.py")
-            for key,value in request.form.items():
+            if is_json == -1:
+                for key,value in request.form.items():
 
-                if value is not None and value != "" and key.lower().startswith("--"):
-                    #key is expected to have '--' on front,
-                    #html elements named the same as dvs.py script args
-                    #even though is brittle in order to help make it
-                    #easier to spot when missing or incorrect
-                    cmd.append(key)
-                    cmd.append(value)
+                    if value is not None and value != "" and key.lower().startswith("--"):
+                        #key is expected to have '--' on front,
+                        #html elements named the same as dvs.py script args
+                        #even though is brittle in order to help make it
+                        #easier to spot when missing or incorrect
+                        cmd.append(key)
+                        cmd.append(value)
+            else:
+                data = request.get_json();
 
-            #will raise CalledProcessError if sub process has non-zero exit code, instead of sucess message below
-            subprocess.check_output(cmd, stderr=subprocess.PIPE)
+                settings_data = get_settings()
+                if settings_data["transmitEnabled"] == False:
+                    return jsonify(error_code=400, message="Unable to submit packet while transmit is disabled."), 400
+                if not "address" in data:
+                    data["address"] = settings_data["transmitHost"];
+                if not "port" in data:
+                    data["port"] = settings_data["transmitPort"];
+                for key, value in data.items():
+                    cmd.append("--" + shorten_packet_field(key))
+                    cmd.append(str(value))
 
-            return render_template('msg.html', message=Markup("Successfully sent DIFI packet.  <i>(To send more using the same field values, press 'Back' arrow in browser to return to the send page.)</i>"))
+            # turn on debug
+            cmd.append("--debug")
+            cmd.append("True")
+
+            #will raise CalledProcessError if sub process has non-zero exit code, instead of success message below
+            output = subprocess.check_output(cmd, stderr=subprocess.PIPE).decode("utf-8")
+
+            if is_json != -1:
+                packet = get_packet_hex(output)
+                if packet != '':
+                    data["packet"] = packet
+
+            if is_json == -1:
+                return render_template('msg.html', message=Markup("Successfully sent DIFI packet.  <i>(To send more using the same field values, press 'Back' arrow in browser to return to the send page.)</i>"))
+            else:
+                return jsonify(data), 200
 
             #if redirect back to form, then store previous form in session
             #session["form_data"] = request.form
@@ -768,15 +897,25 @@ def send_version_context_packets():
         #<input value="{{form["--cif0"]|default('00000002')}}"...
 
     except CalledProcessError as e:
-        return render_template('msg.html', message=Markup("Failed to send packet. Make sure all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, highlight_bad_field_in_exception(e.stderr.decode(sys.getfilesystemencoding()), e))))
+        if is_json == -1:
+            return render_template('msg.html', message=Markup("Failed to send packet. Make sure all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, highlight_bad_field_in_exception(e.stderr.decode(sys.getfilesystemencoding()), e))))
+        else:
+            return  jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, highlight_bad_field_in_exception(e.stderr.decode(sys.getfilesystemencoding()), e))), 500
     except Exception as e:
-        return render_template('msg.html', message=Markup("Failed to send packet. Make sure you entered an IP address and port and that all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, str(e))))
+        if is_json == -1:
+            return render_template('msg.html', message=Markup("Failed to send packet. Make sure you entered an IP address and port and that all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, str(e))))
+        else:
+            return jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, str(e))), 500
+
 
 
 @app.route('/web/v1/difi/send/signal-data', methods=['GET', 'POST'])
+@app.route('/api/v1/difi/send/signal-data', methods=['POST'])
 def send_signal_data_packets():
 
     """HTML web page used to send 'Signal Data' packets to a target IP address."""
+
+    is_json = request.content_type.find("application/json") if request.content_type else False
 
     try:
         #if 'POST'
@@ -785,20 +924,47 @@ def send_signal_data_packets():
             cmd = []
             cmd.append("python3")
             cmd.append("dds.py")
-            for key,value in request.form.items():
 
-                if value is not None and value != "" and key.lower().startswith("--"):
-                    #key is expected to have '--' on front,
-                    #html elements named the same as dds.py script args
-                    #even though is brittle in order to help make it
-                    #easier to spot when missing or incorrect
-                    cmd.append(key)
-                    cmd.append(value)
+            if is_json == -1:
+                for key,value in request.form.items():
 
-            #will raise CalledProcessError if sub process has non-zero exit code, instead of sucess message below
-            subprocess.check_output(cmd, stderr=subprocess.PIPE)
+                    if value is not None and value != "" and key.lower().startswith("--"):
+                        #key is expected to have '--' on front,
+                        #html elements named the same as dds.py script args
+                        #even though is brittle in order to help make it
+                        #easier to spot when missing or incorrect
+                        cmd.append(key)
+                        cmd.append(value)
+            else:
+                data = request.get_json();
 
-            return render_template('msg.html', message=Markup("Successfully sent DIFI packet.  <i>(To send more using the same field values, press 'Back' arrow in browser to return to the send page.)</i>"))
+                settings_data = get_settings()
+                if settings_data["transmitEnabled"] == False:
+                    return jsonify(error_code=400, message="Unable to submit packet while transmit is disabled."), 400
+                if not "address" in data:
+                    data["address"] = settings_data["transmitHost"];
+                if not "port" in data:
+                    data["port"] = settings_data["transmitPort"];
+                for key, value in data.items():
+                    cmd.append("--" + shorten_packet_field(key))
+                    cmd.append(str(value))
+
+            # turn on debug
+            cmd.append("--debug")
+            cmd.append("True")
+
+            #will raise CalledProcessError if sub process has non-zero exit code, instead of success message below
+            output = subprocess.check_output(cmd, stderr=subprocess.PIPE).decode("utf-8")
+
+            if is_json != -1:
+                packet = get_packet_hex(output)
+                if packet != '':
+                    data["packet"] = packet
+
+            if is_json == -1:
+                return render_template('msg.html', message=Markup("Successfully sent DIFI packet.  <i>(To send more using the same field values, press 'Back' arrow in browser to return to the send page.)</i>"))
+            else:
+                return jsonify(data), 200
 
             #if redirect back to form, then store previous form in session
             #session["form_data"] = request.form
@@ -829,15 +995,41 @@ def send_signal_data_packets():
         #<input value="{{form["--icc"]|default('0000')}}"...
 
     except CalledProcessError as e:
-        return render_template('msg.html', message=Markup("Failed to send packet. Make sure all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, highlight_bad_field_in_exception(e.stderr.decode(sys.getfilesystemencoding()), e))))
+        if is_json == -1:
+            return render_template('msg.html', message=Markup("Failed to send packet. Make sure all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, highlight_bad_field_in_exception(e.stderr.decode(sys.getfilesystemencoding()), e))))
+        else:
+            return  jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, highlight_bad_field_in_exception(e.stderr.decode(sys.getfilesystemencoding()), e))), 500
     except Exception as e:
-        return render_template('msg.html', message=Markup("Failed to send packet. Make sure you entered an IP address and port and that all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, str(e))))
-
+        if is_json == -1:
+            return render_template('msg.html', message=Markup("Failed to send packet. Make sure you entered an IP address and port and that all field values are within their valid ranges.  To try again, press 'Back' arrow in browser to return to the send page.<br><br>[%s] <br> %s" % (type(e).__name__, str(e))))
+        else:
+            return jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, str(e))), 500
 
 ####################
 #api route handlers - OpenAPI endpoints (REST json / HTML GUI's)
 ####################
+@app.route('/versions', methods=['GET'])
+def get_versions():
+
+    """Get versions of API supported."""
+
+    try:
+        data = {
+            "versions": [
+                "v1"
+            ]
+        }
+
+        return jsonify(data), 200
+
+    except Exception as e:
+        if is_template_route(request.url_rule):
+            return render_template('msg.html', message=Markup("[%s] %s\r\n" % (type(e).__name__, str(e))))
+        else:
+            return jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, str(e))), 500
+
 @app.route('/api/v1/difi/Info', methods=['GET'])
+@app.route('/api/v1/Info', methods=['GET'])
 @template_route('/web/v1/difi/Info', methods=['GET'])
 def get_difi_openapi_info():
 
@@ -851,21 +1043,17 @@ def get_difi_openapi_info():
         data = {
             "name": DIFI_NAME,
             "description": DIFI_DESCRIPTION,
-            "startTime": DIFI_START_TIME,
-            "version": {
-                "major": DIFI_VERSION_MAJOR,
-                "minor": DIFI_VERSION_MINOR,
-                "patch": DIFI_VERSION_PATCH,
-                "build": DIFI_VERSION_BUILD}
+            "version": get_version_info()
         }
 
         if is_template_route(request.url_rule):
+            data["startTime"] = DIFI_START_TIME
             return render_template('info.html', info=data)
         else:
             return jsonify(data), 200
 
         #note: if don't use jsonify, these are manual ways to build response
-        #d = '{"description":"DIFI packet decoder and sender.","name":"DIFI Checker","startTime":"02/16/2022 09:10:55 PM UTC","version":{"build":"0","major":1,"minor":0,"patch":0}}'
+        #d = '{"description":"DIFI packet decoder and sender.","name":"DIFI Validator","startTime":"02/16/2022 09:10:55 PM UTC","version":{"build":"0","major":1,"minor":0,"patch":0}}'
         #response = Response(response=d,
         #    status=200,
         #    mimetype="application/json")
@@ -884,6 +1072,7 @@ def get_difi_openapi_info():
 
 
 @app.route('/api/v1/difi/Ready', methods=['GET'])
+@app.route('/api/v1/Ready', methods=['GET'])
 def get_difi_openapi_ready():
 
     """Gets whether the application is ready to be used."""
@@ -909,11 +1098,11 @@ def get_difi_openapi_health():
             if "drx.py" in proc.cmdline():
                 data = {
                     "status": "Running",
-                    "createTime": datetime.fromtimestamp(proc.create_time(), tz=timezone.utc).strftime('%m/%d/%Y %r %Z'),
+                    "createTime": datetime.fromtimestamp(proc.create_time(), tz=timezone.utc).isoformat(),
                     "subsystems": [{
                         "name": "drx",
                         "status": "Running",
-                        "startTime": datetime.fromtimestamp(proc.create_time(), tz=timezone.utc).strftime('%m/%d/%Y %r %Z'),
+                        "startTime": datetime.fromtimestamp(proc.create_time(), tz=timezone.utc).isoformat(),
                         "message": "UDP socket listener is listening for DIFI packets."
                         },
                         {
@@ -976,7 +1165,7 @@ def get_difi_openapi_status():
 
         #get packet counts for streams
         streams = {}
-        with os.scandir(path='.') as directory:
+        with os.scandir(path=DIFI_CACHE_HOME) as directory:
             for entry in directory:
                 if entry.is_file():
 
@@ -990,7 +1179,7 @@ def get_difi_openapi_status():
                             buf = f.read()
                             if len(buf) > 0:
                                 item = buf.split("#", 1)
-                                count = item[0]
+                                count = int(item[0])
                                 if len(item) > 1:
                                     updated = item[1]
                         if stream_id in streams:
@@ -1015,7 +1204,7 @@ def get_difi_openapi_status():
                             buf = f.read()
                             if len(buf) > 0:
                                 item = buf.split("#", 1)
-                                count = item[0]
+                                count = int(item[0])
                                 if len(item) > 1:
                                     updated = item[1]
                         if stream_id in streams:
@@ -1046,14 +1235,21 @@ def get_difi_openapi_status():
 
 
 @app.route('/api/v1/difi/Settings', methods=['GET', 'PUT'])
+@app.route('/api/v1/Settings', methods=['GET', 'PUT'])
 @template_route('/web/v1/difi/Settings', methods=['GET'])
 def get_difi_openapi_settings():
 
-    """Gets application settings.  (Note: 'PUT' to modify settings at runtime currently not supported.)
+    """Gets or puts application settings.
     \n:Returns:
     \n* api route--> returns JSON document
     \n* web route--> returns HTML web page
     """
+
+    settings_data = get_settings()
+    receiveEnabled = settings_data["receiveEnabled"];
+    transmitEnabled = settings_data["transmitEnabled"];
+    transmitHost = settings_data["transmitHost"];
+    transmitPort = settings_data["transmitPort"];
 
     try:
         if request.method == 'GET':
@@ -1064,7 +1260,7 @@ def get_difi_openapi_settings():
             drx_host = os.getenv("DIFI_RX_HOST") if os.getenv("DIFI_RX_HOST") else None
             flask_run_host = os.getenv("FLASK_RUN_HOST") if os.getenv("FLASK_RUN_HOST") else None
             flask_run_port = os.getenv("FLASK_RUN_PORT") if os.getenv("FLASK_RUN_PORT") else None
-            
+
             #flask runtime
             url = urlparse(request.base_url)
             flask_runtime_address = url.hostname
@@ -1084,22 +1280,28 @@ def get_difi_openapi_settings():
             except Exception:
                 pass
 
-
             data = {
-                "drx": [{
+                "drx": {
+                    "difiRxEnabled": receiveEnabled,
                     "difiRxPort": drx_port,
                     "difiRxMode": drx_mode,
                     "difiRxHost": drx_host,
                     "runtimeAddress": drx_runtime_address,
                     "runtimePort": drx_runtime_port
-                    }],
-                "flask": [{
+                    },
+                "flask": {
                     "flaskRunHost": flask_run_host,
                     "flaskRunPort": flask_run_port,
                     "runtimeAddress": flask_runtime_address,
                     "runtimePort": flask_runtime_port
-                    }]
+                    },
+                "transmit": {
+                    "difiTxEnabled": transmitEnabled,
+                    "difiTxHost": transmitHost,
+                    "difiTxPort": transmitPort
+                    }
             }
+
             if is_template_route(request.url_rule):
                 return render_template('settings.html', info=data)
             else:
@@ -1133,8 +1335,30 @@ def get_difi_openapi_settings():
             ##return type code 503, and will go to '.ajax.error function'
             #return jsonify(error_code=503, message="Modifying settings at runtime is not supported in this version."), 503
 
-            #return not supported in this version message
-            return jsonify(error_code=503, message="Modifying settings at runtime is not supported in this version."), 503
+            changed = 0
+
+            data = request.get_json();
+            if "drx" in data:
+                if "difiRxEnabled" in data["drx"]:
+                    settings_data["receiveEnabled"] = data["drx"]["difiRxEnabled"];
+                    changed = 1
+            if "transmit" in data:
+                if "difiTxEnabled" in data["transmit"]:
+                    settings_data["transmitEnabled"] = data["transmit"]["difiTxEnabled"];
+                    changed = 1
+                if "difiTxHost" in data["transmit"]:
+                    settings_data["transmitHost"] = data["transmit"]["difiTxHost"];
+                    changed = 1
+                if "difiTxPort" in data["transmit"]:
+                    settings_data["transmitPort"] = int(data["transmit"]["difiTxPort"])
+                    changed = 1
+
+            #accept changes but make no changes
+            if changed == 1:
+                put_settings(settings_data)
+                return jsonify(error_code=200, message="Settings updated."), 200
+            else:
+                return jsonify(error_code=200, message="Modified settings are currently ignored."), 200
         else:
             raise Exception("request.method [" + request.method + "] not supported.")
 
@@ -1152,7 +1376,7 @@ def difi_openapi_operations_reset_statistics():
 
     try:
         #truncate packet archive data files storing counts
-        with os.scandir() as directory:
+        with os.scandir(path=DIFI_CACHE_HOME) as directory:
             for entry in directory:
                 if entry.is_file():
                     if entry.name.startswith(DIFI_COMPLIANT_COUNT_FILE_PREFIX) and entry.name.endswith(DIFI_FILE_EXTENSION):
@@ -1163,19 +1387,6 @@ def difi_openapi_operations_reset_statistics():
         return jsonify(operationStatus="Success"), 200
     except Exception as e:
         return jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, str(e))), 500
-
-
-@app.route('/api/v1/difi/Operations/Health/Clear', methods=['POST'])
-def difi_openapi_operations_health_clear():
-
-    """Clears health of the system and returns status reply. (Note: 'POST' to modify health of system currently not supported.)"""
-
-    try:
-        return jsonify(error_code=503, message="Modifying health of the system is not supported."), 503
-    except Exception as e:
-        return jsonify(error_code=500, message="[%s] %s" % (type(e).__name__, str(e))), 500
-
-
 
 
 # to run standalone flask server for debug, run using:  python3 webgui.py
@@ -1192,8 +1403,6 @@ if __name__ == '__main__':
 # www-data = user and group that's created for nginx from over at top of nginx.conf file (/etc/nginx/nginx.conf)
 # chown-socket = sets www-data to be owner of unix socket
 # chmod-socket = modifies permissions on unix socket to 700 (7 gives owner r/w/x, 00 gives nothing to everyone else)
-
-
 
 
 #@app.route('/status-compliant')
