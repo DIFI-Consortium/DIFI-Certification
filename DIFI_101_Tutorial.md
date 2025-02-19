@@ -176,7 +176,7 @@ We will now dissect the signal data packet we generated using the code in the pr
 
  If using Linux:
 
-    `~./local/lib/wireshark/plugins`
+    `~/.local/lib/wireshark/plugins`
 
 Run Wireshark, and verify the plugin is loaded under Help->About Wireshark->Plugins.
 
