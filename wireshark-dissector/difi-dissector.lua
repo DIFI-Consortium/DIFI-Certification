@@ -115,7 +115,7 @@ local function difi_common_dissector(buffer, tree)
     tree:add(stream_id, buffer(4, 4):uint())
     -- padding bits
     tree:add(padding_bits, buffer(8,1):uint())
-    tree:add(oui, buffer(8, 4):uint())
+    tree:add(oui, buffer(9, 3):uint())
     tree:add(packet_class_code, bit.band(word3, 0xffff))
     tree:add(information_class, bit.rshift(word3, 16))
     tree:add(int_timestamp, buffer(16, 4):uint())
@@ -244,7 +244,7 @@ local function data_pkt_dissector(buffer, tree, name)
     if buffer:len() < 28 then return end
 
     local length = buffer:len()
-    local subtree = tree:add(difi_protocol, buffer(0, 27), "DIFI Protocol, " .. name)
+    local subtree = tree:add(difi_protocol, buffer(0, 28), "DIFI Protocol, " .. name)
 
     -- Header
     difi_common_dissector(buffer, subtree)
@@ -315,19 +315,13 @@ local function heuristic_checker(buffer, pinfo, tree)
     -- guard for length, header for data packet is at least 7 32-bit words
     if buffer:len() < 28 then return false end
 
-    -- TODO: the OUI / CID is 24 bits not 4 bytes. Since pad bit count is no longer fixed at 0 this is no longer valid
     local potential_oui = buffer(9, 3):uint()
     if (potential_oui ~= 0x7C386C and potential_oui ~= 0x6A621E) then return false end
 
     local word0 = buffer(0,4):uint()
-    local packet_type_int = bit.rshift(bit.band(word0,0xf0000000), 28)
+    local packet_type = bit.rshift(bit.band(word0,0xf0000000), 28)
 
-    local valid_ptype = false
-    if packet_type == 4 or packet_type == 5 or packet_type == 1 or packet_type == 6 then
-        valid_ptype = true
-    end
-    valid_ptype = true
-    if valid_ptype then
+    if packet_type == 1 or packet_type == 4 or packet_type == 6 then
         difi_protocol.dissector(buffer, pinfo, tree)
         return true
     else
@@ -339,22 +333,21 @@ function difi_protocol.dissector(buffer, pinfo, tree)
 
     local word0 = buffer(0,4):uint()
     local word3 = buffer(12,4):uint()
-    local packet_type_int = bit.rshift(bit.band(word0,0xf0000000), 28)
     local packet_class_int = bit.rshift(bit.band(word3,0x0000ffff), 0)
 
     local packet_type_int = bit.rshift(bit.band(word0,0xf0000000), 28)
     name = "unknown type=" .. packet_type_int .. " , class=" .. packet_class_int
-    if packet_type_int == 0x4 then
-        if packet_class_int == 1 then name = "Standard Flow Signal Context Packet" end
-        if packet_class_int == 3 then name = "Sample Count Context Packet" end
-        context_pkt_dissector(buffer, tree, name)
-    elseif packet_type_int == 0x5 then
-        name = "Version Flow Signal Context Packet"
-        version_pkt_dissector(buffer, tree, name)
-    elseif packet_type_int == 0x1 then
+    if packet_type_int == 0x1 then
         if packet_class_int == 0 then name = "Standard Flow Signal Data Packet" end
         if packet_class_int == 2 then name = "Sample Count Data Packet" end
         data_pkt_dissector(buffer, tree, name)
+    elseif packet_type_int == 0x4 and packet_class_int == 4 then
+        name = "Version Flow Signal Context Packet"
+        version_pkt_dissector(buffer, tree)
+    elseif packet_type_int == 0x4 then
+        if packet_class_int == 1 then name = "Standard Flow Signal Context Packet" end
+        if packet_class_int == 3 then name = "Sample Count Context Packet" end
+        context_pkt_dissector(buffer, tree, name)
     elseif packet_type_int == 0x6 then
         if packet_class_int == 6 then name = "Real Time Command Packet" end
         if packet_class_int == 5 then name = "Sample Count Command Packet" end
