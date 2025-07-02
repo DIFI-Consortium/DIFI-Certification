@@ -100,10 +100,7 @@ def process_data(data: Union[bytes,BytesIO], timestamp=None, count=None):
         print("packet received, but data empty.")
         return
     try:
-        if type(data) is bytes:
-            stream = io.BytesIO(data)
-        else:
-            stream = data
+        stream = io.BytesIO(data) if isinstance(data, bytes) else data
 
         # packet type
         tmpbuf = stream.read1(4)

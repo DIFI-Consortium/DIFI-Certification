@@ -138,11 +138,9 @@ FIELDS={}
 # helper functions
 ###########
 def boolean_value(MAP, field_name):
-    res = "0"
-    if field_name in MAP:
-        if MAP[field_name] == "1" or MAP[field_name] == "true" or MAP[field_name] == "True" or MAP[field_name] == True:
-            res = "1"
-    return res
+    if MAP.get(field_name, False) in ["1", "true", "True", True]:
+        return "1"
+    return "0"
 
 ###########
 # primary function
