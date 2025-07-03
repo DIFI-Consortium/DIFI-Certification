@@ -143,11 +143,6 @@ def send_difi_compliant_version_context_packet(count: int = 0):
         "{0:02b}".format(int(tsi,16)),
         "{0:02b}".format(int(tsf,16))), 2))
 
-    # This logic doesn't really make sense because you'll never get to: else "0"
-    # if "--seqnum" in FIELDS and FIELDS["--seqnum"] is not None:
-    #     seqnum = FIELDS["--seqnum"] if "--seqnum" in FIELDS else "0" #hex
-    # else:
-    #     seqnum = "%01x" % (count % 16)
     seqnum = FIELDS["--seqnum"] if FIELDS.get("--seqnum") is not None else "%01x" % (count % 16)
 
     first_half_header = "%s%s%s" % (pkt_type, clsid_rsvd_tsm_tsi_tsf, seqnum)
