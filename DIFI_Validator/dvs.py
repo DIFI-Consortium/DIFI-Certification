@@ -129,12 +129,12 @@ def send_difi_compliant_version_context_packet(count: int = 0):
     # 5B61 DEC = = 0101 1011 0110 0001 Binary
 
     # 1st 16 bits of header in hex.  #5B61
-    pkt_type = FIELDS["--pkt-type"] if "--pkt-type" in FIELDS else "5" #hex
-    clsid = FIELDS["--clsid"] if "--clsid" in FIELDS else "1" #hex
-    rsvd = FIELDS["--rsvd"] if "--rsvd" in FIELDS else "0" #hex
-    tsm = FIELDS["--tsm"] if "--tsm" in FIELDS else "1" #hex
-    tsi = FIELDS["--tsi"] if "--tsi" in FIELDS else "1" #hex
-    tsf = FIELDS["--tsf"] if "--tsf" in FIELDS else "2" #hex
+    pkt_type = FIELDS.get("--pkt-type", "5") #hex
+    clsid = FIELDS.get("--clsid", "1") #hex
+    rsvd = FIELDS.get("--rsvd", "0") #hex
+    tsm = FIELDS.get("--tsm", "1") #hex
+    tsi = FIELDS.get("--tsi", "1") #hex
+    tsf = FIELDS.get("--tsf", "2") #hex
 
     clsid_rsvd_tsm_tsi_tsf = "%02x" % (int("%s%s%s%s%s" % (
         "{0:01b}".format(int(clsid,16)),
@@ -143,10 +143,7 @@ def send_difi_compliant_version_context_packet(count: int = 0):
         "{0:02b}".format(int(tsi,16)),
         "{0:02b}".format(int(tsf,16))), 2))
 
-    if "--seqnum" in FIELDS and FIELDS["--seqnum"] is not None:
-        seqnum = FIELDS["--seqnum"] if "--seqnum" in FIELDS else "0" #hex
-    else:
-        seqnum = "%01x" % (count % 16)
+    seqnum = FIELDS["--seqnum"] if FIELDS.get("--seqnum") is not None else "%01x" % (count % 16)
 
     first_half_header = "%s%s%s" % (pkt_type, clsid_rsvd_tsm_tsi_tsf, seqnum)
     packetchunk = bytearray.fromhex(first_half_header) #(5B61) #clsid=0x1,tsm=0x1,tsf=0x2
@@ -165,11 +162,10 @@ def send_difi_compliant_version_context_packet(count: int = 0):
     # STREAM_ID = 1
     if type(STREAM_ID) is int:
         stream_id_int = STREAM_ID
+    elif str(STREAM_ID).lower().startswith("0x"):
+        stream_id_int = int(STREAM_ID,16)
     else:
-        if str(STREAM_ID).lower().startswith("0x"):
-            stream_id_int = int(STREAM_ID,16)
-        else:
-            stream_id_int = int(STREAM_ID,10)
+        stream_id_int = int(STREAM_ID,10)
 
     stream_hex_int = '0x{0:08X}'.format(stream_id_int)
     if not SILENT: print(f"STREAM_ID (hex) = {stream_hex_int}")
@@ -231,7 +227,7 @@ def send_difi_compliant_version_context_packet(count: int = 0):
     #The values of 0 and greater than 366 are not valid.
     if day_of_year == 0:
         day_of_year = 1
-    if day_of_year >= 366:
+    elif day_of_year >= 366:
         day_of_year = 365
     if not SILENT and DEBUG: print(f" day of year = {day_of_year}")
 
