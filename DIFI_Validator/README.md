@@ -50,6 +50,7 @@ In a second terminal, run the drx.py component:
 
 ```bash
 cd DIFI_Validator
+export FILES_INCLUDE_STREAMID=True
 python drx.py
 ```
 
