@@ -22,6 +22,8 @@ For questions/comments on the Validator tool, reach out to Marc.
 
 ```bash
 cd DIFI_Validator
+sudo apt update
+sudo apt install libxml2-dev
 sudo pip install -r requirements.txt
 export DIFI_RX_MODE=pcap
 export PCAP_FILE=/path/to/your/pcap/filename.pcap
