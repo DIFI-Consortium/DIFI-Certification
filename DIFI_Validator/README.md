@@ -88,10 +88,9 @@ except drx.NoncompliantDifiPacket as e:
     print("--> not DIFI compliant, packet not decoded:\r\n%s" % e.difi_info.to_json())
 except Exception as e:
     print("error: ", e)
-
 ```
 
-## To check if header in packet is DIFI compliant:
+## Check if header in packet is DIFI compliant
 
 ```Python
 import drx
@@ -114,7 +113,8 @@ except Exception as e:
     print("error: ", e)
 ```
 
-## To check if packet contents are DIFI compliant (i.e. packet fields after the header):
+## Check if packet contents are DIFI compliant (i.e. packet fields after the header)
+
 ```Python
 import drx
 try:
@@ -167,5 +167,4 @@ try:
     dvs.send_difi_compliant_version_context_packet()
 except Exception as e:
     print(e)
-
 ```
