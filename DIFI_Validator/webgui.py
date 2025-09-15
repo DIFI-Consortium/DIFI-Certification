@@ -45,7 +45,7 @@ app = Flask(__name__)
 ###########
 DIFI_VERSION_SUPPORTED = "v1"
 DIFI_CACHE_HOME = "./"
-if os.getenv("DIFI_CACHE_HOME") != "":
+if os.getenv("DIFI_CACHE_HOME"):
     DIFI_CACHE_HOME = os.getenv("DIFI_CACHE_HOME") + "/"
 CONFIG_SETTINGS = "config.json"
 VERSION_INFO = "version-info.json"
