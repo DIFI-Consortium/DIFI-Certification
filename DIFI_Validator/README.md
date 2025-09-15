@@ -26,7 +26,7 @@ sudo apt update
 sudo apt install libxml2-dev
 sudo pip install -r requirements.txt
 export DIFI_RX_MODE=pcap
-export PCAP_FILE=/path/to/your/pcap/filename.pcap
+export PCAP_FILE=examples/Example1_1Msps_8bits.pcapng
 python drx.py
 ```
 
