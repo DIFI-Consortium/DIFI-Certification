@@ -56,9 +56,11 @@ python drx.py
 
 This will receive DIFI packets on port 4991 by default
 
-In a third terminal, we will send an example DIFI packet to drx.py.  Open [DIFI 101 tutorial](../DIFI_101_Tutorial.md#Creating_DIFI_Packets_in_Python) section on "Creating DIFI Packets in Python", and run the example code using a DESTINATION_PORT of 4991.  It may be easier to copy/paste this code into a new .py script and run it with `python myscript.py`.  You should see that the terminal running drx.py shows a data packet being received.
+You can now use the web GUI tool to send individual packets, then watch them get received by drx.py.  You can also use the "See latest packet" buttons on the web GUI to view what we sent.
 
-In the web GUI (in your browser) change the Stream ID to 0x00000000 and click the "See latest good data packet" button.  If all went well, you should be brought to this screen:
+Optionally, in a third terminal, we will send an example DIFI packet to drx.py.  Open [DIFI 101 tutorial](../DIFI_101_Tutorial.md#Creating_DIFI_Packets_in_Python) section on "Creating DIFI Packets in Python", and run the example code using a DESTINATION_PORT of 4991.  It may be easier to copy/paste this code into a new .py script and run it with `python myscript.py`.  You should see that the terminal running drx.py shows a data packet being received.
+
+In the web GUI (in your browser) make sure the Stream ID is 0x00000000 (the default value) and click the "See latest good data packet" button.  If all went well, you should be brought to this screen:
 
 ![](../images/good_data_packet.png)
 
