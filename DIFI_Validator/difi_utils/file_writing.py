@@ -18,7 +18,7 @@ JSON_AS_HEX = False  #converts applicable int fields in json doc to hex strings
 
 CONFIG_SETTINGS = "config.json"
 DIFI_CACHE_HOME = "./"
-if os.getenv("DIFI_CACHE_HOME") not in ["", None]:
+if os.getenv("DIFI_CACHE_HOME"):
     DIFI_CACHE_HOME = os.getenv("DIFI_CACHE_HOME") + "/"
 
 def is_receive_enabled():

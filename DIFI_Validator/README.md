@@ -22,9 +22,11 @@ For questions/comments on the Validator tool, reach out to Marc.
 
 ```bash
 cd DIFI_Validator
+sudo apt update
+sudo apt install libxml2-dev
 sudo pip install -r requirements.txt
 export DIFI_RX_MODE=pcap
-export PCAP_FILE=/path/to/your/pcap/filename.pcap
+export PCAP_FILE=examples/Example1_1Msps_8bits.pcapng
 python drx.py
 ```
 
@@ -48,20 +50,19 @@ In a second terminal, run the drx.py component:
 
 ```bash
 cd DIFI_Validator
+export FILES_INCLUDE_STREAMID=True
 python drx.py
 ```
 
 This will receive DIFI packets on port 4991 by default
 
-In a third terminal, we will send an example DIFI packet to drx.py.  Open [DIFI 101 tutorial](../DIFI_101_Tutorial.md#Creating_DIFI_Packets_in_Python) section on "Creating DIFI Packets in Python", and run the example code using a DESTINATION_PORT of 4991.  It may be easier to copy/paste this code into a new .py script and run it with `python myscript.py`.  You should see that the terminal running drx.py shows a data packet being received.
+The webgui app lets you generate DIFI packets, it essentially calls dcs.py, dds.py, and dvs.py using parameters you specify in the webgui (vs command line if you want to skip using the webgui).  We can create one data packet using the "Send a data packet" button, try setting the stream id to 0 and target port to 4991, the hit send packet.  Now back on the main page, you can "See count of good packets".
 
-In the web GUI (in your browser) change the Stream ID to 0x00000000 and click the "See latest good data packet" button.  If all went well, you should be brought to this screen:
+Optionally, in a third terminal, we will send an example DIFI packet to drx.py using entirely our own code (without the library in this repo).  Open [DIFI 101 tutorial](../DIFI_101_Tutorial.md#Creating_DIFI_Packets_in_Python) section on "Creating DIFI Packets in Python", and run the example code using a DESTINATION_PORT of 4991.  It may be easier to copy/paste this code into a new .py script and run it with `python myscript.py`.  You should see that the terminal running drx.py shows a data packet being received.  In the web GUI (in your browser) make sure the Stream ID is 0x00000000 (the default value) and click the "See latest good data packet" button.  If all went well, you should be brought to this screen:
 
 ![](../images/good_data_packet.png)
 
 Just to reiterate what happened here, the drx.py app is what ultimately recieved and processed the packet which was crafted and sent by your script.  The webgui app simply provides a convinient interface for seeing the results of drx.py.
-
-The webgui app also lets you generate DIFI packets, it essentially calls dcs.py, dds.py, and dvs.py using parameters you specify in the webgui (vs command line if you want to skip using the webgui).  We can create another data packet using the "Send a data packet" button, try setting the stream id to 0 and target port to 4991, the hit send packet.  Now back on the main page, if you click "See count of good packets", there should now be 2.
 
 # Misc Examples
 
@@ -87,10 +88,9 @@ except drx.NoncompliantDifiPacket as e:
     print("--> not DIFI compliant, packet not decoded:\r\n%s" % e.difi_info.to_json())
 except Exception as e:
     print("error: ", e)
-
 ```
 
-## To check if header in packet is DIFI compliant:
+## Check if header in packet is DIFI compliant
 
 ```Python
 import drx
@@ -113,7 +113,8 @@ except Exception as e:
     print("error: ", e)
 ```
 
-## To check if packet contents are DIFI compliant (i.e. packet fields after the header):
+## Check if packet contents are DIFI compliant (i.e. packet fields after the header)
+
 ```Python
 import drx
 try:
@@ -166,5 +167,4 @@ try:
     dvs.send_difi_compliant_version_context_packet()
 except Exception as e:
     print(e)
-
 ```
