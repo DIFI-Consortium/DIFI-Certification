@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 # syntax=docker/dockerfile:1
 
-ARG DISTRO=redhat/ubi8-minimal:8.10
+ARG DISTRO=redhat/ubi9-minimal:9.6
 
 FROM $DISTRO
 
@@ -62,7 +62,7 @@ ENV FLASK_RUN_HOST=0.0.0.0
 
 # install in docker container
 RUN microdnf update -y --nodocs && \
-    microdnf install -y --nodocs python39 python39-devel shadow-utils gcc && \
+    microdnf install -y --nodocs python3 python3-devel shadow-utils gcc && \
     microdnf clean all && \
     rm -rf /var/cache/dnf && \
     mkdir -p /local/wheels && \
