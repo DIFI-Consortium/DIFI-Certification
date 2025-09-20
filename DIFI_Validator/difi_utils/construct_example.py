@@ -47,8 +47,29 @@ DIFIContext = Struct(
     "sampleRate" / Int64ubScaled(),
     "timeStampAdj" / Int64sb,
     "timeStampCal" / Int32ub,
-    "stateEventInd" / Int32ub,
-    "dataPacketFormat" / Int64ub,
+    "stateEventInd" / BitStruct( # 1 word TODO make sure these are in the right order
+        "calibrated_time_indicator" / BitsInteger(1),
+        "valid_data_indicator" / BitsInteger(1),
+        "reference_lock_indicator" / BitsInteger(1),
+        "agc_mgc_indicator" / BitsInteger(1),
+        "detected_signal_indicator" / BitsInteger(1),
+        "spectral_inversion_indicator" / BitsInteger(1),
+        "over_range_indicator" / BitsInteger(1),
+        "sample_loss_indicator" / BitsInteger(1),
+    ),
+    "dataPacketFormat" / BitStruct( # 2 words TODO make sure these are in the right order
+        "packing_method" / BitsInteger(1),
+        "real_complex_type" / BitsInteger(2),
+        "data_item_format" / BitsInteger(5),
+        "sample_component_repeat_indicator" / BitsInteger(1),
+        "event_tag_size" / BitsInteger(3),
+        "channel_tag_size" / BitsInteger(4),
+        "data_item_fraction_size" / BitsInteger(4),
+        "item_packing_field_size" / BitsInteger(6),
+        "data_item_size" / BitsInteger(6),
+        "repeat_count" / BitsInteger(16),
+        "vector_size" / BitsInteger(16)
+    )
 )
 
 # example of how to build a packet, type bytes
@@ -102,7 +123,5 @@ else:
             break
 
 parsed = DIFIContext.parse(data)
-print(dir(parsed))
-
 for key, value in parsed.items():
     print(f"{key}: {value}")
