@@ -1,0 +1,40 @@
+DIFIContext DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+DIFIContext ::= SEQUENCE {  -- 108 bytes total (27 words)
+    header SEQUENCE {  -- 1 word (32 bits)
+        pktType     INTEGER (0..15),       -- 4 bits  (bits 28-31) must be 0x4
+        classId     INTEGER (0..1),        -- 1 bit   (bit 27) must be 0x1
+        reserved    INTEGER (0..3),        -- 2 bits  (bits 25-26) must be 0x0
+        tsm         INTEGER (0..1),        -- 1 bit   (bit 24) must be 0x1
+        tsi         INTEGER (0..3),        -- 2 bits  (bits 22-23)
+        tsf         INTEGER (0..3),        -- 2 bits  (bits 20-21) must be 0x2
+        seqNum      INTEGER (0..15),       -- 4 bits  (bits 16-19) mod16 of running packet count
+        pktSize     INTEGER (0..65535)     -- 16 bits (bits 0-15) number of 32-bit words in packet, must be 27
+    },
+    streamId INTEGER (0..4294967295), -- 32 bits (usually set to 0x0)
+    classId SEQUENCE {  -- 2 words
+        paddingBits     INTEGER (0..31),  -- 5 bits (bits 27-31) must be 0x0
+        reserved1       INTEGER (0..8),  -- 3 bits (bits 24-26) must be 0x0
+        oui             INTEGER (0..16777215),  -- 24 bits (bits 0-23) must be 0x6A621E
+        infoClassCode   INTEGER (0..65535),  -- 16 bits (bits 16 - 31)
+        packetClassCode INTEGER (0..65535)  -- 16 bits (bits 0 - 15)
+    },
+    intSecsTimestamp  INTEGER (0..4294967295), -- 32 bits
+    fracSecsTimestamp INTEGER (0..18446744073709551615), -- 64 bits
+    cif0              INTEGER (0..4294967295), -- 32 bits but needs to get int -> hex string conversion I think
+    refPoint          INTEGER (0..4294967295), -- 32 bits
+    bandwidth         INTEGER (0..18446744073709551615), -- 64 bits
+    ifFreq            INTEGER (-9223372036854775808..9223372036854775807), -- 64 bits
+    rfFreq            INTEGER (0..18446744073709551615), -- 64 bits
+    ifBandOffset      INTEGER (0..18446744073709551615), -- 64 bits
+    referenceLevel    INTEGER (0..4294967295), -- 32 bits
+    stage1GainAtten   INTEGER (0..65535), -- 16 bits
+    stage2GainAtten   INTEGER (0..65535), -- 16 bits
+    sampleRate        INTEGER (0..18446744073709551615), -- 64 bits
+    timeStampAdj      INTEGER (-9223372036854775808..9223372036854775807), -- 64 bits, in femtoseconds
+    timeStampCal      INTEGER (0..4294967295), -- 32 bits
+    stateEventInd     INTEGER (0..4294967295), -- 32 bits
+    dataPacketFormat  INTEGER (0..18446744073709551615) -- 64 bits
+}
+
+END
