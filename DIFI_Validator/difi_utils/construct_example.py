@@ -78,11 +78,11 @@ if parsed.header.reserved != 0: raise Exception("Reserved bits must be 0")
 if parsed.header.tsm != 1: raise Exception("TSM must be 1")
 if parsed.header.tsf != 2: raise Exception("TSF must be 2")
 if parsed.cif0 != 0xFBB98000: raise Exception(f"Nonstandard CIF0, it was {parsed.cif0:X}")
-if parsed.dataPacketFormat.real_complex_type != "real": raise Exception(f"Not a standard flow signal context packet, value was {parsed.dataPacketFormat.real_complex_type}")
-if parsed.dataPacketFormat.data_item_format != "unsigned_fixed_point": raise Exception(f"Not a standard flow signal context packet, value was {parsed.dataPacketFormat.data_item_format}")
-if parsed.dataPacketFormat.sample_repeat_indicator != "no_repeat": raise Exception(f"Not a standard flow signal context packet, value was {parsed.dataPacketFormat.sample_repeat_indicator}")
-if parsed.dataPacketFormat.event_tag_size != 0: raise Exception(f"Not a standard flow signal context packet, value was {parsed.dataPacketFormat.event_tag_size}")
-if parsed.dataPacketFormat.channel_tag_size != 0: raise Exception(f"Not a standard flow signal context packet, value was {parsed.dataPacketFormat.channel_tag_size}")
+if parsed.dataPacketFormat.real_complex_type != "real": raise Exception(f"Bad real_complex_type, value was {parsed.dataPacketFormat.real_complex_type}")
+if parsed.dataPacketFormat.data_item_format != "unsigned_fixed_point": raise Exception(f"Bad data_item_format, value was {parsed.dataPacketFormat.data_item_format}")
+if parsed.dataPacketFormat.sample_repeat_indicator != "no_repeat": raise Exception(f"Bad sample_repeat_indicator, value was {parsed.dataPacketFormat.sample_repeat_indicator}")
+if parsed.dataPacketFormat.event_tag_size != 0: raise Exception(f"Bad event_tag_size, value was {parsed.dataPacketFormat.event_tag_size}")
+if parsed.dataPacketFormat.channel_tag_size != 0: raise Exception(f"Bad channel_tag_size, value was {parsed.dataPacketFormat.channel_tag_size}")
 
 
 '''
