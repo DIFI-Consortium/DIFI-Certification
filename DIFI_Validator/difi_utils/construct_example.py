@@ -4,60 +4,60 @@ from construct_custom_types import *
 
 DIFIContext = Struct(
     "header" / BitStruct(
-        "pktType" / Bits(4),      # bits 28-31
-        "classId" / Bits(1),      # bit 27
-        "reserved" / Bits(2),     # bits 25-26
-        "tsm" / Bits(1),          # bit 24 
-        "tsi" / Enum(Bits(2), NOTALLOWED=0, UTC=1, GPS=2, POSIX=3), # bits 22-23
-        "tsf" / Bits(2),          # bits 20-21
-        "seqNum" / Bits(4),       # bits 16-19
-        "pktSize" / Bits(16),     # bits 0-15
+        "pktType"  / Bits(4),      # bits 28-31
+        "classId"  / Bits(1),      # bit 27
+        "reserved" / Bits(2),      # bits 25-26
+        "tsm"      / Bits(1),      # bit 24 
+        "tsi"      / Enum(Bits(2), NOTALLOWED=0, UTC=1, GPS=2, POSIX=3), # bits 22-23
+        "tsf"      / Bits(2),      # bits 20-21
+        "seqNum"   / Bits(4),      # bits 16-19
+        "pktSize"  / Bits(16),     # bits 0-15
     ),
     "streamId" / Int32ub,
-    "classId" / BitStruct(
-        "paddingBits" / Bits(5),      # bits 27-31
-        "reserved1" / Bits(3),        # bits 24-26
-        "oui" / Bits(24),             # bits 0-23
-        "infoClassCode" / Bits(16),   # bits 16-31
+    "classId"  / BitStruct(
+        "paddingBits"     / Bits(5),  # bits 27-31
+        "reserved1"       / Bits(3),  # bits 24-26
+        "oui"             / Bits(24), # bits 0-23
+        "infoClassCode"   / Bits(16), # bits 16-31
         "packetClassCode" / Bits(16), # bits 0-15
     ),
-    "intSecsTimestamp" / Int32ub,
+    "intSecsTimestamp"  / Int32ub,
     "fracSecsTimestamp" / Int64ub,
-    "cif0" / Int32ub,
-    "refPoint" / Int32ub,
-    "bandwidth" / Int64ubScaled(),
-    "ifFreq" / Int64sbScaled(),
-    "rfFreq" / Int64sbScaled(),
-    "ifBandOffset" / Int64sbScaled(),
-    "refLevel1" / Int16sbScaled(),
-    "refLevel2" / Int16sbScaled(),
-    "stage1GainAtten" / Int16sbScaled(),
-    "stage2GainAtten" / Int16sbScaled(),
-    "sampleRate" / Int64ubScaled(),
-    "timeStampAdj" / Int64sb,
-    "timeStampCal" / Int32ub,
-    "stateEventInd" / BitStruct( # 1 word TODO make sure these are in the right order
-        "calibrated_time_indicator" / Bits(1),
-        "valid_data_indicator" / Bits(1),
-        "reference_lock_indicator" / Bits(1),
-        "agc_mgc_indicator" / Bits(1),
-        "detected_signal_indicator" / Bits(1),
+    "cif0"              / Int32ub,
+    "refPoint"          / Int32ub,
+    "bandwidth"         / Int64ubScaled(),
+    "ifFreq"            / Int64sbScaled(),
+    "rfFreq"            / Int64sbScaled(),
+    "ifBandOffset"      / Int64sbScaled(),
+    "refLevel1"         / Int16sbScaled(),
+    "refLevel2"         / Int16sbScaled(),
+    "stage1GainAtten"   / Int16sbScaled(),
+    "stage2GainAtten"   / Int16sbScaled(),
+    "sampleRate"        / Int64ubScaled(),
+    "timeStampAdj"      / Int64sb,
+    "timeStampCal"      / Int32ub,
+    "stateEventInd"     / BitStruct( # 1 word. TODO make sure these are in the right order
+        "calibrated_time_indicator"    / Bits(1),
+        "valid_data_indicator"         / Bits(1),
+        "reference_lock_indicator"     / Bits(1),
+        "agc_mgc_indicator"            / Bits(1),
+        "detected_signal_indicator"    / Bits(1),
         "spectral_inversion_indicator" / Bits(1),
-        "over_range_indicator" / Bits(1),
-        "sample_loss_indicator" / Bits(1),
+        "over_range_indicator"         / Bits(1),
+        "sample_loss_indicator"        / Bits(1),
     ),
-    "dataPacketFormat" / BitStruct( # 2 words TODO make sure these are in the right order
-        "packing_method" / Bits(1),
-        "real_complex_type" / Bits(2),
-        "data_item_format" / Bits(5),
-        "sample_component_repeat_indicator" / Bits(1),
-        "event_tag_size" / Bits(3),
-        "channel_tag_size" / Bits(4),
+    "dataPacketFormat" / BitStruct( # 2 words. TODO make sure these are in the right order
+        "packing_method"          / Bits(1),
+        "real_complex_type"       / Bits(2),
+        "data_item_format"        / Bits(5),
+        "sample_repeat_indicator" / Bits(1),
+        "event_tag_size"          / Bits(3),
+        "channel_tag_size"        / Bits(4),
         "data_item_fraction_size" / Bits(4),
         "item_packing_field_size" / Bits(6),
-        "data_item_size" / Bits(6),
-        "repeat_count" / Bits(16),
-        "vector_size" / Bits(16)
+        "data_item_size"          / Bits(6),
+        "repeat_count"            / Bits(16),
+        "vector_size"             / Bits(16)
     )
 )
 
