@@ -3,7 +3,7 @@ from scapy.all import PcapReader, UDP
 from construct_custom_types import *
 
 DIFIContext = Struct(
-    "header" / BitStruct(
+    "header" / BitStruct( # 1 word
         "pktType"  / Bits(4),      # bits 28-31
         "classId"  / Bits(1),      # bit 27
         "reserved" / Bits(2),      # bits 25-26
@@ -13,7 +13,7 @@ DIFIContext = Struct(
         "seqNum"   / Bits(4),      # bits 16-19
         "pktSize"  / Bits(16)),     # bits 0-15
     "streamId" / Int32ub,
-    "classId"  / BitStruct(
+    "classId"  / BitStruct( # 1 word
         "paddingBits"     / Bits(5),  # bits 27-31
         "reserved1"       / Bits(3),  # bits 24-26
         "oui"             / Bits(24), # bits 0-23
