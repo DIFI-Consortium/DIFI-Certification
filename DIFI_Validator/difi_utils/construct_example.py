@@ -5,21 +5,21 @@ from difi_constants import *
 
 DIFIContext = Struct(
     "header" / BitStruct( # 1 word
-        "pktType"  / Bits(4),      # bits 28-31
-        "classId"  / Bits(1),      # bit 27
-        "reserved" / Bits(2),      # bits 25-26
-        "tsm"      / Bits(1),      # bit 24 
-        "tsi"      / Enum(Bits(2), NOTALLOWED=0, UTC=1, GPS=2, POSIX=3), # bits 22-23
-        "tsf"      / Bits(2),      # bits 20-21
-        "seqNum"   / Bits(4),      # bits 16-19
-        "pktSize"  / Bits(16)),    # bits 0-15
+        "pktType"  / Bits(4),
+        "classId"  / Bits(1),
+        "reserved" / Bits(2),
+        "tsm"      / Bits(1),
+        "tsi"      / Enum(Bits(2), NOTALLOWED=0, UTC=1, GPS=2, POSIX=3),
+        "tsf"      / Bits(2),
+        "seqNum"   / Bits(4),
+        "pktSize"  / Bits(16)),
     "streamId" / UnsignedInt32(),
     "classId" / BitStruct( # 1 word
-        "paddingBits"     / Bits(5),   # bits 27-31
-        "reserved1"       / Bits(3),   # bits 24-26
-        "oui"             / Bits(24),  # bits 0-23
-        "infoClassCode"   / Bits(16),  # bits 16-31
-        "packetClassCode" / Bits(16)), # bits 0-15
+        "paddingBits"     / Bits(5),
+        "reserved1"       / Bits(3),
+        "oui"             / Bits(24),
+        "infoClassCode"   / Bits(16),
+        "packetClassCode" / Bits(16)),
     "intSecsTimestamp"  / UnsignedInt32(),
     "fracSecsTimestamp" / UnsignedInt64(),
     "cif0"              / UnsignedInt32(),
