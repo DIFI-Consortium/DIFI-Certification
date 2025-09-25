@@ -1,6 +1,7 @@
 from construct import Struct, BitStruct, Int32ub, Int64ub, Int64sb, Enum
 from scapy.all import PcapReader, UDP
 from construct_custom_types import *
+from difi_constants import *
 
 DIFIContext = Struct(
     "header" / BitStruct( # 1 word
@@ -68,6 +69,21 @@ print(data)
 parsed = DIFIContext.parse(data)
 for key, value in parsed.items():
     print(f"{key}: {value}")
+
+# Example of validations
+if parsed.header.pktType != 0x4: raise Exception("Not a standard flow signal context packet")
+if parsed.header.pktSize != 27: raise Exception("Packet size is not 27 words")
+if parsed.header.classId != 1: raise Exception("Class ID must be 1 for standard flow signal context")
+if parsed.header.reserved != 0: raise Exception("Reserved bits must be 0")
+if parsed.header.tsm != 1: raise Exception("TSM must be 1")
+if parsed.header.tsf != 2: raise Exception("TSF must be 2")
+if parsed.cif0 != 0xFBB98000: raise Exception(f"Nonstandard CIF0, it was {parsed.cif0:X}")
+if parsed.dataPacketFormat.real_complex_type != "real": raise Exception(f"Not a standard flow signal context packet, value was {parsed.dataPacketFormat.real_complex_type}")
+if parsed.dataPacketFormat.data_item_format != "unsigned_fixed_point": raise Exception(f"Not a standard flow signal context packet, value was {parsed.dataPacketFormat.data_item_format}")
+if parsed.dataPacketFormat.sample_repeat_indicator != "no_repeat": raise Exception(f"Not a standard flow signal context packet, value was {parsed.dataPacketFormat.sample_repeat_indicator}")
+if parsed.dataPacketFormat.event_tag_size != 0: raise Exception(f"Not a standard flow signal context packet, value was {parsed.dataPacketFormat.event_tag_size}")
+if parsed.dataPacketFormat.channel_tag_size != 0: raise Exception(f"Not a standard flow signal context packet, value was {parsed.dataPacketFormat.channel_tag_size}")
+
 
 '''
 # example of how to build a packet (of type bytes)
