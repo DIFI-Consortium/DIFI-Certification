@@ -11,16 +11,14 @@ DIFIContext = Struct(
         "tsi"      / Enum(Bits(2), NOTALLOWED=0, UTC=1, GPS=2, POSIX=3), # bits 22-23
         "tsf"      / Bits(2),      # bits 20-21
         "seqNum"   / Bits(4),      # bits 16-19
-        "pktSize"  / Bits(16),     # bits 0-15
-    ),
+        "pktSize"  / Bits(16)),     # bits 0-15
     "streamId" / Int32ub,
     "classId"  / BitStruct(
         "paddingBits"     / Bits(5),  # bits 27-31
         "reserved1"       / Bits(3),  # bits 24-26
         "oui"             / Bits(24), # bits 0-23
         "infoClassCode"   / Bits(16), # bits 16-31
-        "packetClassCode" / Bits(16), # bits 0-15
-    ),
+        "packetClassCode" / Bits(16)), # bits 0-15
     "intSecsTimestamp"  / Int32ub,
     "fracSecsTimestamp" / Int64ub,
     "cif0"              / Int32ub,
@@ -44,8 +42,7 @@ DIFIContext = Struct(
         "detected_signal_indicator"    / Bits(1),
         "spectral_inversion_indicator" / Bits(1),
         "over_range_indicator"         / Bits(1),
-        "sample_loss_indicator"        / Bits(1),
-    ),
+        "sample_loss_indicator"        / Bits(1)),
     "dataPacketFormat" / BitStruct( # 2 words
         "packing_method"          / Enum(Bits(1), processing_efficient=0, link_efficient=1),
         "real_complex_type"       / Enum(Bits(2), real=0, complex_cartesian=1, complex_polar=2, reserved=3),
@@ -57,9 +54,7 @@ DIFIContext = Struct(
         "item_packing_field_size" / Bits(6),
         "data_item_size"          / Bits(6),
         "repeat_count"            / Bits(16),
-        "vector_size"             / Bits(16)
-    )
-)
+        "vector_size"             / Bits(16)))
 
 # Example of parsing a packet
 pcap_file = "../examples/Example1_1Msps_8bits.pcapng"
