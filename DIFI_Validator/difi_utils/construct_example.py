@@ -1,4 +1,4 @@
-from construct import Struct, BitStruct, Int32ub, Int64ub, Int64sb, Enum
+from construct import Struct, BitStruct, Enum
 from scapy.all import PcapReader, UDP
 from construct_custom_types import *
 from difi_constants import *
@@ -13,28 +13,28 @@ DIFIContext = Struct(
         "tsf"      / Bits(2),      # bits 20-21
         "seqNum"   / Bits(4),      # bits 16-19
         "pktSize"  / Bits(16)),    # bits 0-15
-    "streamId" / Int32ub,
+    "streamId" / UnsignedInt32(),
     "classId" / BitStruct( # 1 word
         "paddingBits"     / Bits(5),   # bits 27-31
         "reserved1"       / Bits(3),   # bits 24-26
         "oui"             / Bits(24),  # bits 0-23
         "infoClassCode"   / Bits(16),  # bits 16-31
         "packetClassCode" / Bits(16)), # bits 0-15
-    "intSecsTimestamp"  / Int32ub,
-    "fracSecsTimestamp" / Int64ub,
-    "cif0"              / Int32ub,
-    "refPoint"          / Int32ub,
-    "bandwidth"         / Int64ubScaled(),
-    "ifFreq"            / Int64sbScaled(),
-    "rfFreq"            / Int64sbScaled(),
-    "ifBandOffset"      / Int64sbScaled(),
-    "refLevel1"         / Int16sbScaled(),
-    "refLevel2"         / Int16sbScaled(),
-    "stage1GainAtten"   / Int16sbScaled(),
-    "stage2GainAtten"   / Int16sbScaled(),
-    "sampleRate"        / Int64ubScaled(),
-    "timeStampAdj"      / Int64sb,
-    "timeStampCal"      / Int32ub,
+    "intSecsTimestamp"  / UnsignedInt32(),
+    "fracSecsTimestamp" / UnsignedInt64(),
+    "cif0"              / UnsignedInt32(),
+    "refPoint"          / UnsignedInt32(),
+    "bandwidth"         / UnsignedInt64Scaled(),
+    "ifFreq"            / SignedInt64Scaled(),
+    "rfFreq"            / SignedInt64Scaled(),
+    "ifBandOffset"      / SignedInt64Scaled(),
+    "refLevel1"         / SignedInt16Scaled(),
+    "refLevel2"         / SignedInt16Scaled(),
+    "stage1GainAtten"   / SignedInt16Scaled(),
+    "stage2GainAtten"   / SignedInt16Scaled(),
+    "sampleRate"        / UnsignedInt64Scaled(),
+    "timeStampAdj"      / SignedInt64(),
+    "timeStampCal"      / UnsignedInt32(),
     "stateEventInd" / BitStruct( # 1 word
         "calibrated_time_indicator"    / Bits(1),
         "valid_data_indicator"         / Bits(1),
