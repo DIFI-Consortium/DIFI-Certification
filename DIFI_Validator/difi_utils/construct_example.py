@@ -36,7 +36,7 @@ DIFIContext = Struct(
     "sampleRate"        / Int64ubScaled(),
     "timeStampAdj"      / Int64sb,
     "timeStampCal"      / Int32ub,
-    "stateEventInd"     / BitStruct( # 1 word. TODO make sure these are in the right order
+    "stateEventInd"     / BitStruct( # 1 word
         "calibrated_time_indicator"    / Bits(1),
         "valid_data_indicator"         / Bits(1),
         "reference_lock_indicator"     / Bits(1),
@@ -46,13 +46,13 @@ DIFIContext = Struct(
         "over_range_indicator"         / Bits(1),
         "sample_loss_indicator"        / Bits(1),
     ),
-    "dataPacketFormat" / BitStruct( # 2 words. TODO make sure these are in the right order
-        "packing_method"          / Bits(1),
-        "real_complex_type"       / Bits(2),
-        "data_item_format"        / Bits(5),
-        "sample_repeat_indicator" / Bits(1),
-        "event_tag_size"          / Bits(3),
-        "channel_tag_size"        / Bits(4),
+    "dataPacketFormat" / BitStruct( # 2 words
+        "packing_method"          / Enum(Bits(1), processing_efficient=0, link_efficient=1),
+        "real_complex_type"       / Enum(Bits(2), real=0, complex_cartesian=1, complex_polar=2, reserved=3),
+        "data_item_format"        / Enum(Bits(5), signed_fixed_point=0, unsigned_fixed_point=2),
+        "sample_repeat_indicator" / Enum(Bits(1), no_repeat=0, yes_repeat=1),
+        "event_tag_size"          / Bits(3), # 0 for no event tags
+        "channel_tag_size"        / Bits(4), # 0 for no channel tags
         "data_item_fraction_size" / Bits(4),
         "item_packing_field_size" / Bits(6),
         "data_item_size"          / Bits(6),
