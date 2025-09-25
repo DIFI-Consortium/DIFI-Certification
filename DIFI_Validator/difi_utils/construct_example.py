@@ -1,20 +1,6 @@
-from construct import Struct, BitStruct, BitsInteger, Int16ub, Int32ub, Int64ub, Int64sb, Int16sb, ExprAdapter, ExprSymmetricAdapter, obj_, Enum
+from construct import Struct, BitStruct, Int32ub, Int64ub, Int64sb, Enum
 from scapy.all import PcapReader, UDP
-
-pcap_file = "../examples/Example1_1Msps_8bits.pcapng"
-
-def Int64ubScaled():
-    return ExprAdapter(Int64ub, lambda obj, ctx: obj / 2.0 ** 20, lambda obj, ctx: int(obj * 2.0 ** 20))
-
-def Int64sbScaled():
-    return ExprAdapter(Int64sb, lambda obj, ctx: obj / 2.0 ** 20, lambda obj, ctx: int(obj * 2.0 ** 20))
-
-def Int16sbScaled():
-    return ExprAdapter(Int16sb, lambda obj, ctx: obj / 2.0 ** 7, lambda obj, ctx: int(obj * 2.0 ** 7))
-
-# This is aliased so that it 1) shows up yellow instead of green, and 2) shorter and more concise code
-def Bits(N):
-    return BitsInteger(N)
+from construct_custom_types import *
 
 DIFIContext = Struct(
     "header" / BitStruct(
@@ -75,56 +61,58 @@ DIFIContext = Struct(
     )
 )
 
-# example of how to build a packet, type bytes
-if False:
-    data = DIFIContext.build(
-        dict(
-            header=dict(
-                pktType=0x4,
-                classId=0x1,
-                reserved=0x0,
-                tsm=0x1,
-                tsi=0x1,
-                tsf=0x2,
-                seqNum=0,
-                pktSize=4,
-            ),
-            streamId=12345,
-            classId=dict(
-                paddingBits=0,
-                reserved1=0,
-                oui=0x000000,
-                infoClassCode=0,
-                packetClassCode=0,
-            ),
-            intSecsTimestamp=0,
-            fracSecsTimestamp=0,
-            cif0=0,
-            refPoint=0,
-            bandwidth=int(10),
-            ifFreq=0,
-            rfFreq=0,
-            ifBandOffset=0,
-            refLevel1=0,
-            refLevel2=0,
-            stage1GainAtten=0,
-            stage2GainAtten=0,
-            sampleRate=int(10),
-            timeStampAdj=0,
-            timeStampCal=0,
-            stateEventInd=int(0),
-            dataPacketFormat=0,
-        )
-    )
-
-else:
-    for packet in PcapReader(pcap_file):
-        data = bytes(packet[UDP].payload)
-        packet_type = data[0:4][0] >> 4
-        if packet_type == 0x4:
-            print("Found first context packet")
-            break
+# Example of parsing a packet
+pcap_file = "../examples/Example1_1Msps_8bits.pcapng"
+for packet in PcapReader(pcap_file):
+    data = bytes(packet[UDP].payload)
+    packet_type = data[0:4][0] >> 4
+    if packet_type == 0x4:
+        print("Found first context packet")
+        break
 print(data)
 parsed = DIFIContext.parse(data)
 for key, value in parsed.items():
     print(f"{key}: {value}")
+
+'''
+# example of how to build a packet (of type bytes)
+data = DIFIContext.build(
+    dict(
+        header=dict(
+            pktType=0x4,
+            classId=0x1,
+            reserved=0x0,
+            tsm=0x1,
+            tsi=0x1,
+            tsf=0x2,
+            seqNum=0,
+            pktSize=4,
+        ),
+        streamId=12345,
+        classId=dict(
+            paddingBits=0,
+            reserved1=0,
+            oui=0x000000,
+            infoClassCode=0,
+            packetClassCode=0,
+        ),
+        intSecsTimestamp=0,
+        fracSecsTimestamp=0,
+        cif0=0,
+        refPoint=0,
+        bandwidth=int(10),
+        ifFreq=0,
+        rfFreq=0,
+        ifBandOffset=0,
+        refLevel1=0,
+        refLevel2=0,
+        stage1GainAtten=0,
+        stage2GainAtten=0,
+        sampleRate=int(10),
+        timeStampAdj=0,
+        timeStampCal=0,
+        stateEventInd=int(0),
+        dataPacketFormat=0,
+    )
+)
+'''
