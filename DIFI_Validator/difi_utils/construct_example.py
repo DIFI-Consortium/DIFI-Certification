@@ -13,7 +13,7 @@ DIFIContext = Struct(
         "seqNum"   / Bits(4),      # bits 16-19
         "pktSize"  / Bits(16)),     # bits 0-15
     "streamId" / Int32ub,
-    "classId"  / BitStruct( # 1 word
+    "classId" / BitStruct( # 1 word
         "paddingBits"     / Bits(5),  # bits 27-31
         "reserved1"       / Bits(3),  # bits 24-26
         "oui"             / Bits(24), # bits 0-23
@@ -34,7 +34,7 @@ DIFIContext = Struct(
     "sampleRate"        / Int64ubScaled(),
     "timeStampAdj"      / Int64sb,
     "timeStampCal"      / Int32ub,
-    "stateEventInd"     / BitStruct( # 1 word
+    "stateEventInd" / BitStruct( # 1 word
         "calibrated_time_indicator"    / Bits(1),
         "valid_data_indicator"         / Bits(1),
         "reference_lock_indicator"     / Bits(1),
