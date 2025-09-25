@@ -1,4 +1,4 @@
-from construct import Struct, BitStruct, BitsInteger, Int16ub, Int32ub, Int64ub, Int64sb, Int16sb, ExprAdapter, ExprSymmetricAdapter, obj_
+from construct import Struct, BitStruct, BitsInteger, Int16ub, Int32ub, Int64ub, Int64sb, Int16sb, ExprAdapter, ExprSymmetricAdapter, obj_, Enum
 from scapy.all import PcapReader, UDP
 
 pcap_file = "../examples/Example1_1Msps_8bits.pcapng"
@@ -12,25 +12,28 @@ def Int64sbScaled():
 def Int16sbScaled():
     return ExprAdapter(Int16sb, lambda obj, ctx: obj / 2.0 ** 7, lambda obj, ctx: int(obj * 2.0 ** 7))
 
+# This is aliased so that it 1) shows up yellow instead of green, and 2) shorter and more concise code
+def Bits(N):
+    return BitsInteger(N)
 
 DIFIContext = Struct(
     "header" / BitStruct(
-        "pktType" / BitsInteger(4),      # bits 28-31
-        "classId" / BitsInteger(1),      # bit 27
-        "reserved" / BitsInteger(2),     # bits 25-26
-        "tsm" / BitsInteger(1),          # bit 24
-        "tsi" / BitsInteger(2),          # bits 22-23
-        "tsf" / BitsInteger(2),          # bits 20-21
-        "seqNum" / BitsInteger(4),       # bits 16-19
-        "pktSize" / BitsInteger(16),     # bits 0-15
+        "pktType" / Bits(4),      # bits 28-31
+        "classId" / Bits(1),      # bit 27
+        "reserved" / Bits(2),     # bits 25-26
+        "tsm" / Bits(1),          # bit 24 
+        "tsi" / Enum(Bits(2), NOTALLOWED=0, UTC=1, GPS=2, POSIX=3), # bits 22-23
+        "tsf" / Bits(2),          # bits 20-21
+        "seqNum" / Bits(4),       # bits 16-19
+        "pktSize" / Bits(16),     # bits 0-15
     ),
     "streamId" / Int32ub,
     "classId" / BitStruct(
-        "paddingBits" / BitsInteger(5),      # bits 27-31
-        "reserved1" / BitsInteger(3),        # bits 24-26
-        "oui" / BitsInteger(24),             # bits 0-23
-        "infoClassCode" / BitsInteger(16),   # bits 16-31
-        "packetClassCode" / BitsInteger(16), # bits 0-15
+        "paddingBits" / Bits(5),      # bits 27-31
+        "reserved1" / Bits(3),        # bits 24-26
+        "oui" / Bits(24),             # bits 0-23
+        "infoClassCode" / Bits(16),   # bits 16-31
+        "packetClassCode" / Bits(16), # bits 0-15
     ),
     "intSecsTimestamp" / Int32ub,
     "fracSecsTimestamp" / Int64ub,
@@ -48,27 +51,27 @@ DIFIContext = Struct(
     "timeStampAdj" / Int64sb,
     "timeStampCal" / Int32ub,
     "stateEventInd" / BitStruct( # 1 word TODO make sure these are in the right order
-        "calibrated_time_indicator" / BitsInteger(1),
-        "valid_data_indicator" / BitsInteger(1),
-        "reference_lock_indicator" / BitsInteger(1),
-        "agc_mgc_indicator" / BitsInteger(1),
-        "detected_signal_indicator" / BitsInteger(1),
-        "spectral_inversion_indicator" / BitsInteger(1),
-        "over_range_indicator" / BitsInteger(1),
-        "sample_loss_indicator" / BitsInteger(1),
+        "calibrated_time_indicator" / Bits(1),
+        "valid_data_indicator" / Bits(1),
+        "reference_lock_indicator" / Bits(1),
+        "agc_mgc_indicator" / Bits(1),
+        "detected_signal_indicator" / Bits(1),
+        "spectral_inversion_indicator" / Bits(1),
+        "over_range_indicator" / Bits(1),
+        "sample_loss_indicator" / Bits(1),
     ),
     "dataPacketFormat" / BitStruct( # 2 words TODO make sure these are in the right order
-        "packing_method" / BitsInteger(1),
-        "real_complex_type" / BitsInteger(2),
-        "data_item_format" / BitsInteger(5),
-        "sample_component_repeat_indicator" / BitsInteger(1),
-        "event_tag_size" / BitsInteger(3),
-        "channel_tag_size" / BitsInteger(4),
-        "data_item_fraction_size" / BitsInteger(4),
-        "item_packing_field_size" / BitsInteger(6),
-        "data_item_size" / BitsInteger(6),
-        "repeat_count" / BitsInteger(16),
-        "vector_size" / BitsInteger(16)
+        "packing_method" / Bits(1),
+        "real_complex_type" / Bits(2),
+        "data_item_format" / Bits(5),
+        "sample_component_repeat_indicator" / Bits(1),
+        "event_tag_size" / Bits(3),
+        "channel_tag_size" / Bits(4),
+        "data_item_fraction_size" / Bits(4),
+        "item_packing_field_size" / Bits(6),
+        "data_item_size" / Bits(6),
+        "repeat_count" / Bits(16),
+        "vector_size" / Bits(16)
     )
 )
 
@@ -121,7 +124,7 @@ else:
         if packet_type == 0x4:
             print("Found first context packet")
             break
-
+print(data)
 parsed = DIFIContext.parse(data)
 for key, value in parsed.items():
     print(f"{key}: {value}")
