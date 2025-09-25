@@ -11,13 +11,13 @@ DIFIContext = Struct(
         "tsi"      / Enum(Bits(2), NOTALLOWED=0, UTC=1, GPS=2, POSIX=3), # bits 22-23
         "tsf"      / Bits(2),      # bits 20-21
         "seqNum"   / Bits(4),      # bits 16-19
-        "pktSize"  / Bits(16)),     # bits 0-15
+        "pktSize"  / Bits(16)),    # bits 0-15
     "streamId" / Int32ub,
     "classId" / BitStruct( # 1 word
-        "paddingBits"     / Bits(5),  # bits 27-31
-        "reserved1"       / Bits(3),  # bits 24-26
-        "oui"             / Bits(24), # bits 0-23
-        "infoClassCode"   / Bits(16), # bits 16-31
+        "paddingBits"     / Bits(5),   # bits 27-31
+        "reserved1"       / Bits(3),   # bits 24-26
+        "oui"             / Bits(24),  # bits 0-23
+        "infoClassCode"   / Bits(16),  # bits 16-31
         "packetClassCode" / Bits(16)), # bits 0-15
     "intSecsTimestamp"  / Int32ub,
     "fracSecsTimestamp" / Int64ub,
