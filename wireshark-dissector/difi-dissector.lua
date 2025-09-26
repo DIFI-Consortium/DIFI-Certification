@@ -53,6 +53,7 @@ timestamp_adj = ProtoField.uint64("difi.time_adj", "Timestamp Adjustment (fs)", 
 time_cal      = ProtoField.uint32("difi.time_cal", "Timestamp Calibration Time", base.DEC)
 se_indicator  = ProtoField.uint32("difi.se_indicator", "State and Event Indicators", base.HEX)
 data_format   = ProtoField.uint64("difi.data_format", "Data Packet Payload Format", base.HEX)
+bytes_per_sample = ProtoField.uint8("difi.bytes_per_sample", "Bytes Per Sample (I & Q pair)", base.DEC)
 
 -- Version Header fields
 ctxt_cif0     = ProtoField.uint32("difi.ctxt_cif0", "Context Indicator Field (CIF) 0", base.HEX)
@@ -63,7 +64,6 @@ day           = ProtoField.uint32("difi.day","Day", base.DEC,NULL,0x01ff0000)
 revision      = ProtoField.uint32("difi.revision","Revision", base.DEC,NULL,0x0000fc00)
 user_type     = ProtoField.uint32("difi.user_type","Type (user-defined)", base.DEC,NULL,0x000003c0)
 icd_version   = ProtoField.uint32("difi.icd_version","ICD Version", base.DEC,NULL,0x0000003f)
-
 
 -- command header fields
 cam_field        = ProtoField.uint32("difi.cam_field", "CAM field", base.HEX)
@@ -81,21 +81,22 @@ near_empty       = ProtoField.uint16("difi.near_empty","near_empty", base.DEC,NU
 buffer_underflow = ProtoField.uint16("difi.buffer_underflow","Buffer Underflow", base.DEC,NULL,0x0001)
 
 difi_protocol = Proto("DIFI", "DIFI Protocol")
+difi_legacy_protocol = Proto("DIFI_Legacy", "DIFI Legacy Protocol")
 
 -- Register all potential fields in the tree
 difi_protocol.fields = {
     -- common
-    packet_type, packet_size, seq_num, tsi, tsf, stream_id, padding_bits, oui, packet_class_code, 
+    packet_type, packet_size, seq_num, tsi, tsf, stream_id, padding_bits, oui, packet_class_code,
 	information_class, int_timestamp, frac_timestamp,
     -- data
     data, data_len,
     -- context
-    ctxt_cif, ref_point, bandwidth, if_ref_freq, rf_ref_freq, if_offset, ref_level, scaling_level, 
-	stage1_gain, stage2_gain, sample_rate, timestamp_adj, time_cal, se_indicator, data_format,
+    ctxt_cif, ref_point, bandwidth, if_ref_freq, rf_ref_freq, if_offset, ref_level, scaling_level,
+	stage1_gain, stage2_gain, sample_rate, timestamp_adj, time_cal, se_indicator, data_format, bytes_per_sample,
     -- version
     ctxt_cif0, ctxt_cif1, v49spec, year, day, revision, user_type, icd_version,
     -- command
-    cam_field, message_id, controllee_id, controller_id, ctrl_cif0, ctrl_cif1, 
+    cam_field, message_id, controllee_id, controller_id, ctrl_cif0, ctrl_cif1,
 	buffer_size, buffer_reserved, buffer_level, buffer_overflow, near_full, near_empty, buffer_underflow
 }
 
@@ -170,12 +171,20 @@ local function get_dB(word16)
 	return db_val
 end
 
+local function get_bytes_per_sample(data_format_word64)
+    --  The last 6 bits of the first half from payload_format (bits 32-37)
+    --  gives the number of BITS per I or Q, minus 1.
+    local upper_32_bits = data_format_word64:rshift(32)
+    local bits_per_iq = bit.band(upper_32_bits:tonumber(), 0x3F) + 1
+    -- Get the number of bytes per sample (I and Q pair)
+    return (bits_per_iq * 2) / 8
+end
+
 local function context_pkt_dissector(buffer, tree, name)
 
     if buffer:len() < 108 then return end
 
     local subtree = tree:add(difi_protocol, buffer(0, 108), "DIFI Protocol, " .. name)
-
 	
     -- Header
     difi_common_dissector(buffer, subtree)
@@ -237,6 +246,10 @@ local function context_pkt_dissector(buffer, tree, name)
     subtree:add(time_cal, buffer(92, 4):uint())
     subtree:add(se_indicator, buffer(96, 4):uint())
     subtree:add(data_format, buffer(100, 8):uint64())
+
+    -- Bytes per sample is derived from data_format field
+    subtree:add(bytes_per_sample, get_bytes_per_sample(buffer(100,8):uint64()))
+
 end
 
 local function data_pkt_dissector(buffer, tree, name)
@@ -256,11 +269,11 @@ local function data_pkt_dissector(buffer, tree, name)
 
 end
 
-local function version_pkt_dissector(buffer, tree)
+local function version_pkt_dissector(buffer, tree, name)
 
     if buffer:len() < 44 then return end
 
-    local subtree = tree:add(difi_protocol, buffer(0, 44), "DIFI Protocol, " .. "Version Flow Signal Context Packet")
+    local subtree = tree:add(difi_protocol, buffer(0, 44), "DIFI Protocol, " .. name)
 
     -- Header
     difi_common_dissector(buffer, subtree)
@@ -315,13 +328,14 @@ local function heuristic_checker(buffer, pinfo, tree)
     -- guard for length, header for data packet is at least 7 32-bit words
     if buffer:len() < 28 then return false end
 
+    -- TODO: the OUI / CID is 24 bits not 4 bytes. Since pad bit count is no longer fixed at 0 this is no longer valid
     local potential_oui = buffer(9, 3):uint()
     if (potential_oui ~= 0x7C386C and potential_oui ~= 0x6A621E) then return false end
 
     local word0 = buffer(0,4):uint()
     local packet_type = bit.rshift(bit.band(word0,0xf0000000), 28)
 
-    if packet_type == 1 or packet_type == 4 or packet_type == 6 then
+    if packet_type == 1 or packet_type == 4 or packet_type == 5 or packet_type == 6 then
         difi_protocol.dissector(buffer, pinfo, tree)
         return true
     else
@@ -336,6 +350,7 @@ function difi_protocol.dissector(buffer, pinfo, tree)
     local packet_class_int = bit.rshift(bit.band(word3,0x0000ffff), 0)
 
     local packet_type_int = bit.rshift(bit.band(word0,0xf0000000), 28)
+    pinfo.cols.protocol = difi_protocol.name
     name = "unknown type=" .. packet_type_int .. " , class=" .. packet_class_int
     if packet_type_int == 0x1 then
         if packet_class_int == 0 then name = "Standard Flow Signal Data Packet" end
@@ -343,7 +358,7 @@ function difi_protocol.dissector(buffer, pinfo, tree)
         data_pkt_dissector(buffer, tree, name)
     elseif packet_type_int == 0x4 and packet_class_int == 4 then
         name = "Version Flow Signal Context Packet"
-        version_pkt_dissector(buffer, tree)
+        version_pkt_dissector(buffer, tree, name)
     elseif packet_type_int == 0x4 then
         if packet_class_int == 1 then name = "Standard Flow Signal Context Packet" end
         if packet_class_int == 3 then name = "Sample Count Context Packet" end
@@ -352,9 +367,11 @@ function difi_protocol.dissector(buffer, pinfo, tree)
         if packet_class_int == 6 then name = "Real Time Command Packet" end
         if packet_class_int == 5 then name = "Sample Count Command Packet" end
         control_pkt_dissector(buffer, tree, name)
+    elseif packet_type_int == 0x5 then
+        name = "Legacy Version Flow Signal Context Packet (no longer used in 1.1 and above)"
+        pinfo.cols.protocol = difi_legacy_protocol.name
+        version_pkt_dissector(buffer, tree, name)
     end
-
-    pinfo.cols.protocol = difi_protocol.name
 end
 
 difi_protocol:register_heuristic("udp", heuristic_checker)
