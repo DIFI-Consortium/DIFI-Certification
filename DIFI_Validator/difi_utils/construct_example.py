@@ -66,6 +66,8 @@ for packet in PcapReader(pcap_file):
         print("Found first context packet")
         break
 print(data)
+print(len(data), "bytes")
+print(DIFIContext.sizeof(), "bytes expected by Construct")
 parsed = DIFIContext.parse(data)
 for key, value in parsed.items():
     print(f"{key}: {value}")
@@ -83,47 +85,3 @@ if parsed.dataPacketFormat.data_item_format != "unsigned_fixed_point": raise Exc
 if parsed.dataPacketFormat.sample_repeat_indicator != "no_repeat": raise Exception(f"Bad sample_repeat_indicator, value was {parsed.dataPacketFormat.sample_repeat_indicator}")
 if parsed.dataPacketFormat.event_tag_size != 0: raise Exception(f"Bad event_tag_size, value was {parsed.dataPacketFormat.event_tag_size}")
 if parsed.dataPacketFormat.channel_tag_size != 0: raise Exception(f"Bad channel_tag_size, value was {parsed.dataPacketFormat.channel_tag_size}")
-
-
-'''
-# example of how to build a packet (of type bytes)
-data = DIFIContext.build(
-    dict(
-        header=dict(
-            pktType=0x4,
-            classId=0x1,
-            reserved=0x0,
-            tsm=0x1,
-            tsi=0x1,
-            tsf=0x2,
-            seqNum=0,
-            pktSize=4,
-        ),
-        streamId=12345,
-        classId=dict(
-            paddingBits=0,
-            reserved1=0,
-            oui=0x000000,
-            infoClassCode=0,
-            packetClassCode=0,
-        ),
-        intSecsTimestamp=0,
-        fracSecsTimestamp=0,
-        cif0=0,
-        refPoint=0,
-        bandwidth=int(10),
-        ifFreq=0,
-        rfFreq=0,
-        ifBandOffset=0,
-        refLevel1=0,
-        refLevel2=0,
-        stage1GainAtten=0,
-        stage2GainAtten=0,
-        sampleRate=int(10),
-        timeStampAdj=0,
-        timeStampCal=0,
-        stateEventInd=int(0),
-        dataPacketFormat=0,
-    )
-)
-'''
