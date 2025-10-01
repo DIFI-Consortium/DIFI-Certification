@@ -1,16 +1,7 @@
 from construct import Struct, BitStruct, Enum
-from scapy.all import PcapReader, UDP
 from construct_custom_types import *
-from difi_constants import *
 
-# Notes on endianness and order of fields within Construct-
-#   - DIFI wireshark dissector uses big-endian
-#   - currently I'm using big-endian with construct
-#   - the order of fields within 1 word seem to be reverse of what the DIFI spec shows
-#   - eg packet size is bits 0-15 in the spec
-#   - so it seems like BitStruct is defined with most significant bits first
-
-DIFIContext = Struct(
+difi_context_definition = Struct(
     "header" / BitStruct( # 1 word
         "pktType"  / Bits(4),
         "classId"  / Bits(1),
@@ -67,33 +58,28 @@ DIFIContext = Struct(
         "data_item_size"          / Bits(6),
         "repeat_count"            / Bits(16),  # 2nd word, bits 16-31
         "vector_size"             / Bits(16))) # 2nd word, bits 0-15
-if DIFIContext.sizeof() != 108: raise Exception("Bug in Construct definition of DIFIContext, it should be 108 bytes")
+if difi_context_definition.sizeof() != 108: raise Exception("Bug in Construct definition of difi_context_definition, it should be 108 bytes")
 
-# Example of parsing a packet
-pcap_file = "../examples/Example1_1Msps_8bits.pcapng"
-for packet in PcapReader(pcap_file):
-    data = bytes(packet[UDP].payload)
-    packet_type = data[0:4][0] >> 4
-    if packet_type == 0x4:
-        print("Found first context packet")
-        break
-# print(data)
-if len(data) != DIFIContext.sizeof(): raise Exception(f"Packet size {len(data)} does not match expected size {DIFIContext.sizeof()}")
-parsed = DIFIContext.parse(data)
-for key, value in parsed.items():
-    print(f"{key}: {value}")
+# Notes on endianness and order of fields within Construct-
+#   - DIFI wireshark dissector uses big-endian
+#   - currently I'm using big-endian with construct
+#   - the order of fields within 1 word seem to be reverse of what the DIFI spec shows
+#   - eg packet size is bits 0-15 in the spec
+#   - so it seems like BitStruct is defined with most significant bits first
 
 # Validations
-if parsed.header.pktType != 0x4: raise Exception("Not a standard flow signal context packet")
-if parsed.header.pktSize != 27: raise Exception("Packet size is not 27 words")
-if parsed.header.classId != 1: raise Exception("Class ID must be 1 for standard flow signal context")
-if parsed.header.reserved != 0: raise Exception("Reserved bits must be 0")
-if parsed.header.tsm != 1: raise Exception("TSM must be 1")
-if parsed.header.tsf != 2: raise Exception("TSF must be 2")
-if parsed.cif0 != 0xFBB98000: raise Exception(f"Nonstandard CIF0, it was {parsed.cif0:X}")
-if parsed.dataPacketFormat.real_complex_type != "complex_cartesian": raise Exception(f"Bad real_complex_type, value was {parsed.dataPacketFormat.real_complex_type}")
-if parsed.dataPacketFormat.data_item_format != "signed_fixed_point": raise Exception(f"Bad data_item_format, value was {parsed.dataPacketFormat.data_item_format}")
-if parsed.dataPacketFormat.sample_repeat_indicator != "no_repeat": raise Exception(f"Bad sample_repeat_indicator, value was {parsed.dataPacketFormat.sample_repeat_indicator}")
-if parsed.dataPacketFormat.event_tag_size != 0: raise Exception(f"Bad event_tag_size, value was {parsed.dataPacketFormat.event_tag_size}")
-if parsed.dataPacketFormat.channel_tag_size != 0: raise Exception(f"Bad channel_tag_size, value was {parsed.dataPacketFormat.channel_tag_size}")
-print("All validations passed")
+def validate(packet):
+    if packet.header.pktType != 0x4: raise Exception("Not a standard flow signal context packet")
+    if packet.header.pktSize != 27: raise Exception("Packet size is not 27 words")
+    if packet.header.classId != 1: raise Exception("Class ID must be 1 for standard flow signal context")
+    if packet.header.reserved != 0: raise Exception("Reserved bits must be 0")
+    if packet.header.tsm != 1: raise Exception("TSM must be 1")
+    if packet.header.tsf != 2: raise Exception("TSF must be 2")
+    if packet.cif0 != 0xFBB98000: raise Exception(f"Nonstandard CIF0, it was {packet.cif0:X}")
+    if packet.dataPacketFormat.real_complex_type != "complex_cartesian": raise Exception(f"Bad real_complex_type, value was {packet.dataPacketFormat.real_complex_type}")
+    if packet.dataPacketFormat.data_item_format != "signed_fixed_point": raise Exception(f"Bad data_item_format, value was {packet.dataPacketFormat.data_item_format}")
+    if packet.dataPacketFormat.sample_repeat_indicator != "no_repeat": raise Exception(f"Bad sample_repeat_indicator, value was {packet.dataPacketFormat.sample_repeat_indicator}")
+    if packet.dataPacketFormat.event_tag_size != 0: raise Exception(f"Bad event_tag_size, value was {packet.dataPacketFormat.event_tag_size}")
+    if packet.dataPacketFormat.channel_tag_size != 0: raise Exception(f"Bad channel_tag_size, value was {packet.dataPacketFormat.channel_tag_size}")
+    return True
+difi_context_definition.validate = validate # so it can be called as difi_context.validate(packet)
