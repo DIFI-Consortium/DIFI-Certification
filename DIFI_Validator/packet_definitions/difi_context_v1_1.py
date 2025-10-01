@@ -67,19 +67,20 @@ if difi_context_definition.sizeof() != 108: raise Exception("Bug in Construct de
 #   - eg packet size is bits 0-15 in the spec
 #   - so it seems like BitStruct is defined with most significant bits first
 
-# Validations
+# Validations, the plan is for each failed validation to add a string to a list/log/etc
 def validate(packet):
-    if packet.header.pktType != 0x4: raise Exception("Not a standard flow signal context packet")
-    if packet.header.pktSize != 27: raise Exception("Packet size is not 27 words")
-    if packet.header.classId != 1: raise Exception("Class ID must be 1 for standard flow signal context")
-    if packet.header.reserved != 0: raise Exception("Reserved bits must be 0")
-    if packet.header.tsm != 1: raise Exception("TSM must be 1")
-    if packet.header.tsf != 2: raise Exception("TSF must be 2")
-    if packet.cif0 != 0xFBB98000: raise Exception(f"Nonstandard CIF0, it was {packet.cif0:X}")
-    if packet.dataPacketFormat.real_complex_type != "complex_cartesian": raise Exception(f"Bad real_complex_type, value was {packet.dataPacketFormat.real_complex_type}")
-    if packet.dataPacketFormat.data_item_format != "signed_fixed_point": raise Exception(f"Bad data_item_format, value was {packet.dataPacketFormat.data_item_format}")
-    if packet.dataPacketFormat.sample_repeat_indicator != "no_repeat": raise Exception(f"Bad sample_repeat_indicator, value was {packet.dataPacketFormat.sample_repeat_indicator}")
-    if packet.dataPacketFormat.event_tag_size != 0: raise Exception(f"Bad event_tag_size, value was {packet.dataPacketFormat.event_tag_size}")
-    if packet.dataPacketFormat.channel_tag_size != 0: raise Exception(f"Bad channel_tag_size, value was {packet.dataPacketFormat.channel_tag_size}")
-    return True
+    errors = []
+    if packet.header.pktType != 0x4: errors.append("Not a standard flow signal context packet")
+    if packet.header.pktSize != 27: errors.append("Packet size is not 27 words")
+    if packet.header.classId != 1: errors.append("Class ID must be 1 for standard flow signal context")
+    if packet.header.reserved != 0: errors.append("Reserved bits must be 0")
+    if packet.header.tsm != 1: errors.append("TSM must be 1")
+    if packet.header.tsf != 2: errors.append("TSF must be 2")
+    if packet.cif0 != 0xFBB98000: errors.append(f"Nonstandard CIF0, it was {packet.cif0:X}")
+    if packet.dataPacketFormat.real_complex_type != "complex_cartesian": errors.append(f"Bad real_complex_type, value was {packet.dataPacketFormat.real_complex_type}")
+    if packet.dataPacketFormat.data_item_format != "signed_fixed_point": errors.append(f"Bad data_item_format, value was {packet.dataPacketFormat.data_item_format}")
+    if packet.dataPacketFormat.sample_repeat_indicator != "no_repeat": errors.append(f"Bad sample_repeat_indicator, value was {packet.dataPacketFormat.sample_repeat_indicator}")
+    if packet.dataPacketFormat.event_tag_size != 0: errors.append(f"Bad event_tag_size, value was {packet.dataPacketFormat.event_tag_size}")
+    if packet.dataPacketFormat.channel_tag_size != 0: errors.append(f"Bad channel_tag_size, value was {packet.dataPacketFormat.channel_tag_size}")
+    return errors
 difi_context_definition.validate = validate # so it can be called as difi_context.validate(packet)

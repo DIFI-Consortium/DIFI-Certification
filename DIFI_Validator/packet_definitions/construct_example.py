@@ -16,6 +16,11 @@ for key, value in parsed.items():
     print(f"{key}: {value}")
 
 print("Validating packet...")
-difi_context_definition.validate(parsed)
-print("All validations passed") # any failed validations will raise an exception
+errors = difi_context_definition.validate(parsed)
+if not errors:
+    print("All validations passed")
+else:
+    print("Validation errors found:")
+    for error in errors:
+        print(f" - {error}")
 
