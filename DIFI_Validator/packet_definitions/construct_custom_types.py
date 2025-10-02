@@ -9,6 +9,9 @@ def SignedInt64Scaled():
 def SignedInt16Scaled():
     return ExprAdapter(Int16sb, lambda obj, ctx: obj / 2.0 ** 7, lambda obj, ctx: int(obj * 2.0 ** 7))
 
+def Bits7Year(): # meant for versionInfo.year field, which is years since 2000
+    return ExprAdapter(Bits(7), lambda obj, ctx: obj + 2000, lambda obj, ctx: int(obj - 2000))
+
 # The following are aliased so that they 1) show up yellow and 2) shorter and more concise code
 def Bits(N):
     return BitsInteger(N)

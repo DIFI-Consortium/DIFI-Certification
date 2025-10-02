@@ -1,6 +1,7 @@
 from scapy.all import PcapReader, UDP
 from difi_context_v1_1 import difi_context_definition
 from difi_data_v1_1 import difi_data_definition
+from difi_version_v1_1 import difi_version_definition
 import numpy as np
 
 # Example of parsing a packet
@@ -11,6 +12,7 @@ sample_rate = 1
 for packet in PcapReader(pcap_file):
     data = bytes(packet[UDP].payload)
     packet_type = data[0:4][0] >> 4
+
     if packet_type == 0x4:
         print("Found context packet")
         # print(data)
@@ -51,7 +53,7 @@ for packet in PcapReader(pcap_file):
         samples = samples.astype(np.float32)
         samples = samples[::2] + 1j * samples[1::2] # convert to complex64
 
-        if True:
+        if False:
             import matplotlib.pyplot as plt
             plt.figure(0)
             plt.plot(samples.real, label="I")
@@ -75,7 +77,21 @@ for packet in PcapReader(pcap_file):
             print("Validation errors found:")
             for error in errors:
                 print(f" - {error}")
-        
         continue
         
+    if packet_type == 0x5:
+        print("Found version packet")
+        if len(data) != difi_version_definition.sizeof(): raise Exception(f"Packet size {len(data)} does not match expected size {difi_version_definition.sizeof()}")
+        parsed = difi_version_definition.parse(data)
+        for key, value in parsed.items():
+            print(f"{key}: {value}")
 
+        print("Validating packet...")
+        errors = difi_version_definition.validate(parsed)
+        if not errors:
+            print("All validations passed")
+        else:
+            print("Validation errors found:")
+            for error in errors:
+                print(f" - {error}")
+        continue
