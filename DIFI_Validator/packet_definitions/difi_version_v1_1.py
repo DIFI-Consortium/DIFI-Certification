@@ -1,4 +1,4 @@
-from construct import Struct, BitStruct, Enum, GreedyBytes
+from construct import Struct, BitStruct, Enum
 from construct_custom_types import *
 
 difi_version_definition = Struct(
