@@ -7,7 +7,7 @@ difi_version_definition = Struct(
         "classId"  / Bits(1),
         "reserved" / Bits(2),
         "tsm"      / Bits(1),
-        "tsi"      / Enum(Bits(2), NOTALLOWED=0, UTC=1, GPS=2, POSIX=3),
+        "tsi"      / Enum(Bits(2), not_allowed=0, UTC=1, GPS=2, POSIX=3),
         "tsf"      / Bits(2),
         "seqNum"   / Bits(4),
         "pktSize"  / Bits(16)), # bits 0-15 (order is reversed in BitStruct)
@@ -20,7 +20,7 @@ difi_version_definition = Struct(
         "packetClassCode" / Bits(16)),
     "intSecsTimestamp"  / UnsignedInt32(),
     "fracSecsTimestamp" / UnsignedInt64(),
-    "cif0"              / Enum(UnsignedInt32(), CONTEXT_CHANGE=0x80000002, NO_CHANGE=0x00000002),
+    "cif0"              / Enum(UnsignedInt32(), context_changed=0x80000002, no_change=0x00000002),
     "cif1"              / UnsignedInt32(), # must be 0x0000000C
     "v49SpecVersion"  / UnsignedInt32(), # must be 0x00000004
     "versionInfo" / BitStruct( # 1 word

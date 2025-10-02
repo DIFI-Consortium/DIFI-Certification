@@ -20,7 +20,7 @@ difi_context_definition = Struct(
         "classId"  / Bits(1),
         "reserved" / Bits(2),
         "tsm"      / Bits(1), # for 0x1, 0->fine and 1->coarse. For 0x3 it's always 0
-        "tsi"      / Enum(Bits(2), NOTALLOWED=0, UTC=1, GPS=2, POSIX=3),
+        "tsi"      / Enum(Bits(2), not_allowed=0, UTC=1, GPS=2, POSIX=3),
         "tsf"      / Bits(2), # for 0x1, it should be set to 2 representing picoseconds.  for 0x3 it should be set to 1 representing sample count
         "seqNum"   / Bits(4),
         "pktSize"  / Bits(16)), # bits 0-15 (order is reversed in BitStruct)
@@ -33,8 +33,8 @@ difi_context_definition = Struct(
         "packetClassCode" / Bits(16)), # where we find out whether it's a 0x1 or 0x3
     "intSecsTimestamp"  / UnsignedInt32(),
     "fracSecsTimestamp" / UnsignedInt64(), # for packetClassCode 0x3 it's sample count, for 0x1 it's picoseconds
-    "cif0"              / Enum(UnsignedInt32(), CONTEXT_CHANGE=0xFBB98000, NO_CHANGE=0x7BB98000),
-    "refPoint"          / Enum(UnsignedInt32(), IF=100, RF=75, ANTENNA=25, AIR=15),
+    "cif0"              / Enum(UnsignedInt32(), context_changed=0xFBB98000, no_change=0x7BB98000),
+    "refPoint"          / Enum(UnsignedInt32(), IF=100, RF=75, antenna=25, air=15),
     "bandwidth"         / UnsignedInt64Scaled(),
     "ifFreq"            / SignedInt64Scaled(), # for non-IF systems set to 0
     "rfFreq"            / SignedInt64Scaled(),
