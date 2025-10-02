@@ -1,35 +1,48 @@
 from construct import Struct, BitStruct, Enum
 from construct_custom_types import *
 
+'''
+New in v1.2.1 there are now 3 different classes of context packets and the version packet is now a subset of this context packet instead of its own thing
+(see packetClassCode field) within the Context Packet Type (0x4):
+  0x1, Standard Flow Signal Context
+  0x3, Sample Count Signal Flow Context
+  0x4, Version Flow Signal Context
+
+0x1 and 0x3 have the same packet structure, there's just a couple fields that are interpreted differently
+0x4 has an entirely different packet structure
+So we'll have a separate Construct definition (and thus file) for version, and this one will be 0x1 and 0x3
+'''
+
+# Used for 0x1 and 0x3 packetClassCode, see difi_version_v1_2_1.py for the 0x4 (version) packet
 difi_context_definition = Struct(
     "header" / BitStruct( # 1 word
         "pktType"  / Bits(4),
         "classId"  / Bits(1),
         "reserved" / Bits(2),
-        "tsm"      / Bits(1),
+        "tsm"      / Bits(1), # for 0x1, 0->fine and 1->coarse. For 0x3 it's always 0
         "tsi"      / Enum(Bits(2), NOTALLOWED=0, UTC=1, GPS=2, POSIX=3),
-        "tsf"      / Bits(2),
+        "tsf"      / Bits(2), # for 0x1, it should be set to 2 representing picoseconds.  for 0x3 it should be set to 1 representing sample count
         "seqNum"   / Bits(4),
         "pktSize"  / Bits(16)), # bits 0-15 (order is reversed in BitStruct)
     "streamId" / UnsignedInt32(),
     "classId" / BitStruct( # 2 words
         "paddingBits"     / Bits(5),
         "reserved1"       / Bits(3),
-        "oui"             / Bits(24),
+        "oui"             / Bits(24), # called CID now? value 0x6A621E
         "infoClassCode"   / Bits(16),
-        "packetClassCode" / Bits(16)),
+        "packetClassCode" / Bits(16)), # where we find out whether it's a 0x1 or 0x3
     "intSecsTimestamp"  / UnsignedInt32(),
-    "fracSecsTimestamp" / UnsignedInt64(),
-    "cif0"              / UnsignedInt32(),
-    "refPoint"          / UnsignedInt32(),
+    "fracSecsTimestamp" / UnsignedInt64(), # for packetClassCode 0x3 it's sample count, for 0x1 it's picoseconds
+    "cif0"              / Enum(UnsignedInt32(), CONTEXT_CHANGE=0xFBB98000, NO_CHANGE=0x7BB98000),
+    "refPoint"          / Enum(UnsignedInt32(), IF=100, RF=75, ANTENNA=25, AIR=15),
     "bandwidth"         / UnsignedInt64Scaled(),
-    "ifFreq"            / SignedInt64Scaled(),
+    "ifFreq"            / SignedInt64Scaled(), # for non-IF systems set to 0
     "rfFreq"            / SignedInt64Scaled(),
-    "ifBandOffset"      / SignedInt64Scaled(),
-    "refLevel1"         / SignedInt16Scaled(),
-    "refLevel2"         / SignedInt16Scaled(),
-    "stage1GainAtten"   / SignedInt16Scaled(),
-    "stage2GainAtten"   / SignedInt16Scaled(),
+    "ifBandOffset"      / SignedInt64Scaled(), # for non-IF systems set to 0
+    "refLevel"          / SignedInt16Scaled(), # TODO: make sure this and the next field arent in the wrong order
+    "scalingLevel"      / SignedInt16Scaled(),
+    "gain1"             / SignedInt16Scaled(), # set to 0x0, use refLevel instead
+    "gain2"             / SignedInt16Scaled(), # set to 0x0, use refLevel instead
     "sampleRate"        / UnsignedInt64Scaled(),
     "timeStampAdj"      / SignedInt64(),
     "timeStampCal"      / UnsignedInt32(),
@@ -59,18 +72,11 @@ difi_context_definition = Struct(
         "repeat_count"            / Bits(16),  # 2nd word, bits 16-31
         "vector_size"             / Bits(16))) # 2nd word, bits 0-15
 
-if difi_context_definition.sizeof() != 108: raise Exception("Bug in Construct definition of difi_context_definition, it should be 108 bytes")
 
-# Notes on endianness and order of fields within Construct-
-#   - DIFI wireshark dissector uses big-endian
-#   - currently I'm using big-endian with construct
-#   - the order of fields within 1 word seem to be reverse of what the DIFI spec shows
-#   - eg packet size is bits 0-15 in the spec
-#   - so it seems like BitStruct is defined with most significant bits first
-
-# Validations, the plan is for each failed validation to add a string to a list/log/etc
+# Validations
 def validate(packet):
     errors = []
+    ''' Need an example pcap before filling these out
     if packet.header.pktType != 0x4: errors.append("Not a standard flow signal context packet")
     if packet.header.pktSize != 27: errors.append("Packet size is not 27 words")
     if packet.header.classId != 1: errors.append("Class ID must be 1 for standard flow signal context")
@@ -83,5 +89,6 @@ def validate(packet):
     if packet.dataPacketFormat.sample_repeat_indicator != "no_repeat": errors.append(f"Bad sample_repeat_indicator, value was {packet.dataPacketFormat.sample_repeat_indicator}")
     if packet.dataPacketFormat.event_tag_size != 0: errors.append(f"Bad event_tag_size, value was {packet.dataPacketFormat.event_tag_size}")
     if packet.dataPacketFormat.channel_tag_size != 0: errors.append(f"Bad channel_tag_size, value was {packet.dataPacketFormat.channel_tag_size}")
+    '''
     return errors
 difi_context_definition.validate = validate # so it can be called as difi_context.validate(packet)

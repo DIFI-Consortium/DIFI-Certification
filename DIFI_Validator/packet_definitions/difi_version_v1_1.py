@@ -12,7 +12,7 @@ difi_version_definition = Struct(
         "seqNum"   / Bits(4),
         "pktSize"  / Bits(16)), # bits 0-15 (order is reversed in BitStruct)
     "streamId" / UnsignedInt32(),
-    "classId" / BitStruct( # 1 word
+    "classId" / BitStruct( # 2 words
         "paddingBits"     / Bits(5),
         "reserved1"       / Bits(3),
         "oui"             / Bits(24),

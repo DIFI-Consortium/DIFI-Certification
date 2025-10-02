@@ -80,7 +80,7 @@ for packet in PcapReader(pcap_file):
         continue
         
     if packet_type == 0x5:
-        print("Found version packet")
+        print("Found version packet (v1.1 only)")
         if len(data) != difi_version_definition.sizeof(): raise Exception(f"Packet size {len(data)} does not match expected size {difi_version_definition.sizeof()}")
         parsed = difi_version_definition.parse(data)
         for key, value in parsed.items():
