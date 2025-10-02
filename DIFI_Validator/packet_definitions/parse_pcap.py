@@ -9,6 +9,12 @@ pcap_file = "../examples/Example1_1Msps_8bits.pcapng"
 #bit_depth = None
 bit_depth = 8 # for some reason this example pcap only has conext packet after all the data packets
 sample_rate = 1
+compliant_context_count = 0
+noncompliant_context_count = 0
+compliant_data_count = 0
+noncompliant_data_count = 0
+compliant_version_count = 0
+noncompliant_version_count = 0
 for packet in PcapReader(pcap_file):
     data = bytes(packet[UDP].payload)
     packet_type = data[0:4][0] >> 4
@@ -25,8 +31,10 @@ for packet in PcapReader(pcap_file):
         errors = difi_context_definition.validate(parsed)
         if not errors:
             print("All validations passed")
+            compliant_context_count += 1
         else:
             print("Validation errors found:")
+            noncompliant_context_count += 1
             for error in errors:
                 print(f" - {error}")
 
@@ -73,8 +81,10 @@ for packet in PcapReader(pcap_file):
         errors = difi_data_definition.validate(parsed)
         if not errors:
             print("All validations passed")
+            compliant_data_count += 1
         else:
             print("Validation errors found:")
+            noncompliant_data_count += 1
             for error in errors:
                 print(f" - {error}")
         continue
@@ -90,8 +100,17 @@ for packet in PcapReader(pcap_file):
         errors = difi_version_definition.validate(parsed)
         if not errors:
             print("All validations passed")
+            compliant_version_count += 1
         else:
             print("Validation errors found:")
+            noncompliant_version_count += 1
             for error in errors:
                 print(f" - {error}")
         continue
+
+print("compliant_context_count:", compliant_context_count)
+print("noncompliant_context_count:", noncompliant_context_count)
+print("compliant_data_count:", compliant_data_count)
+print("noncompliant_data_count:", noncompliant_data_count)
+print("compliant_version_count:", compliant_version_count)
+print("noncompliant_version_count:", noncompliant_version_count)
