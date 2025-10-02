@@ -15,6 +15,9 @@ compliant_data_count = 0
 noncompliant_data_count = 0
 compliant_version_count = 0
 noncompliant_version_count = 0
+context_sequence_count = -1
+data_sequence_count = -1
+version_sequence_count = -1
 for packet in PcapReader(pcap_file):
     data = bytes(packet[UDP].payload)
     packet_type = data[0:4][0] >> 4
@@ -29,6 +32,9 @@ for packet in PcapReader(pcap_file):
 
         #print("Validating packet...")
         errors = difi_context_definition.validate(parsed)
+        if context_sequence_count != -1 and parsed.header.seqNum != (context_sequence_count + 1) % 16:
+            errors.append(f"Context packet sequence count jumped from {context_sequence_count} to {parsed.header.seqNum}")
+        context_sequence_count = parsed.header.seqNum
         if not errors:
             #print("All validations passed")
             compliant_context_count += 1
@@ -79,6 +85,9 @@ for packet in PcapReader(pcap_file):
 
         #print("Validating packet...")
         errors = difi_data_definition.validate(parsed)
+        if data_sequence_count != -1 and parsed.header.seqNum != (data_sequence_count + 1) % 16:
+            errors.append(f"Data packet sequence count jumped from {data_sequence_count} to {parsed.header.seqNum}")
+        data_sequence_count = parsed.header.seqNum
         if not errors:
             #print("All validations passed")
             compliant_data_count += 1
@@ -98,6 +107,9 @@ for packet in PcapReader(pcap_file):
 
         #print("Validating packet...")
         errors = difi_version_definition.validate(parsed)
+        if version_sequence_count != -1 and parsed.header.seqNum != (version_sequence_count + 1) % 16:
+            errors.append(f"Version packet sequence count jumped from {version_sequence_count} to {parsed.header.seqNum}")
+        version_sequence_count = parsed.header.seqNum
         if not errors:
             #print("All validations passed")
             compliant_version_count += 1

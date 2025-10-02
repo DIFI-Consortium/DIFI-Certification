@@ -37,7 +37,7 @@ def validate(packet):
     if packet.header.classId != 1: errors.append("Class ID must be 1 for standard flow signal context")
     if packet.header.reserved != 0: errors.append("Reserved bits must be 0")
     if packet.header.tsf != 2: errors.append("TSF must be 2")
-    if packet.cif0 not in ["CONTEXT_CHANGE", "NO_CHANGE"]: errors.append("CIF0 must be 0x80000002 (CONTEXT_CHANGE) or 0x00000002 (NO_CHANGE)")
+    if packet.cif0 not in ["context_changed", "no_change"]: errors.append("CIF0 must be 0x80000002 (context_changed) or 0x00000002 (no_change)")
     if packet.cif1 != 0x0000000C: errors.append("CIF1 must be 0x0000000C")
     if packet.v49SpecVersion != 0x00000004: errors.append("V49SpecVersion must be 0x00000004")
     return errors
