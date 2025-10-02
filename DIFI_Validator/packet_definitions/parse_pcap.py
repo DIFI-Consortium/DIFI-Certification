@@ -20,17 +20,17 @@ for packet in PcapReader(pcap_file):
     packet_type = data[0:4][0] >> 4
 
     if packet_type == 0x4:
-        print("Found context packet")
+        #print("Found context packet")
         # print(data)
         if len(data) != difi_context_definition.sizeof(): raise Exception(f"Packet size {len(data)} does not match expected size {difi_context_definition.sizeof()}")
         parsed = difi_context_definition.parse(data)
-        for key, value in parsed.items():
-            print(f"{key}: {value}")
+        #for key, value in parsed.items():
+        #    print(f"{key}: {value}")
 
-        print("Validating packet...")
+        #print("Validating packet...")
         errors = difi_context_definition.validate(parsed)
         if not errors:
-            print("All validations passed")
+            #print("All validations passed")
             compliant_context_count += 1
         else:
             print("Validation errors found:")
@@ -43,11 +43,11 @@ for packet in PcapReader(pcap_file):
         continue
 
     if packet_type == 0x1 and bit_depth:
-        print("Found data packet")
+        #print("Found data packet")
         parsed = difi_data_definition.parse(data)
-        for key, value in parsed.items():
-            if key != "payload":
-                print(f"{key}: {value}")
+        #for key, value in parsed.items():
+        #    if key != "payload":
+        #        print(f"{key}: {value}")
         
         # Extract samples to numpy array
         if bit_depth == 8:
@@ -77,10 +77,10 @@ for packet in PcapReader(pcap_file):
         if num_iq_samples != len(samples):
             raise Exception(f"Payload size doesnt match packet size, expected {num_iq_samples} IQ samples but got {len(samples)}")
 
-        print("Validating packet...")
+        #print("Validating packet...")
         errors = difi_data_definition.validate(parsed)
         if not errors:
-            print("All validations passed")
+            #print("All validations passed")
             compliant_data_count += 1
         else:
             print("Validation errors found:")
@@ -90,16 +90,16 @@ for packet in PcapReader(pcap_file):
         continue
         
     if packet_type == 0x5:
-        print("Found version packet (v1.1 only)")
+        #print("Found version packet (v1.1 only)")
         if len(data) != difi_version_definition.sizeof(): raise Exception(f"Packet size {len(data)} does not match expected size {difi_version_definition.sizeof()}")
         parsed = difi_version_definition.parse(data)
-        for key, value in parsed.items():
-            print(f"{key}: {value}")
+        #for key, value in parsed.items():
+        #    print(f"{key}: {value}")
 
-        print("Validating packet...")
+        #print("Validating packet...")
         errors = difi_version_definition.validate(parsed)
         if not errors:
-            print("All validations passed")
+            #print("All validations passed")
             compliant_version_count += 1
         else:
             print("Validation errors found:")
