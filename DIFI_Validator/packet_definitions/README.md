@@ -5,7 +5,7 @@ All .py files in this directory using the filename difi-type-version.py (eg difi
 # Running the Parser
 
 A PCAP or live UDP stream can be parsed with either
-`parse_difi.py --pcap ../examples/Example1_1Msps_8bits.pcapng`
+`python parse_difi.py --pcap ../examples/Example1_1Msps_8bits.pcapng`
 or for UDP, 
 `python parse_difi.py --udp-port 50003`
 
