@@ -6,6 +6,7 @@ import numpy as np
 
 # Example of parsing a packet
 pcap_file = "../examples/Example1_1Msps_8bits.pcapng"
+error_log = "error_log.txt"
 #bit_depth = None
 bit_depth = 8 # for some reason this example pcap only has conext packet after all the data packets
 sample_rate = 1
@@ -18,7 +19,7 @@ noncompliant_version_count = 0
 context_sequence_count = -1
 data_sequence_count = -1
 version_sequence_count = -1
-for packet in PcapReader(pcap_file):
+for packet_index, packet in enumerate(PcapReader(pcap_file)):
     data = bytes(packet[UDP].payload)
     packet_type = data[0:4][0] >> 4
 
@@ -43,6 +44,10 @@ for packet in PcapReader(pcap_file):
             noncompliant_context_count += 1
             for error in errors:
                 print(f" - {error}")
+            with open(error_log, "a") as f:
+                for error in errors:
+                    for line in str(error).splitlines():
+                        f.write(f"[Context][Packet {packet_index}] {line}\n")
 
         bit_depth = parsed.dataPacketFormat.data_item_size + 1 # actual size is one more than the field value
         sample_rate = parsed.sampleRate
@@ -96,6 +101,10 @@ for packet in PcapReader(pcap_file):
             noncompliant_data_count += 1
             for error in errors:
                 print(f" - {error}")
+            with open(error_log, "a") as f:
+                for error in errors:
+                    for line in str(error).splitlines():
+                        f.write(f"[Data][Packet {packet_index}] {line}\n")
         continue
         
     if packet_type == 0x5:
@@ -118,6 +127,10 @@ for packet in PcapReader(pcap_file):
             noncompliant_version_count += 1
             for error in errors:
                 print(f" - {error}")
+            with open(error_log, "a") as f:
+                for error in errors:
+                    for line in str(error).splitlines():
+                        f.write(f"[Version][Packet {packet_index}] {line}\n")
         continue
 
 print("compliant_context_count:", compliant_context_count)
