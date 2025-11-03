@@ -167,7 +167,6 @@ def data_sender(sock, addr, sample_rate, samples_per_packet):
             samples_interleaved[1::2] = np.clip(np.imag(samples), -128, 127).astype(np.int8)
         elif BIT_DEPTH == 16:
             samples *= 8000 # get closet to hitting 32768 levels for 16 bit
-            print(samples)
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
             samples_interleaved[0::2] = np.clip(np.real(samples), -32768, 32767).astype(np.int16)
             samples_interleaved[1::2] = np.clip(np.imag(samples), -32768, 32767).astype(np.int16)
