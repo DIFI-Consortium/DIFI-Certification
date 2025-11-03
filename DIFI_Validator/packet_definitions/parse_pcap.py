@@ -139,3 +139,7 @@ print("compliant_data_count:", compliant_data_count)
 print("noncompliant_data_count:", noncompliant_data_count)
 print("compliant_version_count:", compliant_version_count)
 print("noncompliant_version_count:", noncompliant_version_count)
+if (noncompliant_context_count == 0 and noncompliant_data_count == 0 and noncompliant_version_count == 0):
+    print("Overall Result: PASS")
+else:
+    print("Overall Result: FAIL")
