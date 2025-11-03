@@ -6,6 +6,9 @@ from difi_context_v1_1 import difi_context_definition
 from difi_data_v1_1 import difi_data_definition
 from difi_version_v1_1 import difi_version_definition
 
+CONTEXT_PACKETS_PER_SEC = 10
+VERSION_PACKETS_PER_SEC = 2
+
 context = {
     "header": {
         "pktType": 4,
@@ -134,15 +137,17 @@ def send_packet(sock, addr, packet_bytes):
 
 def context_sender(sock, addr):
     pkt = difi_context_definition.build(context)
+    interval = 1.0 / CONTEXT_PACKETS_PER_SEC
     while True:
         send_packet(sock, addr, pkt)
-        time.sleep(0.1)  # 10 per second
+        time.sleep(interval)
 
 def version_sender(sock, addr):
     pkt = difi_version_definition.build(version)
+    interval = 1.0 / VERSION_PACKETS_PER_SEC
     while True:
         send_packet(sock, addr, pkt)
-        time.sleep(0.5)  # 2 per second
+        time.sleep(interval)
 
 def data_sender(sock, addr, sample_rate, samples_per_packet):
     # Example payload (repeat the original payload to match samples_per_packet)
