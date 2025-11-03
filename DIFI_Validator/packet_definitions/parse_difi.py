@@ -66,7 +66,7 @@ def process_packet(data, packet_index, stats, error_log):
             raise Exception(f"Bit depth of {bit_depth} not supported for sample extraction")
         samples = samples.astype(np.float32)
         samples = samples[::2] + 1j * samples[1::2]
-        if True:
+        if False:
             PSD = 10*np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples)))**2)
             f = np.linspace(-sample_rate/2, sample_rate/2, len(PSD))
             plt.cla()
