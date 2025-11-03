@@ -17,3 +17,4 @@ The following examples generate a live UDP stream of DIFI with 10 context packet
 
 `python generate_difi.py --port 50003 --sample-rate 100e3 --samples-per-packet 150 --bit-depth 8`
 
+There is no option for capturing to a pcap because you can simply run tcpdump, e.g., `sudo tcpdump -i lo udp port 50003 -w output.pcap`, to create a pcap out of the UDP stream being generated live.
