@@ -9,7 +9,7 @@ import numpy as np
 
 CONTEXT_PACKETS_PER_SEC = 10
 VERSION_PACKETS_PER_SEC = 2
-BIT_DEPTH = 8 # 8, 12, or 16 is supported by this script
+BIT_DEPTH = 12 # 8, 12, or 16 is supported by this script
 
 context = {
     "header": {
@@ -67,8 +67,8 @@ context = {
         "event_tag_size": 0,
         "channel_tag_size": 0,
         "data_item_fraction_size": 0,
-        "item_packing_field_size": BIT_DEPTH - 1,
-        "data_item_size": BIT_DEPTH - 1,
+        "item_packing_field_size": BIT_DEPTH - 1 if BIT_DEPTH in (8, 12, 16) else 0,
+        "data_item_size": BIT_DEPTH - 1 if BIT_DEPTH in (8, 12, 16) else 0,
         "repeat_count": 0,
         "vector_size": 0,
     },
@@ -165,12 +165,31 @@ def data_sender(sock, addr, sample_rate, samples_per_packet):
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
             samples_interleaved[0::2] = np.clip(np.real(samples), -128, 127).astype(np.int8)
             samples_interleaved[1::2] = np.clip(np.imag(samples), -128, 127).astype(np.int8)
+            payload = samples_interleaved.tobytes()
+        elif BIT_DEPTH == 12:
+            # 12-bit signed samples, pack two 12-bit samples into 3 bytes
+            samples *= 2000 # get close to hitting 2048 levels for 12 bit
+            i_samples = np.clip(np.real(samples), -2048, 2047).astype(np.int16)
+            q_samples = np.clip(np.imag(samples), -2048, 2047).astype(np.int16)
+            samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
+            samples_interleaved[0::2] = i_samples
+            samples_interleaved[1::2] = q_samples
+            packed = bytearray()
+            for i in range(0, len(samples_interleaved), 2):
+                s1 = samples_interleaved[i] & 0xFFF  # 12 bits
+                s2 = samples_interleaved[i+1] & 0xFFF
+                packed.append((s1 >> 4) & 0xFF)
+                packed.append(((s1 & 0xF) << 4) | ((s2 >> 8) & 0xF))
+                packed.append(s2 & 0xFF)
+            payload = bytes(packed)
         elif BIT_DEPTH == 16:
             samples *= 8000 # get closet to hitting 32768 levels for 16 bit
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
             samples_interleaved[0::2] = np.clip(np.real(samples), -32768, 32767).astype(np.int16)
             samples_interleaved[1::2] = np.clip(np.imag(samples), -32768, 32767).astype(np.int16)
-        payload = samples_interleaved.tobytes()
+            payload = samples_interleaved.tobytes()
+        else:
+            raise ValueError(f"Unsupported BIT_DEPTH: {BIT_DEPTH}")
         data["header"]["seqNum"] = seq_num
         data["header"]["pktSize"] = 7 + (len(payload) + 3) // 4  # Update pktSize based on payload length
         data["payload"] = payload
