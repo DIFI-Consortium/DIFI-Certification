@@ -13,4 +13,7 @@ One option is to use the gr-difi example `pn11_over_difi_tx.grc` to test the UDP
 
 # Running the Generator
 
-TODO
+The following examples generate a live UDP stream of DIFI with 10 context packets per second, 2 version packets per second, and data packets corresponding to the requested sample rate and samples-per-packet:
+
+`python generate_difi.py --port 50003 --sample-rate 100e3 --samples-per-packet 150 --bit-depth 8`
+
