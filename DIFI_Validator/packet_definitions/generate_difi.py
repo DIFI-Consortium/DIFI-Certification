@@ -222,7 +222,7 @@ def main():
     print(f"Sending packets to {addr}. Press Ctrl+C to stop.")
     try:
         while True:
-            time.sleep(1)
+            time.sleep(0.1)
     except KeyboardInterrupt:
         print("\nStopped.")
 
