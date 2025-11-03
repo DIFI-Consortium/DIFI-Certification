@@ -9,7 +9,7 @@ import numpy as np
 
 CONTEXT_PACKETS_PER_SEC = 10
 VERSION_PACKETS_PER_SEC = 2
-BIT_DEPTH = 12 # 8, 12, or 16 is supported by this script
+BIT_DEPTH = 8 # 8, 12, or 16 is supported by this script
 
 context = {
     "header": {
