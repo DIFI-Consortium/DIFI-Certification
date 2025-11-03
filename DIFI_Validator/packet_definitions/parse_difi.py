@@ -1,4 +1,3 @@
-
 import argparse
 import socket
 from time import strftime
@@ -8,6 +7,7 @@ from difi_data_v1_1 import difi_data_definition
 from difi_version_v1_1 import difi_version_definition
 import numpy as np
 import matplotlib.pyplot as plt
+
 
 # holds packet statistics and state
 class PacketStats:
@@ -23,6 +23,7 @@ class PacketStats:
         self.context_sequence_count = -1
         self.data_sequence_count = -1
         self.version_sequence_count = -1
+
 
 def process_packet(data, packet_index, stats, error_log):
     bit_depth = stats.bit_depth
@@ -67,8 +68,8 @@ def process_packet(data, packet_index, stats, error_log):
         samples = samples.astype(np.float32)
         samples = samples[::2] + 1j * samples[1::2]
         if False:
-            PSD = 10*np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples)))**2)
-            f = np.linspace(-sample_rate/2, sample_rate/2, len(PSD))
+            PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
+            f = np.linspace(-sample_rate / 2, sample_rate / 2, len(PSD))
             plt.cla()
             plt.plot(f, PSD)
             plt.ylim(-10, 50)
@@ -114,20 +115,21 @@ def process_packet(data, packet_index, stats, error_log):
                     for line in str(error).splitlines():
                         f.write(f"[Version][Packet {packet_index}] {line}\n")
         return
-    
+
+
 def main():
     parser = argparse.ArgumentParser(description="Parse DIFI packets from pcap or live UDP port.")
-    parser.add_argument('--pcap', type=str, help='Path to pcap file to parse')
-    parser.add_argument('--udp-port', type=int, help='UDP port to listen for live packets')
-    parser.add_argument('--error-log', type=str, default='error_log.txt', help='Error log file')
+    parser.add_argument("--pcap", type=str, help="Path to pcap file to parse")
+    parser.add_argument("--udp-port", type=int, help="UDP port to listen for live packets")
+    parser.add_argument("--error-log", type=str, default="error_log.txt", help="Error log file")
     args = parser.parse_args()
 
     if not args.pcap and not args.udp_port:
         print("You must specify either --pcap or --udp-port.")
         return
-    
+
     # Add the pcap filename or UDP port to top of error log file, as well as start time
-    with open(args.error_log, "w") as f: # also clears the file
+    with open(args.error_log, "w") as f:  # also clears the file
         if args.pcap:
             f.write(f"Parsing pcap file: {args.pcap}\n")
         if args.udp_port:
@@ -161,17 +163,18 @@ def main():
 
     with open(args.error_log, "a") as f:
         f.write(f"Total packets processed: {packet_index + 1}\n")
-        
+
     print("compliant_context_count:", stats.compliant_context_count)
     print("noncompliant_context_count:", stats.noncompliant_context_count)
     print("compliant_data_count:", stats.compliant_data_count)
     print("noncompliant_data_count:", stats.noncompliant_data_count)
     print("compliant_version_count:", stats.compliant_version_count)
     print("noncompliant_version_count:", stats.noncompliant_version_count)
-    if (stats.noncompliant_context_count == 0 and stats.noncompliant_data_count == 0 and stats.noncompliant_version_count == 0):
+    if stats.noncompliant_context_count == 0 and stats.noncompliant_data_count == 0 and stats.noncompliant_version_count == 0:
         print("Overall Result: PASS")
     else:
         print("Overall Result: FAIL")
+
 
 if __name__ == "__main__":
     main()

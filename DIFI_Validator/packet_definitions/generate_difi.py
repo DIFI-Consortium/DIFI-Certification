@@ -18,7 +18,7 @@ context = {
         "tsm": 1,
         "tsi": "POSIX",
         "tsf": 2,
-        "seqNum": -1, # FILL IN BEFORE SENDING
+        "seqNum": -1,  # FILL IN BEFORE SENDING
         "pktSize": 27,
     },
     "streamId": 0,
@@ -66,8 +66,8 @@ context = {
         "event_tag_size": 0,
         "channel_tag_size": 0,
         "data_item_fraction_size": 0,
-        "item_packing_field_size": 0, # FILL IN BEFORE SENDING
-        "data_item_size": 0, # FILL IN BEFORE SENDING
+        "item_packing_field_size": 0,  # FILL IN BEFORE SENDING
+        "data_item_size": 0,  # FILL IN BEFORE SENDING
         "repeat_count": 0,
         "vector_size": 0,
     },
@@ -81,7 +81,7 @@ version = {
         "tsm": 1,
         "tsi": "POSIX",
         "tsf": 2,
-        "seqNum": -1, # FILL IN BEFORE SENDING
+        "seqNum": -1,  # FILL IN BEFORE SENDING
         "pktSize": 11,
     },
     "streamId": 0,
@@ -114,8 +114,8 @@ data = {
         "tsm": 0,
         "tsi": "POSIX",
         "tsf": 2,
-        "seqNum": -1, # FILL IN BEFORE SENDING
-        "pktSize": -1, # FILL IN BEFORE SENDING
+        "seqNum": -1,  # FILL IN BEFORE SENDING
+        "pktSize": -1,  # FILL IN BEFORE SENDING
     },
     "streamId": 0,
     "classId": {
@@ -130,8 +130,10 @@ data = {
     "payload": "",
 }
 
+
 def send_packet(sock, addr, packet_bytes):
     sock.sendto(packet_bytes, addr)
+
 
 def context_sender(sock, addr, bit_depth):
     interval = 1.0 / CONTEXT_PACKETS_PER_SEC
@@ -145,6 +147,7 @@ def context_sender(sock, addr, bit_depth):
         seq_num = (seq_num + 1) % 16
         time.sleep(interval)
 
+
 def version_sender(sock, addr):
     interval = 1.0 / VERSION_PACKETS_PER_SEC
     seq_num = 0
@@ -155,21 +158,22 @@ def version_sender(sock, addr):
         seq_num = (seq_num + 1) % 16
         time.sleep(interval)
 
+
 def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
     interval = samples_per_packet / sample_rate  # seconds between packets
     seq_num = 0
     while True:
-        samples = np.random.randn(samples_per_packet) + 1j * np.random.randn(samples_per_packet) # it's IQ samples per packet
+        samples = np.random.randn(samples_per_packet) + 1j * np.random.randn(samples_per_packet)  # it's IQ samples per packet
         samples += 2 * np.exp(2j * np.pi * 0.25 * np.arange(len(samples)))  # add a tone for fun
         if bit_depth == 8:
-            samples *= 30 # get closet to hitting 128 levels for 8 bit
+            samples *= 30  # get closet to hitting 128 levels for 8 bit
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
             samples_interleaved[0::2] = np.clip(np.real(samples), -128, 127).astype(np.int8)
             samples_interleaved[1::2] = np.clip(np.imag(samples), -128, 127).astype(np.int8)
             payload = samples_interleaved.tobytes()
         elif bit_depth == 12:
             # 12-bit signed samples, pack two 12-bit samples into 3 bytes
-            samples *= 2000 # get close to hitting 2048 levels for 12 bit
+            samples *= 2000  # get close to hitting 2048 levels for 12 bit
             i_samples = np.clip(np.real(samples), -2048, 2047).astype(np.int16)
             q_samples = np.clip(np.imag(samples), -2048, 2047).astype(np.int16)
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
@@ -178,13 +182,13 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
             packed = bytearray()
             for i in range(0, len(samples_interleaved), 2):
                 s1 = samples_interleaved[i] & 0xFFF  # 12 bits
-                s2 = samples_interleaved[i+1] & 0xFFF
+                s2 = samples_interleaved[i + 1] & 0xFFF
                 packed.append((s1 >> 4) & 0xFF)
                 packed.append(((s1 & 0xF) << 4) | ((s2 >> 8) & 0xF))
                 packed.append(s2 & 0xFF)
             payload = bytes(packed)
         elif bit_depth == 16:
-            samples *= 8000 # get closet to hitting 32768 levels for 16 bit
+            samples *= 8000  # get closet to hitting 32768 levels for 16 bit
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
             samples_interleaved[0::2] = np.clip(np.real(samples), -32768, 32767).astype(np.int16)
             samples_interleaved[1::2] = np.clip(np.imag(samples), -32768, 32767).astype(np.int16)
@@ -202,11 +206,11 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
 
 def main():
     parser = argparse.ArgumentParser(description="Send DIFI packets over UDP")
-    parser.add_argument('--ip', type=str, default='127.0.0.1', help='Destination IP address')
-    parser.add_argument('--port', type=int, default=50003, help='Destination UDP port')
-    parser.add_argument('--sample-rate', type=float, default=100e3, help='Sample rate (Hz)')
-    parser.add_argument('--samples-per-packet', type=int, default=100, help='Number of IQ samples per data packet')
-    parser.add_argument('--bit-depth', type=int, default=8, choices=[8, 12, 16], help='Bit depth for IQ samples (8, 12, or 16)')
+    parser.add_argument("--ip", type=str, default="127.0.0.1", help="Destination IP address")
+    parser.add_argument("--port", type=int, default=50003, help="Destination UDP port")
+    parser.add_argument("--sample-rate", type=float, default=100e3, help="Sample rate (Hz)")
+    parser.add_argument("--samples-per-packet", type=int, default=100, help="Number of IQ samples per data packet")
+    parser.add_argument("--bit-depth", type=int, default=8, choices=[8, 12, 16], help="Bit depth for IQ samples (8, 12, or 16)")
     args = parser.parse_args()
 
     addr = (args.ip, args.port)
@@ -225,6 +229,7 @@ def main():
             time.sleep(0.1)
     except KeyboardInterrupt:
         print("\nStopped.")
+
 
 if __name__ == "__main__":
     main()
