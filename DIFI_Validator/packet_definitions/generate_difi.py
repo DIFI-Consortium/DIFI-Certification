@@ -5,6 +5,7 @@ import argparse
 from difi_context_v1_1 import difi_context_definition
 from difi_data_v1_1 import difi_data_definition
 from difi_version_v1_1 import difi_version_definition
+import numpy as np
 
 CONTEXT_PACKETS_PER_SEC = 10
 VERSION_PACKETS_PER_SEC = 2
@@ -17,7 +18,7 @@ context = {
         "tsm": 1,
         "tsi": "POSIX",
         "tsf": 2,
-        "seqNum": -1,
+        "seqNum": -1, # FILL IN BEFORE SENDING
         "pktSize": 27,
     },
     "streamId": 0,
@@ -66,7 +67,7 @@ context = {
         "channel_tag_size": 0,
         "data_item_fraction_size": 0,
         "item_packing_field_size": 7,
-        "data_item_size": 7,
+        "data_item_size": 7, # 8 bit I and Q
         "repeat_count": 0,
         "vector_size": 0,
     },
@@ -80,7 +81,7 @@ version = {
         "tsm": 1,
         "tsi": "POSIX",
         "tsf": 2,
-        "seqNum": -1,
+        "seqNum": -1, # FILL IN BEFORE SENDING
         "pktSize": 11,
     },
     "streamId": 0,
@@ -113,8 +114,8 @@ data = {
         "tsm": 0,
         "tsi": "POSIX",
         "tsf": 2,
-        "seqNum": -1,
-        "pktSize": 367,  # Adjust if payload size changes
+        "seqNum": -1, # FILL IN BEFORE SENDING
+        "pktSize": -1, # FILL IN BEFORE SENDING
     },
     "streamId": 0,
     "classId": {
@@ -153,13 +154,16 @@ def version_sender(sock, addr):
         time.sleep(interval)
 
 def data_sender(sock, addr, sample_rate, samples_per_packet):
-    # Example payload (repeat the original payload to match samples_per_packet)
-    base_payload = b'\xf3\x1c\xf2\x19\xf8\x11\n\x10\x1c\x0c\x1d\x04\x0c\x0e\xfa\x1f'
-    payload = base_payload * (samples_per_packet // len(base_payload) + 1)
-    payload = payload[:samples_per_packet]  # Truncate to exact size
     interval = samples_per_packet / sample_rate  # seconds between packets
     seq_num = 0
     while True:
+        samples = np.random.randn(samples_per_packet) + 1j * np.random.randn(samples_per_packet) # it's IQ samples per packet
+        samples += 2 * np.exp(2j * np.pi * 0.25 * np.arange(len(samples)))  # add a tone for fun
+        samples *= 30 # get closet to hitting 128 levels for 8 bit
+        samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
+        samples_interleaved[0::2] = np.clip(np.real(samples), -128, 127).astype(np.int8)
+        samples_interleaved[1::2] = np.clip(np.imag(samples), -128, 127).astype(np.int8)
+        payload = samples_interleaved.tobytes()
         data["header"]["seqNum"] = seq_num
         data["header"]["pktSize"] = 7 + (len(payload) + 3) // 4  # Update pktSize based on payload length
         data["payload"] = payload
@@ -173,7 +177,7 @@ def main():
     parser.add_argument('--ip', type=str, default='127.0.0.1', help='Destination IP address')
     parser.add_argument('--port', type=int, default=50003, help='Destination UDP port')
     parser.add_argument('--sample-rate', type=float, default=100e3, help='Sample rate (Hz)')
-    parser.add_argument('--samples-per-packet', type=int, default=100, help='Number of samples per data packet')
+    parser.add_argument('--samples-per-packet', type=int, default=100, help='Number of IQ samples per data packet')
     args = parser.parse_args()
 
     addr = (args.ip, args.port)

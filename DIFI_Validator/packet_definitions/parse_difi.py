@@ -1,14 +1,15 @@
 
 import argparse
 import socket
-from time import time, strftime
+from time import strftime
 from scapy.all import PcapReader, UDP
 from difi_context_v1_1 import difi_context_definition
 from difi_data_v1_1 import difi_data_definition
 from difi_version_v1_1 import difi_version_definition
 import numpy as np
+import matplotlib.pyplot as plt
 
-# Class to hold packet statistics and state
+# holds packet statistics and state
 class PacketStats:
     def __init__(self):
         self.bit_depth = 8  # default, may be updated by context packet
@@ -63,6 +64,15 @@ def process_packet(data, packet_index, stats, error_log):
             raise Exception(f"Bit depth of {bit_depth} not supported for sample extraction")
         samples = samples.astype(np.float32)
         samples = samples[::2] + 1j * samples[1::2]
+        if False:
+            PSD = 10*np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples)))**2)
+            f = np.linspace(-sample_rate/2, sample_rate/2, len(PSD))
+            plt.cla()
+            plt.plot(f, PSD)
+            plt.ylim(40, 90)
+            plt.draw()
+            plt.pause(0.01)
+
         if num_iq_samples != len(samples):
             raise Exception(f"Payload size doesnt match packet size, expected {num_iq_samples} IQ samples but got {len(samples)}")
         errors = difi_data_definition.validate(parsed)
