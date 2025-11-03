@@ -17,7 +17,7 @@ context = {
         "tsm": 1,
         "tsi": "POSIX",
         "tsf": 2,
-        "seqNum": 14,
+        "seqNum": -1,
         "pktSize": 27,
     },
     "streamId": 0,
@@ -80,7 +80,7 @@ version = {
         "tsm": 1,
         "tsi": "POSIX",
         "tsf": 2,
-        "seqNum": 13,
+        "seqNum": -1,
         "pktSize": 11,
     },
     "streamId": 0,
@@ -105,48 +105,51 @@ version = {
     },
 }
 
-def build_data_packet(seq_num, payload):
-    data = {
-        "header": {
-            "pktType": 1,
-            "classId": 1,
-            "reserved": 0,
-            "tsm": 0,
-            "tsi": "POSIX",
-            "tsf": 2,
-            "seqNum": seq_num,
-            "pktSize": 367,  # Adjust if payload size changes
-        },
-        "streamId": 0,
-        "classId": {
-            "paddingBits": 0,
-            "reserved1": 0,
-            "oui": 6971934,
-            "infoClassCode": 0,
-            "packetClassCode": 0,
-        },
-        "intSecsTimestamp": 1740688471,
-        "fracSecsTimestamp": 106369572000,
-        "payload": payload,
-    }
-    return difi_data_definition.build(data)
-
+data = {
+    "header": {
+        "pktType": 1,
+        "classId": 1,
+        "reserved": 0,
+        "tsm": 0,
+        "tsi": "POSIX",
+        "tsf": 2,
+        "seqNum": -1,
+        "pktSize": 367,  # Adjust if payload size changes
+    },
+    "streamId": 0,
+    "classId": {
+        "paddingBits": 0,
+        "reserved1": 0,
+        "oui": 6971934,
+        "infoClassCode": 0,
+        "packetClassCode": 0,
+    },
+    "intSecsTimestamp": 1740688471,
+    "fracSecsTimestamp": 106369572000,
+    "payload": "",
+}
 
 def send_packet(sock, addr, packet_bytes):
     sock.sendto(packet_bytes, addr)
 
 def context_sender(sock, addr):
-    pkt = difi_context_definition.build(context)
     interval = 1.0 / CONTEXT_PACKETS_PER_SEC
+    seq_num = 0
     while True:
+        context["header"]["seqNum"] = seq_num
+        pkt = difi_context_definition.build(context)
         send_packet(sock, addr, pkt)
+        seq_num = (seq_num + 1) % 16
         time.sleep(interval)
 
 def version_sender(sock, addr):
-    pkt = difi_version_definition.build(version)
     interval = 1.0 / VERSION_PACKETS_PER_SEC
+    seq_num = 0
     while True:
+        version["header"]["seqNum"] = seq_num
+        pkt = difi_version_definition.build(version)
         send_packet(sock, addr, pkt)
+        seq_num = (seq_num + 1) % 16
         time.sleep(interval)
 
 def data_sender(sock, addr, sample_rate, samples_per_packet):
@@ -155,9 +158,12 @@ def data_sender(sock, addr, sample_rate, samples_per_packet):
     payload = base_payload * (samples_per_packet // len(base_payload) + 1)
     payload = payload[:samples_per_packet]  # Truncate to exact size
     interval = samples_per_packet / sample_rate  # seconds between packets
-    seq_num = 15
+    seq_num = 0
     while True:
-        pkt = build_data_packet(seq_num, payload)
+        data["header"]["seqNum"] = seq_num
+        data["header"]["pktSize"] = 7 + (len(payload) + 3) // 4  # Update pktSize based on payload length
+        data["payload"] = payload
+        pkt = difi_data_definition.build(data)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 256  # wrap seq_num for demo
         time.sleep(interval)
