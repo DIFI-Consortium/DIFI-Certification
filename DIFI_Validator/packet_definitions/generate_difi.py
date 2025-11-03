@@ -165,7 +165,7 @@ def data_sender(sock, addr, sample_rate, samples_per_packet):
         data["payload"] = payload
         pkt = difi_data_definition.build(data)
         send_packet(sock, addr, pkt)
-        seq_num = (seq_num + 1) % 256  # wrap seq_num for demo
+        seq_num = (seq_num + 1) % 16  # wrap seq_num for demo
         time.sleep(interval)
 
 def main():
