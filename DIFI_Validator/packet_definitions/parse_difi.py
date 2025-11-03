@@ -8,9 +8,6 @@ from difi_data_v1_1 import difi_data_definition
 from difi_version_v1_1 import difi_version_definition
 import numpy as np
 
-# eg python parse_pcap.py --pcap ../examples/Example1_1Msps_8bits.pcapng
-# use the gr-difi example pn11_over_difi_tx.grc to test the UDP mode
-
 # Class to hold packet statistics and state
 class PacketStats:
     def __init__(self):
