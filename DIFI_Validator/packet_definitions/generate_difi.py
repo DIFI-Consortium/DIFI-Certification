@@ -9,6 +9,7 @@ import numpy as np
 
 CONTEXT_PACKETS_PER_SEC = 10
 VERSION_PACKETS_PER_SEC = 2
+BIT_DEPTH = 8 # 8, 12, or 16 is supported by this script
 
 context = {
     "header": {
@@ -66,8 +67,8 @@ context = {
         "event_tag_size": 0,
         "channel_tag_size": 0,
         "data_item_fraction_size": 0,
-        "item_packing_field_size": 7,
-        "data_item_size": 7, # 8 bit I and Q
+        "item_packing_field_size": BIT_DEPTH - 1,
+        "data_item_size": BIT_DEPTH - 1,
         "repeat_count": 0,
         "vector_size": 0,
     },
@@ -159,10 +160,17 @@ def data_sender(sock, addr, sample_rate, samples_per_packet):
     while True:
         samples = np.random.randn(samples_per_packet) + 1j * np.random.randn(samples_per_packet) # it's IQ samples per packet
         samples += 2 * np.exp(2j * np.pi * 0.25 * np.arange(len(samples)))  # add a tone for fun
-        samples *= 30 # get closet to hitting 128 levels for 8 bit
-        samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
-        samples_interleaved[0::2] = np.clip(np.real(samples), -128, 127).astype(np.int8)
-        samples_interleaved[1::2] = np.clip(np.imag(samples), -128, 127).astype(np.int8)
+        if BIT_DEPTH == 8:
+            samples *= 30 # get closet to hitting 128 levels for 8 bit
+            samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
+            samples_interleaved[0::2] = np.clip(np.real(samples), -128, 127).astype(np.int8)
+            samples_interleaved[1::2] = np.clip(np.imag(samples), -128, 127).astype(np.int8)
+        elif BIT_DEPTH == 16:
+            samples *= 8000 # get closet to hitting 32768 levels for 16 bit
+            print(samples)
+            samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
+            samples_interleaved[0::2] = np.clip(np.real(samples), -32768, 32767).astype(np.int16)
+            samples_interleaved[1::2] = np.clip(np.imag(samples), -32768, 32767).astype(np.int16)
         payload = samples_interleaved.tobytes()
         data["header"]["seqNum"] = seq_num
         data["header"]["pktSize"] = 7 + (len(payload) + 3) // 4  # Update pktSize based on payload length

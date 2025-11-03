@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 # holds packet statistics and state
 class PacketStats:
     def __init__(self):
-        self.bit_depth = 8  # default, may be updated by context packet
+        self.bit_depth = 8  # gets updated by context packet
         self.sample_rate = 1
         self.compliant_context_count = 0
         self.noncompliant_context_count = 0
@@ -57,19 +57,21 @@ def process_packet(data, packet_index, stats, error_log):
         if bit_depth == 8:
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 2
             samples = np.frombuffer(parsed.payload, dtype=np.int8)
+            samples = samples / 128.0  # normalize to -1.0 to 1.0
         elif bit_depth == 16:
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 4
             samples = np.frombuffer(parsed.payload, dtype=np.int16)
+            samples = samples / 32768.0  # normalize to -1.0 to 1.0
         else:
             raise Exception(f"Bit depth of {bit_depth} not supported for sample extraction")
         samples = samples.astype(np.float32)
         samples = samples[::2] + 1j * samples[1::2]
-        if False:
+        if True:
             PSD = 10*np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples)))**2)
             f = np.linspace(-sample_rate/2, sample_rate/2, len(PSD))
             plt.cla()
             plt.plot(f, PSD)
-            plt.ylim(40, 90)
+            plt.ylim(-10, 50)
             plt.draw()
             plt.pause(0.01)
 
