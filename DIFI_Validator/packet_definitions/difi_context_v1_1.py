@@ -77,7 +77,7 @@ def validate(packet):
     if packet.header.reserved != 0: errors.append("Reserved bits must be 0")
     if packet.header.tsm != 1: errors.append("TSM must be 1")
     if packet.header.tsf != 2: errors.append("TSF must be 2")
-    if packet.cif0 != 0xFBB98000: errors.append(f"Nonstandard CIF0, it was {packet.cif0:X}")
+    if packet.cif0 != 0xFBB98000 and packet.cif0 != 0x7BB98000: errors.append(f"Nonstandard CIF0, it was {packet.cif0:X}")
     if packet.dataPacketFormat.real_complex_type != "complex_cartesian": errors.append(f"Bad real_complex_type, value was {packet.dataPacketFormat.real_complex_type}")
     if packet.dataPacketFormat.data_item_format != "signed_fixed_point": errors.append(f"Bad data_item_format, value was {packet.dataPacketFormat.data_item_format}")
     if packet.dataPacketFormat.sample_repeat_indicator != "no_repeat": errors.append(f"Bad sample_repeat_indicator, value was {packet.dataPacketFormat.sample_repeat_indicator}")
