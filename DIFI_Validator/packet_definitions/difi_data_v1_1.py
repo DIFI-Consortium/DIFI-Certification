@@ -35,7 +35,7 @@ def validate(packet):
     if packet.header.tsi == 0: errors.append("TSI must not be 0")
     if packet.header.tsf != 2: errors.append("TSF must be 2")
     if packet.classId.paddingBits != 0: errors.append("Padding bits must be 0")
-    if packet.classId.OUI != 0x6A621E : errors.append("OUI is invalid, expecting 0x6A621E")
+    if packet.classId.oui != 0x6A621E : errors.append("OUI is invalid, expecting 0x6A621E")
     if packet.classId.infoClassCode != 0x0000: errors.append("Information Class Code must be 0")
     if packet.classId.packetClassCode != 0x0000: errors.append("Packet Class Code must be 0")
     return errors
