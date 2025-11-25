@@ -6,7 +6,7 @@ difi_data_definition = Struct(
         "pktType"  / Bits(4),
         "classId"  / Bits(1),
         "reserved" / Bits(2),
-        "tsm"      / Bits(1),
+        "specTime" / Bits(1),
         "tsi"      / Enum(Bits(2), not_allowed=0, UTC=1, GPS=2, POSIX=3),
         "tsf"      / Bits(2),
         "seqNum"   / Bits(4),
@@ -31,11 +31,11 @@ def validate(packet):
     if packet.header.pktType != 0x1: errors.append("Not a standard flow signal data packet")
     if packet.header.classId != 1: errors.append("Class ID must be 1 for standard flow signal context")
     if packet.header.reserved != 0: errors.append("Reserved bits must be 0")
-    if packet.header.tsm != 1: errors.append("TSM must be 1")
+    if packet.header.specTime != 0: errors.append("VITA 49.2 Spectrum/Time must be 0")
     if packet.header.tsi == 0: errors.append("TSI must not be 0")
     if packet.header.tsf != 2: errors.append("TSF must be 2")
     if packet.classId.paddingBits != 0: errors.append("Padding bits must be 0")
-    if packet.classId.OUI != 0x6A621E : errors.append("OUI is invalid, expecting 0x6A621E")
+    if packet.classId.oui != 0x6A621E : errors.append("OUI is invalid, expecting 0x6A621E")
     if packet.classId.infoClassCode != 0x0000: errors.append("Information Class Code must be 0")
     if packet.classId.packetClassCode != 0x0000: errors.append("Packet Class Code must be 0")
     return errors
