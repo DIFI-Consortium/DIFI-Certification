@@ -33,12 +33,21 @@ difi_version_definition = Struct(
 # Validations
 def validate(packet):
     errors = []
-    if packet.header.pktType != 0x5: errors.append("Not a standard flow signal data packet")
-    if packet.header.classId != 1: errors.append("Class ID must be 1 for standard flow signal context")
+    if packet.header.pktType != 0x5: errors.append("Not a version packet")
+    if packet.header.classId != 1: errors.append("Class ID must be 1")
     if packet.header.reserved != 0: errors.append("Reserved bits must be 0")
+    if packet.header.tsm != 1: errors.append("TSM must be 1")
+    if packet.header.tsi == 0: errors.append("TSI must not be 0")
     if packet.header.tsf != 2: errors.append("TSF must be 2")
+    if packet.classId.paddingBits != 0: errors.append("Padding bits must be 0")
+    if packet.classId.oui != 0x6A621E : errors.append("OUI is invalid, expecting 0x6A621E")
+    if packet.classId.infoClassCode != 0x0001: errors.append("Information Class Code must be 1")
+    if packet.classId.packetClassCode != 0x0004: errors.append("Packet Class Code must be 4")
     if packet.cif0 not in ["context_changed", "no_change"]: errors.append("CIF0 must be 0x80000002 (context_changed) or 0x00000002 (no_change)")
     if packet.cif1 != 0x0000000C: errors.append("CIF1 must be 0x0000000C")
     if packet.v49SpecVersion != 0x00000004: errors.append("V49SpecVersion must be 0x00000004")
+    if packet.versionInfo.revision != 1: errors.append("Revision must be 1")
+    if packet.versionInfo.type != 0: errors.append("Type must be 0")
+    if packet.versionInfo.icdVersion != 0: errors.append("ICD Version must be 0")
     return errors
 difi_version_definition.validate = validate

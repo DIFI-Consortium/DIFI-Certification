@@ -25,7 +25,7 @@ class PacketStats:
         self.version_sequence_count = -1
 
 
-def process_packet(data, packet_index, stats, error_log):
+def process_packet(data, packet_index, stats, error_log, plot_psd=False):
     bit_depth = stats.bit_depth
     sample_rate = stats.sample_rate
     packet_type = data[0:4][0] >> 4
@@ -67,7 +67,7 @@ def process_packet(data, packet_index, stats, error_log):
             raise Exception(f"Bit depth of {bit_depth} not supported for sample extraction")
         samples = samples.astype(np.float32)
         samples = samples[::2] + 1j * samples[1::2]
-        if False:
+        if plot_psd:
             PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
             f = np.linspace(-sample_rate / 2, sample_rate / 2, len(PSD))
             plt.cla()
@@ -122,6 +122,7 @@ def main():
     parser.add_argument("--pcap", type=str, help="Path to pcap file to parse")
     parser.add_argument("--udp-port", type=int, help="UDP port to listen for live packets")
     parser.add_argument("--error-log", type=str, default="error_log.txt", help="Error log file")
+    parser.add_argument("--plot-psd", action="store_true", help="Plot the Power Spectral Density (PSD)")
     args = parser.parse_args()
 
     if not args.pcap and not args.udp_port:
@@ -143,7 +144,7 @@ def main():
     if args.pcap:
         for packet in PcapReader(args.pcap):
             data = bytes(packet[UDP].payload)
-            process_packet(data, packet_index, stats, args.error_log)
+            process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd)
             packet_index += 1
 
     # UDP Mode
@@ -154,7 +155,7 @@ def main():
         try:
             while True:
                 data, addr = sock.recvfrom(4096)
-                process_packet(data, packet_index, stats, args.error_log)
+                process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd)
                 packet_index += 1
         except KeyboardInterrupt:
             print("\nStopped listening.")
@@ -174,6 +175,9 @@ def main():
         print("Overall Result: PASS")
     else:
         print("Overall Result: FAIL")
+
+    if args.plot_psd:
+        plt.savefig("PSD.png")
 
 
 if __name__ == "__main__":
