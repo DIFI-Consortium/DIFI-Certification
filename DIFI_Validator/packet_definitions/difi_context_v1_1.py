@@ -84,7 +84,7 @@ def validate(packet):
     if packet.classId.packetClassCode != 0x0001: errors.append("Packet Class Code must be 1")
     if packet.cif0 != 0xFBB98000 and packet.cif0 != 0x7BB98000: errors.append(f"Nonstandard CIF0, it was {packet.cif0:X}")
     if packet.refPoint != 0x64: errors.append(f"Reference point must be 0x64")
-    if packet.dataPacketFormat.packing_method != 0x1: errors.append(f"Packing type must be link-efficient")
+    if packet.dataPacketFormat.packing_method != "link_efficient": errors.append(f"Packing type must be link-efficient")
     if packet.dataPacketFormat.real_complex_type != "complex_cartesian": errors.append(f"Bad real_complex_type, value was {packet.dataPacketFormat.real_complex_type}")
     if packet.dataPacketFormat.data_item_format != "signed_fixed_point": errors.append(f"Bad data_item_format, value was {packet.dataPacketFormat.data_item_format}")
     if packet.dataPacketFormat.sample_repeat_indicator != "no_repeat": errors.append(f"Bad sample_repeat_indicator, value was {packet.dataPacketFormat.sample_repeat_indicator}")
@@ -92,5 +92,7 @@ def validate(packet):
     if packet.dataPacketFormat.channel_tag_size != 0: errors.append(f"Bad channel_tag_size, value was {packet.dataPacketFormat.channel_tag_size}")
     if packet.dataPacketFormat.item_packing_field_size < 3 and packet.dataPacketFormat.item_packing_field_size > 15: errors.append(f"Bit depth out of range")
     if packet.dataPacketFormat.data_item_size < 3 and packet.dataPacketFormat.data_item_size > 15: errors.append(f"Data item size out of range")
+    
+    
     return errors
 difi_context_definition.validate = validate # so it can be called as difi_context.validate(packet)

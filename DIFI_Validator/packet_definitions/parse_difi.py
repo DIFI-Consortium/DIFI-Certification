@@ -67,7 +67,7 @@ def process_packet(data, packet_index, stats, error_log):
             raise Exception(f"Bit depth of {bit_depth} not supported for sample extraction")
         samples = samples.astype(np.float32)
         samples = samples[::2] + 1j * samples[1::2]
-        if False:
+        if True:
             PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
             f = np.linspace(-sample_rate / 2, sample_rate / 2, len(PSD))
             plt.cla()
@@ -75,6 +75,7 @@ def process_packet(data, packet_index, stats, error_log):
             plt.ylim(-10, 50)
             plt.draw()
             plt.pause(0.01)
+
 
         if num_iq_samples != len(samples):
             raise Exception(f"Payload size doesnt match packet size, expected {num_iq_samples} IQ samples but got {len(samples)}")
@@ -174,6 +175,8 @@ def main():
         print("Overall Result: PASS")
     else:
         print("Overall Result: FAIL")
+
+    plt.savefig("PSD.png")
 
 
 if __name__ == "__main__":

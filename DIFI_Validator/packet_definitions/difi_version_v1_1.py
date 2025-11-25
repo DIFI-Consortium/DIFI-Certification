@@ -46,7 +46,7 @@ def validate(packet):
     if packet.cif0 not in ["context_changed", "no_change"]: errors.append("CIF0 must be 0x80000002 (context_changed) or 0x00000002 (no_change)")
     if packet.cif1 != 0x0000000C: errors.append("CIF1 must be 0x0000000C")
     if packet.v49SpecVersion != 0x00000004: errors.append("V49SpecVersion must be 0x00000004")
-    if packet.versionInfo.revision != 0: errors.append("Type must be 1")
+    if packet.versionInfo.revision != 1: errors.append("Revision must be 1")
     if packet.versionInfo.type != 0: errors.append("Type must be 0")
     if packet.versionInfo.icdVersion != 0: errors.append("ICD Version must be 0")
     return errors
