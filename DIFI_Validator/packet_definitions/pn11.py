@@ -125,6 +125,16 @@ samples = samples[peak_index:] # remove transients at start
 samples = samples[:len(pn11_bits) * sps // 2 ] # truncate to original length
 samples = samples[0::sps] # decimate down to 1 sample per symbol
 
+# Demodulate
+demod_bits = qpsk_demodulate(samples)
+
+# Compare
+num_bit_errors = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))])
+print(f"Number of bit errors: {num_bit_errors} out of {len(pn11_bits)} bits, BER: {num_bit_errors/len(pn11_bits):.6f}")
+for i in range(len(pn11_bits)):
+    if demod_bits[i] != pn11_bits[i]:
+        print(f"Bit {i}: transmitted {pn11_bits[i]}, received {demod_bits[i]}")
+
 if False:
     plt.figure(2)
     plt.plot(samples.real)
@@ -143,14 +153,3 @@ if False:
     plt.grid()
     plt.axis('equal')
     plt.show()
-
-# Demodulate
-demod_bits = qpsk_demodulate(samples)
-
-# Compare
-num_bit_errors = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))])
-print(f"Number of bit errors: {num_bit_errors} out of {len(pn11_bits)} bits, BER: {num_bit_errors/len(pn11_bits):.6f}")
-#for i in range(len(pn11_bits)):
-#    if demod_bits[i] != pn11_bits[i]:
-#        print(f"Bit {i}: transmitted {pn11_bits[i]}, received {demod_bits[i]}")
-
