@@ -1,13 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Simulation params
+# Simulation params, treated as constants for now
 sps = 4
 rc_num_taps = 51
 rc_beta = 0.35
-SNR_dB = 40
+SNR_dB = 10
 
-def qpsk_modulate(bits, sps):
+# Originally 2047 bits for PN11
+pn11_bits = [1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,1,1,1,0,0,1,0,0,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,0,0,0,1,0,1,0,0,0,0,1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,1,0,1,1,0,1,0,1,0,0,0,0,1,1,0,0,0,0,1,0,0,1,1,1,1,0,0,1,0,1,1,1,0,0,1,1,1,0,0,1,0,1,1,1,1,0,1,1,1,0,0,1,0,0,1,0,1,0,1,1,1,0,1,1,0,0,0,0,1,0,1,0,1,1,1,0,0,1,0,0,0,0,1,0,1,1,1,0,1,0,0,1,0,0,1,0,1,0,0,1,1,0,1,1,0,0,0,1,1,1,1,0,1,1,1,0,1,1,0,0,1,0,1,0,1,0,1,1,1,1,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,1,0,1,1,1,1,1,0,0,1,0,0,1,0,0,0,1,1,1,0,1,1,0,1,0,1,1,0,1,0,1,1,0,0,0,1,1,0,0,0,1,1,1,0,1,1,1,1,0,1,1,0,1,0,1,0,0,1,0,1,1,0,0,0,0,1,1,0,0,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,0,0,0,0,1,0,1,0,0,1,1,0,0,1,0,0,0,1,1,1,1,1,1,0,1,0,1,1,0,0,0,0,1,0,0,0,1,1,1,0,0,1,0,1,0,1,1,0,1,1,1,0,0,0,0,1,1,0,1,0,1,1,0,0,1,1,1,0,0,0,1,1,1,1,1,0,1,1,0,1,1,0,0,0,1,0,1,1,0,1,1,1,0,1,0,0,1,1,0,1,0,1,0,0,1,1,1,1,0,0,0,0,1,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1,0,1,1,0,1,0,0,0,1,0,0,1,1,0,0,1,0,1,0,1,1,1,1,1,1,0,0,0,0,1,0,0,0,0,1,1,0,0,1,0,1,0,0,1,1,1,1,1,0,0,0,1,1,1,0,0,0,1,1,0,1,1,0,1,1,0,1,1,1,0,1,1,0,1,1,0,1,0,1,0,1,1,0,1,1,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,1,1,0,1,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,0,1,0,1,1,1,0,1,1,1,1,0,0,1,0,1,0,1,0,0,1,1,1,0,0,0,0,0,1,1,1,0,1,1,0,0,0,1,1,0,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,0,1,0,1,1,0,1,0,0,0,0,0,0,1,1,0,0,1,0,0,0,0,1,1,1,1,1,0,1,0,0,1,1,0,0,0,1,0,0,1,1,1,1,1,0,1,0,1,1,1,0,0,0,1,0,0,0,1,0,1,1,0,1,0,1,0,1,0,0,1,1,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,1,1,0,0,0,1,1,0,0,1,1,1,1,0,1,1,1,1,1,1,0,0,1,0,1,0,0,0,0,1,1,1,0,0,0,1,0,0,1,1,0,1,1,0,1,0,1,1,1,1,0,1,1,0,0,0,1,0,0,1,0,1,1,1,0,1,0,1,1,0,0,1,0,1,0,0,0,1,1,1,1,0,0,0,1,0,1,1,0,0,1,1,0,1,0,0,1,1,1,1,1,1,0,0,1,1,1,0,0,0,0,1,1,1,1,0,1,1,0,0,1,1,0,0,1,0,1,1,1,1,1,1,1,1,0,0,1,0,0,0,0,0,0,1,1,1,0,1,0,0,0,0,1,1,0,1,0,0,1,0,0,1,1,1,0,0,1,1,0,1,1,1,0,1,1,1,1,1,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,1,0,1,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,0,1,1,0,0,0,1,0,1,0,0,1,1,1,0,1,0,0,0,1,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,1,0,0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,1,1,0,0,1,1,0,0,0,1,1,1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,1,0,1,1,1,0,0,0,0,1,0,0,1,0,1,1,0,0,1,0,1,1,0,0,1,1,1,1,0,0,1,1,1,1,1,0,0,1,1,1,1,0,0,0,1,1,1,1,0,0,1,1,0,1,1,0,0,1,1,1,1,1,0,1,1,1,1,1,0,0,0,1,0,1,0,0,0,1,1,0,1,0,0,0,1,0,1,1,1,0,0,1,0,1,0,0,1,0,1,1,1,0,0,0,1,1,0,0,1,0,1,1,0,1,1,1,1,1,0,0,1,1,0,1,0,0,0,1,1,1,1,1,0,0,1,0,1,1,0,0,0,1,1,1,0,0,1,1,1,0,1,1,0,1,1,1,1,0,1,0,1,1,0,1,0,0,1,0,0,0,1,1,0,0,1,1,0,1,0,1,1,1,1,1,1,1,0,0,0,1,0,0,0,0,0,1,1,0,1,0,1,0,0,0,1,1,1,0,0,0,0,1,0,1,1,0,1,1,0,0,1,0,0,1,1,0,1,1,1,1,0,1,1,1,1,0,1,0,0,1,0,1,0,0,1,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1,0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,0,0,0,0,1,1,0,0,0,1,0,0,0,1,1,1,1,0,1,0,1,0,1,1,0,0,1,0,0,0,0,0,1,1,1,1,0,1,0,0,0,1,1,0,0,1,0,0,1,0,1,1,1,1,1,0,1,1,0,0,1,0,0,0,1,0,1,1,1,1,0,1,0,1,0,0,1,0,0,1,0,0,0,0,1,1,0,1,1,0,1,0,0,1,1,1,0,1,1,0,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,0,0,1,0,0,0,1,0,0,1,0,1,0,1,0,1,0,1,1,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,0,1,1,0,0,0,0,1,1,1,0,1,1,1,0,0,1,1,0,1,0,1,0,1,1,1,1,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,1,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,0,1,0,0,1,0,0,1,0,1,1,0,1,1,0,1,1,0,0,1,1,0,1,1,0,1,1,1,1,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,0,1,0,0,1,0,0,1,1,1,1,0,1,1,0,1,1,1,0,0,1,0,1,1,0,1,0,1,1,1,0,0,1,1,0,0,0,1,0,1,1,1,1,1,1,0,1,0,0,1,0,0,0,0,1,0,0,1,1,0,1,0,0,1,0,1,1,1,1,0,0,1,1,0,0,1,0,0,1,1,1,1,1,1,1,0,1,1,1,0,0,0,0,0,1,0,1,0,1,1,0,0,0,1,0,0,0,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,0,0,0,1,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,1,0,1,0,0,1,0,1,0,1,0,0,0,1,1,0,0,0,0,0,1,0,1,1,1,1,0,0,0,1,0,0,1,0,0,1,1,0,1,0,1,1,0,1,1,1,1,0,0,0,1,1,0,1,0,0,1,1,0,1,1,1,0,0,1,1,1,1,0,1,0,1,1,1,1,0,0,1,0,0,0,1,0,0,1,1,1,0,1,0,1,0,1,1,1,0,1,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,0,0,1,1,0,1,0,1,0,1,0,1,1,1,0,0,0,0,0,0,0,1,0,1,1,0,0,0,0,0,1,0,0,1,1,1,0,0,0,1,0,1,1,1,0,1,1,0,1,0,0,1,0,1,0,1,1,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,0,0,0,1,1,0,0,0,0,1,1,0,1,1,1,1,0,0,1,1,1,0,1,0,0,1,1,1,1,0,1,0,0,1,1,1,0,0,1,0,0,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0,1,0,1,0]
+pn11_bits = pn11_bits[:2046]  # make even length since we're using QPSK
+
+def qpsk_modulate(pn11_bits, sps):
     const_points = [-1-1j, -1+1j, 1+1j, 1-1j]
     sym_map = [0, 1, 3, 2]
     symbols = []
@@ -51,105 +55,106 @@ def fractional_delay_filter(delay):
     h /= np.sum(h) # normalize to get unity gain, we don't want to change the amplitude/power
     return h
 
-# Originally 2047 bits for PN11
-pn11_bits = [1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,1,1,1,0,0,1,0,0,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,0,0,0,1,0,1,0,0,0,0,1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,1,0,1,1,0,1,0,1,0,0,0,0,1,1,0,0,0,0,1,0,0,1,1,1,1,0,0,1,0,1,1,1,0,0,1,1,1,0,0,1,0,1,1,1,1,0,1,1,1,0,0,1,0,0,1,0,1,0,1,1,1,0,1,1,0,0,0,0,1,0,1,0,1,1,1,0,0,1,0,0,0,0,1,0,1,1,1,0,1,0,0,1,0,0,1,0,1,0,0,1,1,0,1,1,0,0,0,1,1,1,1,0,1,1,1,0,1,1,0,0,1,0,1,0,1,0,1,1,1,1,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,1,0,1,1,1,1,1,0,0,1,0,0,1,0,0,0,1,1,1,0,1,1,0,1,0,1,1,0,1,0,1,1,0,0,0,1,1,0,0,0,1,1,1,0,1,1,1,1,0,1,1,0,1,0,1,0,0,1,0,1,1,0,0,0,0,1,1,0,0,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,0,0,0,0,1,0,1,0,0,1,1,0,0,1,0,0,0,1,1,1,1,1,1,0,1,0,1,1,0,0,0,0,1,0,0,0,1,1,1,0,0,1,0,1,0,1,1,0,1,1,1,0,0,0,0,1,1,0,1,0,1,1,0,0,1,1,1,0,0,0,1,1,1,1,1,0,1,1,0,1,1,0,0,0,1,0,1,1,0,1,1,1,0,1,0,0,1,1,0,1,0,1,0,0,1,1,1,1,0,0,0,0,1,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1,0,1,1,0,1,0,0,0,1,0,0,1,1,0,0,1,0,1,0,1,1,1,1,1,1,0,0,0,0,1,0,0,0,0,1,1,0,0,1,0,1,0,0,1,1,1,1,1,0,0,0,1,1,1,0,0,0,1,1,0,1,1,0,1,1,0,1,1,1,0,1,1,0,1,1,0,1,0,1,0,1,1,0,1,1,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,1,1,0,1,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,0,1,0,1,1,1,0,1,1,1,1,0,0,1,0,1,0,1,0,0,1,1,1,0,0,0,0,0,1,1,1,0,1,1,0,0,0,1,1,0,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,0,1,0,1,1,0,1,0,0,0,0,0,0,1,1,0,0,1,0,0,0,0,1,1,1,1,1,0,1,0,0,1,1,0,0,0,1,0,0,1,1,1,1,1,0,1,0,1,1,1,0,0,0,1,0,0,0,1,0,1,1,0,1,0,1,0,1,0,0,1,1,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,1,1,0,0,0,1,1,0,0,1,1,1,1,0,1,1,1,1,1,1,0,0,1,0,1,0,0,0,0,1,1,1,0,0,0,1,0,0,1,1,0,1,1,0,1,0,1,1,1,1,0,1,1,0,0,0,1,0,0,1,0,1,1,1,0,1,0,1,1,0,0,1,0,1,0,0,0,1,1,1,1,0,0,0,1,0,1,1,0,0,1,1,0,1,0,0,1,1,1,1,1,1,0,0,1,1,1,0,0,0,0,1,1,1,1,0,1,1,0,0,1,1,0,0,1,0,1,1,1,1,1,1,1,1,0,0,1,0,0,0,0,0,0,1,1,1,0,1,0,0,0,0,1,1,0,1,0,0,1,0,0,1,1,1,0,0,1,1,0,1,1,1,0,1,1,1,1,1,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,1,0,1,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,0,1,1,0,0,0,1,0,1,0,0,1,1,1,0,1,0,0,0,1,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,1,0,0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,1,1,0,0,1,1,0,0,0,1,1,1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,1,0,1,1,1,0,0,0,0,1,0,0,1,0,1,1,0,0,1,0,1,1,0,0,1,1,1,1,0,0,1,1,1,1,1,0,0,1,1,1,1,0,0,0,1,1,1,1,0,0,1,1,0,1,1,0,0,1,1,1,1,1,0,1,1,1,1,1,0,0,0,1,0,1,0,0,0,1,1,0,1,0,0,0,1,0,1,1,1,0,0,1,0,1,0,0,1,0,1,1,1,0,0,0,1,1,0,0,1,0,1,1,0,1,1,1,1,1,0,0,1,1,0,1,0,0,0,1,1,1,1,1,0,0,1,0,1,1,0,0,0,1,1,1,0,0,1,1,1,0,1,1,0,1,1,1,1,0,1,0,1,1,0,1,0,0,1,0,0,0,1,1,0,0,1,1,0,1,0,1,1,1,1,1,1,1,0,0,0,1,0,0,0,0,0,1,1,0,1,0,1,0,0,0,1,1,1,0,0,0,0,1,0,1,1,0,1,1,0,0,1,0,0,1,1,0,1,1,1,1,0,1,1,1,1,0,1,0,0,1,0,1,0,0,1,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1,0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,0,0,0,0,1,1,0,0,0,1,0,0,0,1,1,1,1,0,1,0,1,0,1,1,0,0,1,0,0,0,0,0,1,1,1,1,0,1,0,0,0,1,1,0,0,1,0,0,1,0,1,1,1,1,1,0,1,1,0,0,1,0,0,0,1,0,1,1,1,1,0,1,0,1,0,0,1,0,0,1,0,0,0,0,1,1,0,1,1,0,1,0,0,1,1,1,0,1,1,0,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,0,0,1,0,0,0,1,0,0,1,0,1,0,1,0,1,0,1,1,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,0,1,1,0,0,0,0,1,1,1,0,1,1,1,0,0,1,1,0,1,0,1,0,1,1,1,1,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,1,0,1,0,1,1,1,1,0,1,0,0,0,0,1,0,0,1,0,0,1,0,0,1,0,1,1,0,1,1,0,1,1,0,0,1,1,0,1,1,0,1,1,1,1,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,0,1,0,0,1,0,0,1,1,1,1,0,1,1,0,1,1,1,0,0,1,0,1,1,0,1,0,1,1,1,0,0,1,1,0,0,0,1,0,1,1,1,1,1,1,0,1,0,0,1,0,0,0,0,1,0,0,1,1,0,1,0,0,1,0,1,1,1,1,0,0,1,1,0,0,1,0,0,1,1,1,1,1,1,1,0,1,1,1,0,0,0,0,0,1,0,1,0,1,1,0,0,0,1,0,0,0,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,0,0,0,1,1,1,1,0,0,1,0,0,1,1,0,0,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,1,0,1,0,0,1,0,1,0,1,0,0,0,1,1,0,0,0,0,0,1,0,1,1,1,1,0,0,0,1,0,0,1,0,0,1,1,0,1,0,1,1,0,1,1,1,1,0,0,0,1,1,0,1,0,0,1,1,0,1,1,1,0,0,1,1,1,1,0,1,0,1,1,1,1,0,0,1,0,0,0,1,0,0,1,1,1,0,1,0,1,0,1,1,1,0,1,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,0,0,1,1,0,1,0,1,0,1,0,1,1,1,0,0,0,0,0,0,0,1,0,1,1,0,0,0,0,0,1,0,0,1,1,1,0,0,0,1,0,1,1,1,0,1,1,0,1,0,0,1,0,1,0,1,1,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,0,0,0,1,1,0,0,0,0,1,1,0,1,1,1,1,0,0,1,1,1,0,1,0,0,1,1,1,1,0,1,0,0,1,1,1,0,0,1,0,0,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0,1,0,1,0]
-pn11_bits = pn11_bits[:2046]  # make even length since we're using QPSK
+def gen_pn11_qpsk():
+    samples = qpsk_modulate(pn11_bits, sps)
+    h_rc = rc_filter(rc_num_taps, rc_beta, sps)
+    samples = np.convolve(samples, h_rc) # Filter our signal, in order to apply the pulse shaping
+    return samples
 
-# Create transmit signal
-samples = qpsk_modulate(pn11_bits, sps)
-template = samples # save for correlation later
-h_rc = rc_filter(rc_num_taps, rc_beta, sps)
-samples = np.convolve(samples, h_rc) # Filter our signal, in order to apply the pulse shaping
+def process_pn11_qpsk(samples):
+    # Create template to correlate against
+    template = qpsk_modulate(pn11_bits, sps)
 
-# for testing purposes, apply a known fractional delay
-h_delay = fractional_delay_filter(0.123) 
-samples = np.convolve(samples, h_delay)
+    # Correlate against template
+    correlation = np.abs(np.correlate(samples, template, mode='valid')) # np.correlate includes the conj()
+    peak_index = np.argmax(correlation)
 
-# Add some amount of zeros before and after to simulate timing offset
-num_zeros_before = 1500
-num_zeros_after = 700
-samples = np.concatenate((np.zeros(num_zeros_before), samples, np.zeros(num_zeros_after)))
+    # Using max point, and two neighboring points, estimate the integer and fractional delay
+    y_lower = correlation[peak_index - 1]
+    y_0 = correlation[peak_index]
+    y_upper = correlation[peak_index + 1]
+    frac_delay = (y_upper - y_lower) / (2 * (2 * y_0 - y_lower - y_upper))
+    total_delay = peak_index + frac_delay
+    print(f"Estimated delay: {total_delay:.4f} samples (integer: {peak_index}, fractional: {frac_delay:.4f})")
 
-# AWGN
-noise_power = np.var(samples) / 10**(SNR_dB / 10)
-n = np.sqrt(noise_power / 2) * (np.random.randn(len(samples)) + 1j * np.random.randn(len(samples)))
-samples += n
+    # Correct fractional delay
+    h_delay_correction = fractional_delay_filter(-1 * frac_delay) 
+    samples = np.convolve(samples, h_delay_correction)
+    samples = samples[(len(h_delay_correction)-1)//2:] # remove filter delay
 
-# Plot PSD
-if False:
-    PSD = 10*np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples)))**2)
-    f = np.linspace(-0.5, 0.5, len(PSD))
-    plt.figure(0)
-    plt.plot(f, PSD)
-    plt.xlabel("Normalized Frequency (cycles/sample)")
-    plt.ylabel("Power/Frequency (dB)")
-    plt.grid()
-    plt.show()
+    # Extract symbols we care about and decimate
+    samples = samples[peak_index:] # remove transients at start
+    samples = samples[:len(pn11_bits) * sps // 2 ] # truncate to original length
+    samples = samples[0::sps] # decimate down to 1 sample per symbol
 
-if False:
-    plt.plot(samples.real, label="I")
-    plt.plot(samples.imag, label="Q")
-    plt.xlabel("Sample Index")
-    plt.ylabel("Amplitude")
-    plt.legend()
-    plt.grid()
-    plt.show()
+    if False: # for debugging
+        plt.figure(2)
+        plt.plot(samples.real)
+        plt.plot(samples.imag)
+        plt.xlabel("Symbol Index")
+        plt.ylabel("Amplitude")
+        plt.legend(["I","Q"])
+        plt.grid()
+        plt.show()
 
-# Correlate against template
-correlation = np.abs(np.correlate(samples, template, mode='valid')) # np.correlate includes the conj()
-peak_index = np.argmax(correlation)
+    if False: # for debugging
+        plt.figure(1)
+        plt.plot(samples.real[0:100], samples.imag[0:100], '.')
+        plt.xlabel("I")
+        plt.ylabel("Q")
+        plt.grid()
+        plt.axis('equal')
+        plt.show()
 
-if False:
-    plt.figure(3)
-    plt.plot(correlation)
-    plt.xlabel("Lag")
-    plt.ylabel("Correlation Magnitude")
-    plt.grid()
-    plt.show()
+    # Demodulate
+    demod_bits = qpsk_demodulate(samples)
+    return demod_bits
 
-# Using max point, and two neighboring points, estimate the integer and fractional delay
-y_lower = correlation[peak_index - 1]
-y_0 = correlation[peak_index]
-y_upper = correlation[peak_index + 1]
-frac_delay = (y_upper - y_lower) / (2 * (2 * y_0 - y_lower - y_upper))
-total_delay = peak_index + frac_delay
-print(f"Estimated delay: {total_delay:.4f} samples (integer: {peak_index}, fractional: {frac_delay:.4f})")
 
-# Correct fractional delay
-h_delay_correction = fractional_delay_filter(-1 * frac_delay) 
-samples = np.convolve(samples, h_delay_correction)
-samples = samples[(len(h_delay_correction)-1)//2:] # remove filter delay
+if __name__ == "__main__":
+    tx_samples = gen_pn11_qpsk()
 
-# Extract symbols we care about and decimate
-samples = samples[peak_index:] # remove transients at start
-samples = samples[:len(pn11_bits) * sps // 2 ] # truncate to original length
-samples = samples[0::sps] # decimate down to 1 sample per symbol
+    # for testing purposes, apply a known fractional delay
+    h_delay = fractional_delay_filter(0.123) 
+    tx_samples = np.convolve(tx_samples, h_delay)
 
-# Demodulate
-demod_bits = qpsk_demodulate(samples)
+    # Add some amount of zeros before and after to simulate timing offset
+    num_zeros_before = 1500
+    num_zeros_after = 700
+    tx_samples = np.concatenate((np.zeros(num_zeros_before), tx_samples, np.zeros(num_zeros_after)))
 
-# Compare
-num_bit_errors = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))])
-print(f"Number of bit errors: {num_bit_errors} out of {len(pn11_bits)} bits, BER: {num_bit_errors/len(pn11_bits):.6f}")
-for i in range(len(pn11_bits)):
-    if demod_bits[i] != pn11_bits[i]:
-        print(f"Bit {i}: transmitted {pn11_bits[i]}, received {demod_bits[i]}")
+    # AWGN
+    noise_power = np.var(tx_samples) / 10**(SNR_dB / 10)
+    n = np.sqrt(noise_power / 2) * (np.random.randn(len(tx_samples)) + 1j * np.random.randn(len(tx_samples)))
+    tx_samples += n
 
-if False:
-    plt.figure(2)
-    plt.plot(samples.real)
-    plt.plot(samples.imag)
-    plt.xlabel("Symbol Index")
-    plt.ylabel("Amplitude")
-    plt.legend(["I","Q"])
-    plt.grid()
-    plt.show()
+    # Plot PSD
+    if False:
+        PSD = 10*np.log10(np.abs(np.fft.fftshift(np.fft.fft(tx_samples)))**2)
+        f = np.linspace(-0.5, 0.5, len(PSD))
+        plt.figure(0)
+        plt.plot(f, PSD)
+        plt.xlabel("Normalized Frequency (cycles/sample)")
+        plt.ylabel("Power/Frequency (dB)")
+        plt.grid()
+        plt.show()
 
-if False:
-    plt.figure(1)
-    plt.plot(samples.real[0:100], samples.imag[0:100], '.')
-    plt.xlabel("I")
-    plt.ylabel("Q")
-    plt.grid()
-    plt.axis('equal')
-    plt.show()
+    if False:
+        plt.plot(tx_samples.real, label="I")
+        plt.plot(tx_samples.imag, label="Q")
+        plt.xlabel("Sample Index")
+        plt.ylabel("Amplitude")
+        plt.legend()
+        plt.grid()
+        plt.show()
+
+    # Process received samples
+    demod_bits = process_pn11_qpsk(tx_samples)
+
+    # Compare
+    num_bit_errors = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))])
+    print(f"Number of bit errors: {num_bit_errors} out of {len(pn11_bits)} bits, BER: {num_bit_errors/len(pn11_bits):.6f}")
+    for i in range(len(pn11_bits)):
+        if demod_bits[i] != pn11_bits[i]:
+            print(f"Bit {i}: transmitted {pn11_bits[i]}, received {demod_bits[i]}")
+
