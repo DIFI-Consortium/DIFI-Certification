@@ -6,6 +6,7 @@ from difi_context_v1_1 import difi_context_definition
 from difi_data_v1_1 import difi_data_definition
 from difi_version_v1_1 import difi_version_definition
 import numpy as np
+from pn11 import gen_pn11_qpsk
 
 CONTEXT_PACKETS_PER_SEC = 10
 VERSION_PACKETS_PER_SEC = 2
@@ -130,6 +131,9 @@ data = {
     "payload": "",
 }
 
+tx_samples = gen_pn11_qpsk()
+tx_samples_doubled = np.concatenate((tx_samples, tx_samples))
+tx_samples_i = 0
 
 def send_packet(sock, addr, packet_bytes):
     sock.sendto(packet_bytes, addr)
@@ -160,22 +164,21 @@ def version_sender(sock, addr):
 
 
 def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
+    global tx_samples_i
     interval = samples_per_packet / sample_rate  # seconds between packets
     seq_num = 0
     while True:
-        samples = np.random.randn(samples_per_packet) + 1j * np.random.randn(samples_per_packet)  # it's IQ samples per packet
-        samples += 2 * np.exp(2j * np.pi * 0.25 * np.arange(len(samples)))  # add a tone for fun
+        samples = tx_samples_doubled[tx_samples_i:tx_samples_i + samples_per_packet]
+        tx_samples_i = (tx_samples_i + samples_per_packet) % len(tx_samples)
         if bit_depth == 8:
-            samples *= 30  # get closet to hitting 128 levels for 8 bit
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
-            samples_interleaved[0::2] = np.clip(np.real(samples), -128, 127).astype(np.int8)
-            samples_interleaved[1::2] = np.clip(np.imag(samples), -128, 127).astype(np.int8)
+            samples_interleaved[0::2] = np.clip(np.real(samples * 128), -128, 127).astype(np.int8)
+            samples_interleaved[1::2] = np.clip(np.imag(samples * 128), -128, 127).astype(np.int8)
             payload = samples_interleaved.tobytes()
         elif bit_depth == 12:
             # 12-bit signed samples, pack two 12-bit samples into 3 bytes
-            samples *= 2000  # get close to hitting 2048 levels for 12 bit
-            i_samples = np.clip(np.real(samples), -2048, 2047).astype(np.int16)
-            q_samples = np.clip(np.imag(samples), -2048, 2047).astype(np.int16)
+            i_samples = np.clip(np.real(samples * 2048), -2048, 2047).astype(np.int16)
+            q_samples = np.clip(np.imag(samples * 2048), -2048, 2047).astype(np.int16)
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
             samples_interleaved[0::2] = i_samples
             samples_interleaved[1::2] = q_samples
@@ -188,10 +191,9 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
                 packed.append(s2 & 0xFF)
             payload = bytes(packed)
         elif bit_depth == 16:
-            samples *= 8000  # get closet to hitting 32768 levels for 16 bit
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
-            samples_interleaved[0::2] = np.clip(np.real(samples), -32768, 32767).astype(np.int16)
-            samples_interleaved[1::2] = np.clip(np.imag(samples), -32768, 32767).astype(np.int16)
+            samples_interleaved[0::2] = np.clip(np.real(samples * 32768), -32768, 32767).astype(np.int16)
+            samples_interleaved[1::2] = np.clip(np.imag(samples * 32768), -32768, 32767).astype(np.int16)
             payload = samples_interleaved.tobytes()
         else:
             raise ValueError(f"Unsupported bit_depth: {bit_depth}")
@@ -212,6 +214,9 @@ def main():
     parser.add_argument("--samples-per-packet", type=int, default=100, help="Number of IQ samples per data packet")
     parser.add_argument("--bit-depth", type=int, default=8, choices=[8, 12, 16], help="Bit depth for IQ samples (8, 12, or 16)")
     args = parser.parse_args()
+
+    if args.samples_per_packet > len(tx_samples):
+        raise ValueError(f"samples_per_packet {args.samples_per_packet} exceeds available samples {len(tx_samples)}")
 
     addr = (args.ip, args.port)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
