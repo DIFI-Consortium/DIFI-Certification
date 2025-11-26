@@ -83,7 +83,7 @@ def process_pn11_qpsk(samples):
     y_upper = correlation[peak_index + 1]
     frac_delay = (y_upper - y_lower) / (2 * (2 * y_0 - y_lower - y_upper))
     total_delay = peak_index + frac_delay
-    print(f"Estimated delay: {total_delay:.4f} samples (integer: {peak_index}, fractional: {frac_delay:.4f})")
+    #print(f"Estimated delay: {total_delay:.4f} samples (integer: {peak_index}, fractional: {frac_delay:.4f})")
 
     # Correct fractional delay
     h_delay_correction = fractional_delay_filter(-1 * frac_delay) 
