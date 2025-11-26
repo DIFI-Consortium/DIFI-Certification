@@ -59,6 +59,11 @@ def gen_pn11_qpsk():
     samples = qpsk_modulate(pn11_bits, sps)
     h_rc = rc_filter(rc_num_taps, rc_beta, sps)
     samples = np.convolve(samples, h_rc, "same") # Filter our signal, in order to apply the pulse shaping
+
+    # for testing purposes, apply a random fractional delay so that it's not always exactly 0.5
+    #h_delay = fractional_delay_filter(np.random.uniform(-0.5, 0.5)) 
+    #samples = np.convolve(samples, h_delay, "same")
+
     samples /= np.max(np.real(samples))
     samples *= 0.95 # leave some headroom
     print("Generated", len(samples), "samples for PN11 QPSK signal")

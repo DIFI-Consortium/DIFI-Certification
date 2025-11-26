@@ -171,16 +171,14 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
         samples = tx_samples_doubled[tx_samples_i:tx_samples_i + samples_per_packet]
         tx_samples_i = (tx_samples_i + samples_per_packet) % len(tx_samples)
         if bit_depth == 8:
-            samples *= 128
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
-            samples_interleaved[0::2] = np.clip(np.real(samples), -128, 127).astype(np.int8)
-            samples_interleaved[1::2] = np.clip(np.imag(samples), -128, 127).astype(np.int8)
+            samples_interleaved[0::2] = np.clip(np.real(samples * 128), -128, 127).astype(np.int8)
+            samples_interleaved[1::2] = np.clip(np.imag(samples * 128), -128, 127).astype(np.int8)
             payload = samples_interleaved.tobytes()
         elif bit_depth == 12:
             # 12-bit signed samples, pack two 12-bit samples into 3 bytes
-            samples *= 2048
-            i_samples = np.clip(np.real(samples), -2048, 2047).astype(np.int16)
-            q_samples = np.clip(np.imag(samples), -2048, 2047).astype(np.int16)
+            i_samples = np.clip(np.real(samples * 2048), -2048, 2047).astype(np.int16)
+            q_samples = np.clip(np.imag(samples * 2048), -2048, 2047).astype(np.int16)
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
             samples_interleaved[0::2] = i_samples
             samples_interleaved[1::2] = q_samples
@@ -193,10 +191,9 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
                 packed.append(s2 & 0xFF)
             payload = bytes(packed)
         elif bit_depth == 16:
-            samples *= 32768
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
-            samples_interleaved[0::2] = np.clip(np.real(samples), -32768, 32767).astype(np.int16)
-            samples_interleaved[1::2] = np.clip(np.imag(samples), -32768, 32767).astype(np.int16)
+            samples_interleaved[0::2] = np.clip(np.real(samples * 32768), -32768, 32767).astype(np.int16)
+            samples_interleaved[1::2] = np.clip(np.imag(samples * 32768), -32768, 32767).astype(np.int16)
             payload = samples_interleaved.tobytes()
         else:
             raise ValueError(f"Unsupported bit_depth: {bit_depth}")
