@@ -61,6 +61,7 @@ def gen_pn11_qpsk():
     samples = np.convolve(samples, h_rc, "same") # Filter our signal, in order to apply the pulse shaping
     samples /= np.max(np.real(samples))
     samples *= 0.95 # leave some headroom
+    print("Generated", len(samples), "samples for PN11 QPSK signal")
     return samples
 
 def process_pn11_qpsk(samples):

@@ -7,7 +7,7 @@ from difi_data_v1_1 import difi_data_definition
 from difi_version_v1_1 import difi_version_definition
 import numpy as np
 import matplotlib.pyplot as plt
-
+from pn11 import gen_pn11_qpsk, process_pn11_qpsk, pn11_bits
 
 # holds packet statistics and state
 class PacketStats:
@@ -51,7 +51,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
                         f.write(f"[Context][Packet {packet_index}] {line}\n")
         stats.bit_depth = parsed.dataPacketFormat.data_item_size + 1
         stats.sample_rate = parsed.sampleRate
-        return
+        return None
 
     if packet_type == 0x1 and bit_depth:
         parsed = difi_data_definition.parse(data)
@@ -75,7 +75,6 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
             plt.ylim(-10, 50)
             plt.draw()
             plt.pause(0.01)
-
         if num_iq_samples != len(samples):
             raise Exception(f"Payload size doesnt match packet size, expected {num_iq_samples} IQ samples but got {len(samples)}")
         errors = difi_data_definition.validate(parsed)
@@ -93,7 +92,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
                 for error in errors:
                     for line in str(error).splitlines():
                         f.write(f"[Data][Packet {packet_index}] {line}\n")
-        return
+        return samples
 
     if packet_type == 0x5:
         if len(data) != difi_version_definition.sizeof():
@@ -114,7 +113,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
                 for error in errors:
                     for line in str(error).splitlines():
                         f.write(f"[Version][Packet {packet_index}] {line}\n")
-        return
+        return None
 
 
 def main():
@@ -123,6 +122,7 @@ def main():
     parser.add_argument("--udp-port", type=int, help="UDP port to listen for live packets")
     parser.add_argument("--error-log", type=str, default="error_log.txt", help="Error log file")
     parser.add_argument("--plot-psd", action="store_true", help="Plot the Power Spectral Density (PSD)")
+    parser.add_argument("--pn11", action="store_true", help="Run PN11 receiver and report BER")
     args = parser.parse_args()
 
     if not args.pcap and not args.udp_port:
@@ -153,9 +153,18 @@ def main():
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind(("", args.udp_port))
         try:
+            samples_buffer = np.array([], dtype=np.complex64)
             while True:
                 data, addr = sock.recvfrom(4096)
-                process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd)
+                samples = process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd)
+                if samples is not None and args.pn11:
+                    samples_buffer = np.concatenate((samples_buffer, samples))
+                    # Process PN11 in chunks of 2048 samples
+                    if len(samples_buffer) >= 4092*2: # 2 sequences worth, so we know there's 1 full sequence in the middle
+                        demod_bits = process_pn11_qpsk(samples_buffer)
+                        BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))])/len(pn11_bits)
+                        print("BER:", BER)
+                        samples_buffer = np.array([], dtype=np.complex64) # for now just clear buffer after each processing, in theory we could keep leftover samples though
                 packet_index += 1
         except KeyboardInterrupt:
             print("\nStopped listening.")
