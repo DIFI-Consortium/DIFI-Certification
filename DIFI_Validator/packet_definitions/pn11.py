@@ -54,10 +54,13 @@ def fractional_delay_filter(delay):
     h /= np.sum(h) # normalize to get unity gain, we don't want to change the amplitude/power
     return h
 
+# Roughly -1 to +1
 def gen_pn11_qpsk():
     samples = qpsk_modulate(pn11_bits, sps)
     h_rc = rc_filter(rc_num_taps, rc_beta, sps)
-    samples = np.convolve(samples, h_rc) # Filter our signal, in order to apply the pulse shaping
+    samples = np.convolve(samples, h_rc, "same") # Filter our signal, in order to apply the pulse shaping
+    samples /= np.max(np.real(samples))
+    samples *= 0.95 # leave some headroom
     return samples
 
 def process_pn11_qpsk(samples):
