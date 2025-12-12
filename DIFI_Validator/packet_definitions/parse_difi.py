@@ -94,13 +94,35 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
         samples = samples[::2] + 1j * samples[1::2]
         stats.most_recent_samples = samples # for plotting at the end
         if plot_psd:
+            plt.ion()
             PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
             f = np.linspace(-sample_rate / 2, sample_rate / 2, len(PSD))
-            plt.cla()
-            plt.plot(f, PSD)
-            plt.ylim(-10, 50)
-            plt.draw()
-            plt.pause(0.01)
+            if not hasattr(process_packet, "fig") or process_packet.fig is None:
+                process_packet.fig, process_packet.axs = plt.subplots(3, 1, figsize=(8, 10))
+            fig, axs = process_packet.fig, process_packet.axs
+            # PSD subplot
+            axs[0].cla()
+            axs[0].plot(f / 1e6, PSD)
+            axs[0].set_xlabel("Frequency (MHz)")
+            axs[0].set_ylabel("Power Spectral Density (dB/Hz)")
+            axs[0].set_ylim(-30, 30)
+            axs[0].grid()
+            # IQ scatter subplot
+            axs[1].cla()
+            axs[1].plot(samples.real, samples.imag, '.', markersize=5)
+            axs[1].set_xlabel("I")
+            axs[1].set_ylabel("Q")
+            axs[1].grid()
+            # I/Q vs Time subplot
+            axs[2].cla()
+            axs[2].plot(samples.real)
+            axs[2].plot(samples.imag)
+            axs[2].set_xlabel("Time")
+            axs[2].set_ylabel("Sample Value")
+            axs[2].grid()
+            fig.tight_layout()
+            fig.canvas.draw()
+            fig.canvas.flush_events()
         if num_iq_samples != len(samples):
             raise Exception(f"Payload size doesnt match packet size, expected {num_iq_samples} IQ samples but got {len(samples)}")
         errors = difi_data_definition.validate(parsed)
