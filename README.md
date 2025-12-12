@@ -13,7 +13,7 @@ Welcome to the Digital Intermediate Frequency Interoperability (DIFI) Certificat
 #### Certify Source (Parse DIFI)
 
 A PCAP or live UDP stream can be parsed with either
-`python certify_source.py --pcap ../examples/Example1_1Msps_8bits.pcapng`
+`python certify_source.py --pcap DIFI_Validator/examples/Example1_1Msps_8bits.pcapng`
 or for UDP, 
 `python certify_source.py --udp-port 50003`
 

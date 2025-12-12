@@ -2,11 +2,11 @@ import socket
 import threading
 import time
 import argparse
-from difi_context_v1_1 import difi_context_definition
-from difi_data_v1_1 import difi_data_definition
-from difi_version_v1_1 import difi_version_definition
+from packet_definitions.difi_context_v1_1 import difi_context_definition
+from packet_definitions.difi_data_v1_1 import difi_data_definition
+from packet_definitions.difi_version_v1_1 import difi_version_definition
 import numpy as np
-from pn11 import gen_pn11_qpsk
+from packet_definitions.pn11 import gen_pn11_qpsk
 import subprocess
 import yaml
 from time import strftime

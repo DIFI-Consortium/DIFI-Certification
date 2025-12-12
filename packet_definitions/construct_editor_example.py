@@ -1,6 +1,6 @@
 import wx
 from construct_editor.wx_widgets import WxConstructHexEditor
-from difi_context_v1_1 import difi_context_definition
+from .difi_context_v1_1 import difi_context_definition
 
 '''
 sudo apt-get install build-essential libgtk-3-dev
