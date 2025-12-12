@@ -30,3 +30,4 @@ DIFI_Validator/packet_definitions/error_log.txt
 DIFI_Validator/packet_definitions/PSD.png
 DIFI_Validator/packet_definitions/certify_source_summary*.yaml
 DIFI_Validator/packet_definitions/certify_sink_summary*.yaml
+DIFI_Validator/packet_definitions/final_data_packet_psd.png

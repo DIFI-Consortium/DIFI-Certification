@@ -30,6 +30,7 @@ class PacketStats:
         self.data_timestamp = 0
         self.version_timestamp = 0
         self.data_packet_size = 0 # in words
+        self.most_recent_samples = np.array([], dtype=np.complex64) # for plotting at the end
 
 output_yaml_dict = {}
 
@@ -91,6 +92,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
             raise Exception(f"Bit depth of {bit_depth} not supported for sample extraction")
         samples = samples.astype(np.float32)
         samples = samples[::2] + 1j * samples[1::2]
+        stats.most_recent_samples = samples # for plotting at the end
         if plot_psd:
             PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
             f = np.linspace(-sample_rate / 2, sample_rate / 2, len(PSD))
@@ -236,8 +238,15 @@ if __name__ == "__main__":
         print("Overall Result: FAIL")
         output_yaml_dict["overall_result"] = "FAIL"
 
-    if args.plot_psd:
-        plt.savefig("PSD.png")
+    # Always plot the last PSD at the end
+    samples = stats.most_recent_samples
+    PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
+    f = np.linspace(-stats.sample_rate / 2, stats.sample_rate / 2, len(PSD))
+    plt.plot(f / 1e6, PSD)
+    plt.xlabel("Frequency (MHz)")
+    plt.ylabel("Power Spectral Density (dB/Hz)")
+    plt.grid()
+    plt.savefig("final_data_packet_psd.png")
 
     output_yaml_dict["company"] = args.company
     output_yaml_dict["product_name"] = args.product_name
