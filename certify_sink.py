@@ -146,8 +146,10 @@ try:
 except Exception as e:
     output_yaml_dict["difi_cert_commit_hash"] = "unknown"
 
+
 def send_packet(sock, addr, packet_bytes):
     sock.sendto(packet_bytes, addr)
+
 
 def context_sender(sock, addr, bit_depth):
     interval = 1.0 / CONTEXT_PACKETS_PER_SEC
@@ -178,7 +180,7 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
     interval = samples_per_packet / sample_rate  # seconds between packets
     seq_num = 0
     while True:
-        samples = tx_samples_tiled[tx_samples_i:tx_samples_i + samples_per_packet]
+        samples = tx_samples_tiled[tx_samples_i : tx_samples_i + samples_per_packet]
         tx_samples_i = (tx_samples_i + samples_per_packet) % len(tx_samples)
         if bit_depth == 8:
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
@@ -209,7 +211,6 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
             raise ValueError(f"Unsupported bit_depth: {bit_depth}")
         data["header"]["seqNum"] = seq_num
         data["header"]["pktSize"] = 7 + (len(payload) + 3) // 4  # Update pktSize based on payload length
-        print(data["header"]["pktSize"]) # TEMPORARY
         data["payload"] = payload
         pkt = difi_data_definition.build(data)
         send_packet(sock, addr, pkt)

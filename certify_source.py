@@ -11,6 +11,7 @@ from pn11 import gen_pn11_qpsk, process_pn11_qpsk, pn11_bits
 import subprocess
 import yaml
 
+
 # holds packet statistics and state, these are intended to only be used internally
 class PacketStats:
     def __init__(self):
@@ -22,15 +23,16 @@ class PacketStats:
         self.noncompliant_data_count = 0
         self.compliant_version_count = 0
         self.noncompliant_version_count = 0
-        self.context_sequence_count = -1 # used to find gaps
+        self.context_sequence_count = -1  # used to find gaps
         self.data_sequence_count = -1
         self.version_sequence_count = -1
-        self.stream_id = -1 # stream ID can be 0 so we cant start it as None or 0
-        self.context_timestamp = 0 # used to check monotonicity
+        self.stream_id = -1  # stream ID can be 0 so we cant start it as None or 0
+        self.context_timestamp = 0  # used to check monotonicity
         self.data_timestamp = 0
         self.version_timestamp = 0
-        self.data_packet_size = 0 # in words
-        self.most_recent_samples = np.array([], dtype=np.complex64) # for plotting at the end
+        self.data_packet_size = 0  # in words
+        self.most_recent_samples = np.array([], dtype=np.complex64)  # for plotting at the end
+
 
 output_yaml_dict = {}
 
@@ -39,6 +41,7 @@ try:
     output_yaml_dict["difi_cert_commit_hash"] = commit_hash
 except Exception as e:
     output_yaml_dict["difi_cert_commit_hash"] = "unknown"
+
 
 def process_packet(data, packet_index, stats, error_log, plot_psd=False):
     bit_depth = stats.bit_depth
@@ -59,7 +62,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
         elif parsed.streamId != stats.stream_id:
             errors.append(f"Stream ID changed from {stats.stream_id} to {parsed.streamId}")
         timestamp = parsed.intSecsTimestamp + parsed.fracSecsTimestamp / 1e12
-        if timestamp <= stats.context_timestamp: # might want just a < but TBD
+        if timestamp <= stats.context_timestamp:  # might want just a < but TBD
             errors.append(f"Context packet timestamp went backwards from {stats.context_timestamp} to {timestamp}")
         stats.context_timestamp = timestamp
         if not errors:
@@ -92,7 +95,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
             raise Exception(f"Bit depth of {bit_depth} not supported for sample extraction")
         samples = samples.astype(np.float32)
         samples = samples[::2] + 1j * samples[1::2]
-        stats.most_recent_samples = samples # for plotting at the end
+        stats.most_recent_samples = samples  # for plotting at the end
         if plot_psd:
             plt.ion()
             PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
@@ -109,7 +112,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
             axs[0].grid()
             # IQ scatter subplot
             axs[1].cla()
-            axs[1].plot(samples.real, samples.imag, '.', markersize=5)
+            axs[1].plot(samples.real, samples.imag, ".", markersize=5)
             axs[1].set_xlabel("I")
             axs[1].set_ylabel("Q")
             axs[1].grid()
@@ -138,7 +141,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
             errors.append(f"Data packet timestamp went backwards from {stats.data_timestamp} to {timestamp}")
         stats.data_timestamp = timestamp
         if not stats.data_packet_size:
-            stats.data_packet_size = parsed.header.pktSize # in words
+            stats.data_packet_size = parsed.header.pktSize  # in words
             output_yaml_dict["data_packet_size_in_words"] = stats.data_packet_size
         elif parsed.header.pktSize != stats.data_packet_size:
             errors.append(f"Data packet size changed from {stats.data_packet_size} to {parsed.header.pktSize}")
@@ -233,11 +236,12 @@ if __name__ == "__main__":
                 if samples is not None and args.pn11:
                     samples_buffer = np.concatenate((samples_buffer, samples))
                     # Process PN11 in chunks of 2048 samples
-                    if len(samples_buffer) >= 4092*2: # 2 sequences worth, so we know there's 1 full sequence in the middle
+                    if len(samples_buffer) >= 4092 * 2:  # 2 sequences worth, so we know there's 1 full sequence in the middle
                         demod_bits = process_pn11_qpsk(samples_buffer)
-                        BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))])/len(pn11_bits)
+                        BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))]) / len(pn11_bits)
                         print("BER:", BER)
-                        samples_buffer = np.array([], dtype=np.complex64) # for now just clear buffer after each processing, in theory we could keep leftover samples though
+                        # for now just clear buffer after each processing, in theory we could keep leftover samples though
+                        samples_buffer = np.array([], dtype=np.complex64)
                 packet_index += 1
         except KeyboardInterrupt:
             print("\nStopped listening.")
