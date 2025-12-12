@@ -135,7 +135,7 @@ data = {
 }
 
 tx_samples = gen_pn11_qpsk()
-tx_samples_doubled = np.concatenate((tx_samples, tx_samples))
+tx_samples_tiled = np.concatenate((tx_samples, tx_samples, tx_samples, tx_samples))
 tx_samples_i = 0
 
 output_yaml_dict = {}
@@ -178,7 +178,7 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
     interval = samples_per_packet / sample_rate  # seconds between packets
     seq_num = 0
     while True:
-        samples = tx_samples_doubled[tx_samples_i:tx_samples_i + samples_per_packet]
+        samples = tx_samples_tiled[tx_samples_i:tx_samples_i + samples_per_packet]
         tx_samples_i = (tx_samples_i + samples_per_packet) % len(tx_samples)
         if bit_depth == 8:
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
@@ -209,6 +209,7 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
             raise ValueError(f"Unsupported bit_depth: {bit_depth}")
         data["header"]["seqNum"] = seq_num
         data["header"]["pktSize"] = 7 + (len(payload) + 3) // 4  # Update pktSize based on payload length
+        print(data["header"]["pktSize"]) # TEMPORARY
         data["payload"] = payload
         pkt = difi_data_definition.build(data)
         send_packet(sock, addr, pkt)
@@ -221,15 +222,24 @@ if __name__ == "__main__":
     parser.add_argument("--ip", type=str, default="127.0.0.1", help="Destination IP address")
     parser.add_argument("--port", type=int, default=50003, help="Destination UDP port")
     parser.add_argument("--sample-rate", type=float, default=100e3, help="Sample rate (Hz)")
-    parser.add_argument("--samples-per-packet", type=int, default=100, help="Number of IQ samples per data packet")
+    parser.add_argument("--packet-size", type=str, default="small", choices=["small", "large"], help="Packet size (small or large)")
     parser.add_argument("--bit-depth", type=int, default=8, choices=[8, 12, 16], help="Bit depth for IQ samples (8, 12, or 16)")
     parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
     parser.add_argument("--product-name", type=str, default="Fillmein", help="Product name")
     parser.add_argument("--product-version", type=str, default="0.0", help="Product version")
     args = parser.parse_args()
 
-    if args.samples_per_packet > len(tx_samples):
-        raise ValueError(f"samples_per_packet {args.samples_per_packet} exceeds available samples {len(tx_samples)}")
+    if args.packet_size == "small":
+        packet_size_words = 360
+    elif args.packet_size == "large":
+        packet_size_words = 2232
+    else:
+        raise ValueError("Invalid packet size")
+    samples_per_packet = int(((packet_size_words - 7) * 4) / (args.bit_depth / 8.0 * 2))
+    print(f"samples_per_packet: {samples_per_packet}")
+
+    if samples_per_packet > len(tx_samples) * 2:
+        raise ValueError(f"samples_per_packet {samples_per_packet} exceeds available samples {len(tx_samples)}")
 
     addr = (args.ip, args.port)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -237,7 +247,7 @@ if __name__ == "__main__":
     threads = [
         threading.Thread(target=context_sender, args=(sock, addr, args.bit_depth), daemon=True),
         threading.Thread(target=version_sender, args=(sock, addr), daemon=True),
-        threading.Thread(target=data_sender, args=(sock, addr, args.sample_rate, args.samples_per_packet, args.bit_depth), daemon=True),
+        threading.Thread(target=data_sender, args=(sock, addr, args.sample_rate, samples_per_packet, args.bit_depth), daemon=True),
     ]
     for t in threads:
         t.start()
@@ -253,7 +263,7 @@ if __name__ == "__main__":
     output_yaml_dict["product_version"] = args.product_version
     output_yaml_dict["bit_depth"] = args.bit_depth
     output_yaml_dict["sample_rate_hz"] = args.sample_rate
-    output_yaml_dict["samples_per_packet"] = args.samples_per_packet
+    output_yaml_dict["samples_per_packet"] = samples_per_packet
     print(output_yaml_dict)
     timestamp_str = strftime("%Y%m%d_%H%M%S")
     output_yaml_filename = f"certify_sink_summary_{timestamp_str}.yaml"

@@ -15,7 +15,7 @@ One option is to use the gr-difi example `pn11_over_difi_tx.grc` to test the UDP
 
 The following examples generate a live UDP stream of DIFI with 10 context packets per second, 2 version packets per second, and data packets corresponding to the requested sample rate and samples-per-packet:
 
-`python generate_difi.py --port 50003 --sample-rate 100e3 --samples-per-packet 150 --bit-depth 8`
+`python generate_difi.py --port 50003 --sample-rate 100e3 --packet-size small --bit-depth 8`
 
 There is no option for capturing to a pcap because you can simply run tcpdump, e.g., `sudo tcpdump -i lo udp port 50003 -w output.pcap`, to create a pcap out of the UDP stream being generated live.
 
