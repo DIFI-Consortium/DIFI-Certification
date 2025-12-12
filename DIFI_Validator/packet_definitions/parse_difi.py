@@ -8,8 +8,10 @@ from difi_version_v1_1 import difi_version_definition
 import numpy as np
 import matplotlib.pyplot as plt
 from pn11 import gen_pn11_qpsk, process_pn11_qpsk, pn11_bits
+import subprocess
+import yaml
 
-# holds packet statistics and state
+# holds packet statistics and state, these are intended to only be used internally
 class PacketStats:
     def __init__(self):
         self.bit_depth = 8  # gets updated by context packet
@@ -20,16 +22,29 @@ class PacketStats:
         self.noncompliant_data_count = 0
         self.compliant_version_count = 0
         self.noncompliant_version_count = 0
-        self.context_sequence_count = -1
+        self.context_sequence_count = -1 # used to find gaps
         self.data_sequence_count = -1
         self.version_sequence_count = -1
+        self.stream_id = -1 # stream ID can be 0 so we cant start it as None or 0
+        self.context_timestamp = 0 # used to check monotonicity
+        self.data_timestamp = 0
+        self.version_timestamp = 0
+        self.data_packet_size = 0 # in words
 
+output_yaml_dict = {}
+
+try:
+    commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8").strip()
+    output_yaml_dict["difi_cert_commit_hash"] = commit_hash
+except Exception as e:
+    output_yaml_dict["difi_cert_commit_hash"] = "unknown"
 
 def process_packet(data, packet_index, stats, error_log, plot_psd=False):
     bit_depth = stats.bit_depth
     sample_rate = stats.sample_rate
     packet_type = data[0:4][0] >> 4
 
+    # Context Packet
     if packet_type == 0x4:
         if len(data) != difi_context_definition.sizeof():
             raise Exception(f"Packet size {len(data)} does not match expected size {difi_context_definition.sizeof()}")
@@ -38,6 +53,14 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
         if stats.context_sequence_count != -1 and parsed.header.seqNum != (stats.context_sequence_count + 1) % 16:
             errors.append(f"Context packet sequence count jumped from {stats.context_sequence_count} to {parsed.header.seqNum}")
         stats.context_sequence_count = parsed.header.seqNum
+        if stats.stream_id == -1:
+            stats.stream_id = parsed.streamId
+        elif parsed.streamId != stats.stream_id:
+            errors.append(f"Stream ID changed from {stats.stream_id} to {parsed.streamId}")
+        timestamp = parsed.intSecsTimestamp + parsed.fracSecsTimestamp / 1e12
+        if timestamp <= stats.context_timestamp: # might want just a < but TBD
+            errors.append(f"Context packet timestamp went backwards from {stats.context_timestamp} to {timestamp}")
+        stats.context_timestamp = timestamp
         if not errors:
             stats.compliant_context_count += 1
         else:
@@ -53,6 +76,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
         stats.sample_rate = parsed.sampleRate
         return None
 
+    # Data Packet
     if packet_type == 0x1 and bit_depth:
         parsed = difi_data_definition.parse(data)
         if bit_depth == 8:
@@ -81,6 +105,19 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
         if stats.data_sequence_count != -1 and parsed.header.seqNum != (stats.data_sequence_count + 1) % 16:
             errors.append(f"Data packet sequence count jumped from {stats.data_sequence_count} to {parsed.header.seqNum}")
         stats.data_sequence_count = parsed.header.seqNum
+        if stats.stream_id == -1:
+            stats.stream_id = parsed.streamId
+        elif parsed.streamId != stats.stream_id:
+            errors.append(f"Stream ID changed from {stats.stream_id} to {parsed.streamId}")
+        timestamp = parsed.intSecsTimestamp + parsed.fracSecsTimestamp / 1e12
+        if timestamp <= stats.data_timestamp:
+            errors.append(f"Data packet timestamp went backwards from {stats.data_timestamp} to {timestamp}")
+        stats.data_timestamp = timestamp
+        if not stats.data_packet_size:
+            stats.data_packet_size = parsed.header.pktSize # in words
+            output_yaml_dict["data_packet_size_in_words"] = stats.data_packet_size
+        elif parsed.header.pktSize != stats.data_packet_size:
+            errors.append(f"Data packet size changed from {stats.data_packet_size} to {parsed.header.pktSize}")
         if not errors:
             stats.compliant_data_count += 1
         else:
@@ -94,6 +131,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
                         f.write(f"[Data][Packet {packet_index}] {line}\n")
         return samples
 
+    # Version Packet
     if packet_type == 0x5:
         if len(data) != difi_version_definition.sizeof():
             raise Exception(f"Packet size {len(data)} does not match expected size {difi_version_definition.sizeof()}")
@@ -102,6 +140,14 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
         if stats.version_sequence_count != -1 and parsed.header.seqNum != (stats.version_sequence_count + 1) % 16:
             errors.append(f"Version packet sequence count jumped from {stats.version_sequence_count} to {parsed.header.seqNum}")
         stats.version_sequence_count = parsed.header.seqNum
+        if stats.stream_id == -1:
+            stats.stream_id = parsed.streamId
+        elif parsed.streamId != stats.stream_id:
+            errors.append(f"Stream ID changed from {stats.stream_id} to {parsed.streamId}")
+        timestamp = parsed.intSecsTimestamp + parsed.fracSecsTimestamp / 1e12
+        if timestamp <= stats.version_timestamp:
+            errors.append(f"Version packet timestamp went backwards from {stats.version_timestamp} to {timestamp}")
+        stats.version_timestamp = timestamp
         if not errors:
             stats.compliant_version_count += 1
         else:
@@ -116,18 +162,21 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
         return None
 
 
-def main():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse DIFI packets from pcap or live UDP port.")
     parser.add_argument("--pcap", type=str, help="Path to pcap file to parse")
     parser.add_argument("--udp-port", type=int, help="UDP port to listen for live packets")
     parser.add_argument("--error-log", type=str, default="error_log.txt", help="Error log file")
     parser.add_argument("--plot-psd", action="store_true", help="Plot the Power Spectral Density (PSD)")
     parser.add_argument("--pn11", action="store_true", help="Run PN11 receiver and report BER")
+    parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
+    parser.add_argument("--product-name", type=str, default="Fillmein", help="Product name")
+    parser.add_argument("--product-version", type=str, default="0.0", help="Product version")
     args = parser.parse_args()
 
     if not args.pcap and not args.udp_port:
         print("You must specify either --pcap or --udp-port.")
-        return
+        exit()
 
     # Add the pcap filename or UDP port to top of error log file, as well as start time
     with open(args.error_log, "w") as f:  # also clears the file
@@ -182,12 +231,20 @@ def main():
     print("noncompliant_version_count:", stats.noncompliant_version_count)
     if stats.noncompliant_context_count == 0 and stats.noncompliant_data_count == 0 and stats.noncompliant_version_count == 0:
         print("Overall Result: PASS")
+        output_yaml_dict["overall_result"] = "PASS"
     else:
         print("Overall Result: FAIL")
+        output_yaml_dict["overall_result"] = "FAIL"
 
     if args.plot_psd:
         plt.savefig("PSD.png")
 
+    output_yaml_dict["bit_depth"] = stats.bit_depth
+    output_yaml_dict["sample_rate_hz"] = stats.sample_rate
+    print(output_yaml_dict)
+    timestamp_str = strftime("%Y%m%d_%H%M%S")
+    output_yaml_filename = f"certify_source_summary_{timestamp_str}.yaml"
+    with open(output_yaml_filename, "w") as f:
+        yaml.dump(output_yaml_dict, f)
 
-if __name__ == "__main__":
-    main()
+# TODO CREATE REQUIREMENTS.TXT

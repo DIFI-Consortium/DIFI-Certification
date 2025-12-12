@@ -206,13 +206,16 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
         time.sleep(interval)
 
 
-def main():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Send DIFI packets over UDP")
     parser.add_argument("--ip", type=str, default="127.0.0.1", help="Destination IP address")
     parser.add_argument("--port", type=int, default=50003, help="Destination UDP port")
     parser.add_argument("--sample-rate", type=float, default=100e3, help="Sample rate (Hz)")
     parser.add_argument("--samples-per-packet", type=int, default=100, help="Number of IQ samples per data packet")
     parser.add_argument("--bit-depth", type=int, default=8, choices=[8, 12, 16], help="Bit depth for IQ samples (8, 12, or 16)")
+    parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
+    parser.add_argument("--product-name", type=str, default="Fillmein", help="Product name")
+    parser.add_argument("--product-version", type=str, default="0.0", help="Product version")
     args = parser.parse_args()
 
     if args.samples_per_packet > len(tx_samples):
@@ -234,7 +237,3 @@ def main():
             time.sleep(0.1)
     except KeyboardInterrupt:
         print("\nStopped.")
-
-
-if __name__ == "__main__":
-    main()

@@ -18,8 +18,8 @@ difi_context_definition = Struct(
         "oui"             / Bits(24),
         "infoClassCode"   / Bits(16),
         "packetClassCode" / Bits(16)),
-    "intSecsTimestamp"  / UnsignedInt32(),
-    "fracSecsTimestamp" / UnsignedInt64(),
+    "intSecsTimestamp"  / UnsignedInt32(), # TSI specifies epoch
+    "fracSecsTimestamp" / UnsignedInt64(), # picoseconds
     "cif0"              / UnsignedInt32(),
     "refPoint"          / UnsignedInt32(),
     "bandwidth"         / UnsignedInt64Scaled(),
