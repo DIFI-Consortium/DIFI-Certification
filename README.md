@@ -8,6 +8,25 @@ Welcome to the Digital Intermediate Frequency Interoperability (DIFI) Certificat
 
 ## DIFI Certification Working Group Projects
 
+### DIFI Self-Certification Tooling
+
+#### Certify Source (Parse DIFI)
+
+A PCAP or live UDP stream can be parsed with either
+`python certify_source.py --pcap ../examples/Example1_1Msps_8bits.pcapng`
+or for UDP, 
+`python certify_source.py --udp-port 50003`
+
+One option is to use the gr-difi example `pn11_over_difi_tx.grc` to test the UDP mode.
+
+#### Certify Sink (Generate DIFI)
+
+The following examples generate a live UDP stream of DIFI with 10 context packets per second, 2 version packets per second, and data packets corresponding to the requested sample rate and samples-per-packet:
+
+`python certify_sink.py --port 50003 --sample-rate 100e3 --packet-size small --bit-depth 8`
+
+There is no option for capturing to a pcap because you can simply run tcpdump, e.g., `sudo tcpdump -i lo udp port 50003 -w output.pcap`, to create a pcap out of the UDP stream being generated live.
+
 ### DIFI Python Packet Validator 
 The Packet validator is a collection of [Python](https://www.python.org/ "Python") scripts that generate Standard Context' packets, 'Version Context' packets and 'Data' packets (dcs.py, dvs.py & dds.py) for consumption by a DIFI packet receiver (drx.py). The collection of scripts were released as open source by [Kratos Defense](https://www.kratosdefense.com/ "Kratos") to the DIFI Consortium. 
 
