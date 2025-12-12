@@ -222,6 +222,7 @@ if __name__ == "__main__":
     parser.add_argument("--ip", type=str, default="127.0.0.1", help="Destination IP address")
     parser.add_argument("--port", type=int, default=50003, help="Destination UDP port")
     parser.add_argument("--sample-rate", type=float, default=100e3, help="Sample rate (Hz)")
+    parser.add_argument("--duration", type=float, default=10.0, help="Duration to send packets (seconds)")
     parser.add_argument("--packet-size", type=str, default="small", choices=["small", "large"], help="Packet size (small or large)")
     parser.add_argument("--bit-depth", type=int, default=8, choices=[8, 12, 16], help="Bit depth for IQ samples (8, 12, or 16)")
     parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
@@ -253,8 +254,11 @@ if __name__ == "__main__":
         t.start()
     print(f"Sending packets to {addr}. Press Ctrl+C to stop.")
     try:
+        start_time = time.time()
         while True:
             time.sleep(0.1)
+            if time.time() - start_time > args.duration:
+                break
     except KeyboardInterrupt:
         print("\nStopped.")
 
