@@ -239,6 +239,9 @@ if __name__ == "__main__":
     if args.plot_psd:
         plt.savefig("PSD.png")
 
+    output_yaml_dict["company"] = args.company
+    output_yaml_dict["product_name"] = args.product_name
+    output_yaml_dict["product_version"] = args.product_version
     output_yaml_dict["bit_depth"] = stats.bit_depth
     output_yaml_dict["sample_rate_hz"] = stats.sample_rate
     print(output_yaml_dict)

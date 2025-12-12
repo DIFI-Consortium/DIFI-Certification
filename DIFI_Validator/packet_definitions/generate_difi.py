@@ -7,6 +7,9 @@ from difi_data_v1_1 import difi_data_definition
 from difi_version_v1_1 import difi_version_definition
 import numpy as np
 from pn11 import gen_pn11_qpsk
+import subprocess
+import yaml
+from time import strftime
 
 CONTEXT_PACKETS_PER_SEC = 10
 VERSION_PACKETS_PER_SEC = 2
@@ -135,9 +138,16 @@ tx_samples = gen_pn11_qpsk()
 tx_samples_doubled = np.concatenate((tx_samples, tx_samples))
 tx_samples_i = 0
 
+output_yaml_dict = {}
+
+try:
+    commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8").strip()
+    output_yaml_dict["difi_cert_commit_hash"] = commit_hash
+except Exception as e:
+    output_yaml_dict["difi_cert_commit_hash"] = "unknown"
+
 def send_packet(sock, addr, packet_bytes):
     sock.sendto(packet_bytes, addr)
-
 
 def context_sender(sock, addr, bit_depth):
     interval = 1.0 / CONTEXT_PACKETS_PER_SEC
@@ -237,3 +247,15 @@ if __name__ == "__main__":
             time.sleep(0.1)
     except KeyboardInterrupt:
         print("\nStopped.")
+
+    output_yaml_dict["company"] = args.company
+    output_yaml_dict["product_name"] = args.product_name
+    output_yaml_dict["product_version"] = args.product_version
+    output_yaml_dict["bit_depth"] = args.bit_depth
+    output_yaml_dict["sample_rate_hz"] = args.sample_rate
+    output_yaml_dict["samples_per_packet"] = args.samples_per_packet
+    print(output_yaml_dict)
+    timestamp_str = strftime("%Y%m%d_%H%M%S")
+    output_yaml_filename = f"certify_sink_summary_{timestamp_str}.yaml"
+    with open(output_yaml_filename, "w") as f:
+        yaml.dump(output_yaml_dict, f)
