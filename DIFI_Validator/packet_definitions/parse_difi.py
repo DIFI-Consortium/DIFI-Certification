@@ -244,7 +244,6 @@ if __name__ == "__main__":
     output_yaml_dict["product_version"] = args.product_version
     output_yaml_dict["bit_depth"] = stats.bit_depth
     output_yaml_dict["sample_rate_hz"] = stats.sample_rate
-    print(output_yaml_dict)
     timestamp_str = strftime("%Y%m%d_%H%M%S")
     output_yaml_filename = f"certify_source_summary_{timestamp_str}.yaml"
     with open(output_yaml_filename, "w") as f:
