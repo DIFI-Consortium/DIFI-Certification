@@ -1,5 +1,5 @@
 from construct import Struct, BitStruct, Enum
-from construct_custom_types import *
+from .construct_custom_types import *
 
 '''
 New in v1.2.1 there are now 3 different classes of context packets and the version packet is now a subset of this context packet instead of its own thing

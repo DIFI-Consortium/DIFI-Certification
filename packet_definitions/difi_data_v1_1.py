@@ -1,5 +1,5 @@
 from construct import Struct, BitStruct, Enum, GreedyBytes
-from construct_custom_types import *
+from .construct_custom_types import *
 
 difi_data_definition = Struct(
     "header" / BitStruct( # 1 word
