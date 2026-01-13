@@ -13,7 +13,9 @@ Copy [difi-dissector.lua](difi-dissector.lua) into the Wireshark plugins directo
 
  If using Linux:
 
-    `~./local/lib/wireshark/plugins`
+    `~/.local/lib/wireshark/plugins`
+    or
+    '~/.config/wireshark/plugins' (note you may need to create the plugins folder)
 
 * Run Wireshark
 * Verify the plugin is loaded under Help->About Wireshark->Plugins
