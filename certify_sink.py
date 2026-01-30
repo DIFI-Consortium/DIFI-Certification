@@ -180,6 +180,7 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
     interval = samples_per_packet / sample_rate  # seconds between packets
     seq_num = 0
     while True:
+        start_t = time.time()
         samples = tx_samples_tiled[tx_samples_i : tx_samples_i + samples_per_packet]
         tx_samples_i = (tx_samples_i + samples_per_packet) % len(tx_samples)
         if bit_depth == 8:
@@ -215,8 +216,8 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
         pkt = difi_data_definition.build(data)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 16  # wrap seq_num for demo
-        time.sleep(interval)
-
+        time_elapsed = time.time() - start_t
+        time.sleep(interval - time_elapsed if interval > time_elapsed else 0)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Send DIFI packets over UDP")
