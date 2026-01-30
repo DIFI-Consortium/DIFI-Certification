@@ -1,0 +1,42 @@
+name: Certify Source and Sink Test
+
+on:
+  pull_request:
+    # only runs on PRs that target main
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-certify-source-and-sink:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run certify_source.py
+        run: |
+          python certify_source.py --pcap DIFI_Validator/examples/Example1_1Msps_8bits.pcapng
+
+      - name: Check error_log.txt exists
+        run: |
+          if [ ! -f error_log.txt ]; then
+            echo "error_log.txt not found!" && exit 1
+          fi
+
+      - name: Run certify_sink.py
+        run: |
+          python certify_sink.py --port 50003 --sample-rate 100e3 --packet-size small --bit-depth 8
