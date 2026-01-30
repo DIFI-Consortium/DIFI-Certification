@@ -1,6 +1,12 @@
 import wx
 from construct_editor.wx_widgets import WxConstructHexEditor
-from .difi_context_v1_1 import difi_context_definition
+import sys
+import os
+if __name__ == "__main__":
+	sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+	from difi_context_v1_1 import difi_context_definition
+else:
+	from .difi_context_v1_1 import difi_context_definition
 
 '''
 sudo apt-get install build-essential libgtk-3-dev
@@ -14,4 +20,9 @@ frame = wx.Frame(None, title="Construct Hex Editor", size=(1300, 1000))
 editor_panel = WxConstructHexEditor(frame, construct=difi_context_definition, binary=b)
 editor_panel.construct_editor.expand_all()
 frame.Show(True)
+
+# Close the window after 5 seconds if running in CI
+if os.environ.get('CI', '').lower() == 'true':
+	wx.CallLater(5000, frame.Close)
+
 app.MainLoop()

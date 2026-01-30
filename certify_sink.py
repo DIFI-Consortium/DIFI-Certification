@@ -45,7 +45,7 @@ context = {
     "refLevel2": 0.0,
     "stage1GainAtten": 0.0,
     "stage2GainAtten": -13.25,
-    "sampleRate": 1000000.0,
+    "sampleRate": 0.0, # Gets filled in
     "timeStampAdj": 0,
     "timeStampCal": 0,
     "stateEventInd": {
@@ -151,13 +151,14 @@ def send_packet(sock, addr, packet_bytes):
     sock.sendto(packet_bytes, addr)
 
 
-def context_sender(sock, addr, bit_depth):
+def context_sender(sock, addr, bit_depth, sample_rate):
     interval = 1.0 / CONTEXT_PACKETS_PER_SEC
     seq_num = 0
     while True:
         context["header"]["seqNum"] = seq_num
         context["dataPacketFormat"]["item_packing_field_size"] = bit_depth - 1
         context["dataPacketFormat"]["data_item_size"] = bit_depth - 1
+        context["sampleRate"] = sample_rate
         pkt = difi_context_definition.build(context)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 16
@@ -180,6 +181,7 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
     interval = samples_per_packet / sample_rate  # seconds between packets
     seq_num = 0
     while True:
+        start_t = time.time()
         samples = tx_samples_tiled[tx_samples_i : tx_samples_i + samples_per_packet]
         tx_samples_i = (tx_samples_i + samples_per_packet) % len(tx_samples)
         if bit_depth == 8:
@@ -215,8 +217,8 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
         pkt = difi_data_definition.build(data)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 16  # wrap seq_num for demo
-        time.sleep(interval)
-
+        time_elapsed = time.time() - start_t
+        time.sleep(interval - time_elapsed if interval > time_elapsed else 0)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Send DIFI packets over UDP")
@@ -247,7 +249,7 @@ if __name__ == "__main__":
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     threads = [
-        threading.Thread(target=context_sender, args=(sock, addr, args.bit_depth), daemon=True),
+        threading.Thread(target=context_sender, args=(sock, addr, args.bit_depth, args.sample_rate), daemon=True),
         threading.Thread(target=version_sender, args=(sock, addr), daemon=True),
         threading.Thread(target=data_sender, args=(sock, addr, args.sample_rate, samples_per_packet, args.bit_depth), daemon=True),
     ]

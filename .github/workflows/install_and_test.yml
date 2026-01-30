@@ -1,0 +1,63 @@
+name: Certify Source and Sink Test
+
+on:
+  pull_request:
+    # only runs on PRs that target main
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-certify-source-and-sink:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Apt installs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libgl1-mesa-dev libglu1-mesa-dev libjpeg-dev libtiff-dev libsdl2-dev libgstreamer-plugins-base1.0-dev libnotify-dev freeglut3-dev libsm-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install pre-built wxPython wheel
+        run: |
+          python -m pip install --upgrade pip
+          # Download and install pre-built wxPython wheel
+          pip install https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-24.04/wxpython-4.2.4-cp310-cp310-linux_x86_64.whl
+
+      - name: Pip installs (remaining requirements)
+        run: |
+          pip install -r requirements.txt
+
+      - name: Start Xvfb (virtual framebuffer)
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 -screen 0 1024x768x24 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Run certify_source.py
+        run: |
+          python certify_source.py --pcap DIFI_Validator/examples/Example1_1Msps_8bits.pcapng
+
+      - name: Check error_log.txt exists
+        run: |
+          if [ ! -f error_log.txt ]; then
+            echo "error_log.txt not found!" && exit 1
+          fi
+
+      - name: Run certify_sink.py
+        run: |
+          python certify_sink.py --port 50003 --sample-rate 100e3 --packet-size small --bit-depth 8
+
+      - name: Run construct editor example
+        run: |
+          python packet_definitions/construct_editor_example.py

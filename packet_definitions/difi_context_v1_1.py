@@ -1,5 +1,8 @@
 from construct import Struct, BitStruct, Enum
-from .construct_custom_types import *
+try:
+    from .construct_custom_types import *
+except ImportError:
+    from construct_custom_types import *
 
 difi_context_definition = Struct(
     "header" / BitStruct( # 1 word
@@ -68,7 +71,7 @@ if difi_context_definition.sizeof() != 108: raise Exception("Bug in Construct de
 #   - eg packet size is bits 0-15 in the spec
 #   - so it seems like BitStruct is defined with most significant bits first
 
-# Validations, the plan is for each failed validation to add a string to a list/log/etc
+# Validations, the plan is for each failed validation to add a string to a list/log/etc. TODO: Add spreadsheet identifiers to each validation message
 def validate(packet):
     errors = []
     if packet.header.pktType != 0x4: errors.append("Not a standard flow signal context packet")
@@ -92,7 +95,9 @@ def validate(packet):
     if packet.dataPacketFormat.channel_tag_size != 0: errors.append(f"Bad channel_tag_size, value was {packet.dataPacketFormat.channel_tag_size}")
     if packet.dataPacketFormat.item_packing_field_size < 3 and packet.dataPacketFormat.item_packing_field_size > 15: errors.append(f"Bit depth out of range")
     if packet.dataPacketFormat.data_item_size < 3 and packet.dataPacketFormat.data_item_size > 15: errors.append(f"Data item size out of range")
-    
+    if packet.rfFreq < 0 or packet.rfFreq > 100e9: errors.append(f"RF frequency {packet.rfFreq} Hz out of expected range (0-100 GHz)")
+    if packet.ifFreq < 0 or packet.ifFreq > 100e9: errors.append(f"IF frequency {packet.ifFreq} Hz out of expected range (0-100 GHz)")
+    # Note, we are purposefully not yet checking the lock bits for time and frequency reference
     
     return errors
 difi_context_definition.validate = validate # so it can be called as difi_context.validate(packet)
