@@ -68,7 +68,7 @@ if difi_context_definition.sizeof() != 108: raise Exception("Bug in Construct de
 #   - eg packet size is bits 0-15 in the spec
 #   - so it seems like BitStruct is defined with most significant bits first
 
-# Validations, the plan is for each failed validation to add a string to a list/log/etc
+# Validations, the plan is for each failed validation to add a string to a list/log/etc. TODO: Add spreadsheet identifiers to each validation message
 def validate(packet):
     errors = []
     if packet.header.pktType != 0x4: errors.append("Not a standard flow signal context packet")
