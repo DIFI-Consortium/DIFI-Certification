@@ -11,6 +11,8 @@ from packet_definitions.pn11 import gen_pn11_qpsk, process_pn11_qpsk, pn11_bits
 import subprocess
 import yaml
 
+# This script certfies a DIFI source, i.e., a device/software that generates DIFI packets, and we parse/verify them
+
 
 # holds packet statistics and state, these are intended to only be used internally
 class PacketStats:
@@ -43,7 +45,7 @@ except Exception as e:
     output_yaml_dict["difi_cert_commit_hash"] = "unknown"
 
 
-def process_packet(data, packet_index, stats, error_log, plot_psd=False):
+def process_packet(data, packet_index, stats, error_log, plot_psd=False, validate_rf_freq=None, validate_if_freq=None, validate_bandwidth=None):
     bit_depth = stats.bit_depth
     sample_rate = stats.sample_rate
     packet_type = data[0:4][0] >> 4
@@ -54,6 +56,12 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False):
             raise Exception(f"Packet size {len(data)} does not match expected size {difi_context_definition.sizeof()}")
         parsed = difi_context_definition.parse(data)
         errors = difi_context_definition.validate(parsed)
+        if validate_rf_freq is not None and abs(parsed.rfFreq - validate_rf_freq) > 1e-6: # leave a tolerance
+            errors.append(f"RF frequency {parsed.rfFreq} does not match expected {validate_rf_freq}")
+        if validate_if_freq is not None and abs(parsed.ifFreq - validate_if_freq) > 1e-6:
+            errors.append(f"IF frequency {parsed.ifFreq} does not match expected {validate_if_freq}")
+        if validate_bandwidth is not None and abs(parsed.bandwidth - validate_bandwidth) > 1e-6:
+            errors.append(f"Bandwidth {parsed.bandwidth} does not match expected {validate_bandwidth}")
         if stats.context_sequence_count != -1 and parsed.header.seqNum != (stats.context_sequence_count + 1) % 16:
             errors.append(f"Context packet sequence count jumped from {stats.context_sequence_count} to {parsed.header.seqNum}")
         stats.context_sequence_count = parsed.header.seqNum
@@ -199,10 +207,13 @@ if __name__ == "__main__":
     parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
     parser.add_argument("--product-name", type=str, default="Fillmein", help="Product name")
     parser.add_argument("--product-version", type=str, default="0.0", help="Product version")
+    parser.add_argument("--validate-rf-freq", type=float, help="Expected RF frequency in Hz for validation")
+    parser.add_argument("--validate-if-freq", type=float, help="Expected IF frequency in Hz for validation")
+    parser.add_argument("--validate-bandwidth", type=float, help="Expected bandwidth in Hz for validation")
     args = parser.parse_args()
 
     if not args.pcap and not args.udp_port:
-        print("You must specify either --pcap or --udp-port.")
+        print("You must specify either --pcap or --udp-port")
         exit()
 
     # Add the pcap filename or UDP port to top of error log file, as well as start time
@@ -220,7 +231,7 @@ if __name__ == "__main__":
     if args.pcap:
         for packet in PcapReader(args.pcap):
             data = bytes(packet[UDP].payload)
-            process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd)
+            process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq, validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth)
             packet_index += 1
 
     # UDP Mode
@@ -232,7 +243,7 @@ if __name__ == "__main__":
             samples_buffer = np.array([], dtype=np.complex64)
             while True:
                 data, addr = sock.recvfrom(4096)
-                samples = process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd)
+                samples = process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq, validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth)
                 if samples is not None and args.pn11:
                     samples_buffer = np.concatenate((samples_buffer, samples))
                     # Process PN11 in chunks of 2048 samples
