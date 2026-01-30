@@ -365,6 +365,19 @@ if __name__ == "__main__":
         yaml.dump(output_yaml_dict, f)
 
     if args.create_iq_recording and len(stats.most_recent_samples) > 0:
+        # Create spectrogram
+        x = np.fromfile("iq_recording.sigmf-data", dtype=np.complex64)
+        fft_size = 1024
+        num_rows = len(x) // fft_size # // is an integer division which rounds down
+        spectrogram = np.zeros((num_rows, fft_size))
+        for i in range(num_rows):
+            spectrogram[i,:] = 10*np.log10(np.abs(np.fft.fftshift(np.fft.fft(x[i*fft_size:(i+1)*fft_size])))**2)
+        plt.figure(2)
+        plt.imshow(spectrogram, aspect='auto', extent = [stats.sample_rate/-2/1e6, stats.sample_rate/2/1e6, len(x)/stats.sample_rate, 0])
+        plt.xlabel("Frequency [MHz]")
+        plt.ylabel("Time [s]")
+        plt.savefig("iq_recording_spectrogram.png", dpi=300, bbox_inches='tight')
+
         # Create SigMF metadata file
         sigmf_meta =   {
             "global": {
