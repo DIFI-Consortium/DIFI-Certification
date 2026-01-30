@@ -344,35 +344,16 @@ if __name__ == "__main__":
         print("Overall Result: FAIL")
         output_yaml_dict["overall_result"] = "FAIL"
 
-    # Always plot the last PSD at the end
-    samples = stats.most_recent_samples
-    PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2 / (len(samples)*stats.sample_rate)) # dB/Hz
-    f = np.linspace(-stats.sample_rate / 2, stats.sample_rate / 2, len(PSD))
-    plt.plot(f / 1e6, PSD)
-    plt.xlabel("Frequency [MHz]")
-    plt.ylabel("Power Spectral Density [dB/Hz]")
-    plt.grid()
-    plt.savefig("final_data_packet_psd.png")
-
-    output_yaml_dict["company"] = args.company
-    output_yaml_dict["product_name"] = args.product_name
-    output_yaml_dict["product_version"] = args.product_version
-    output_yaml_dict["bit_depth"] = stats.bit_depth
-    output_yaml_dict["sample_rate_hz"] = stats.sample_rate
-    timestamp_str = strftime("%Y%m%d_%H%M%S")
-    output_yaml_filename = f"certify_source_summary_{timestamp_str}.yaml"
-    with open(output_yaml_filename, "w") as f:
-        yaml.dump(output_yaml_dict, f)
-
-    if args.create_iq_recording and len(stats.most_recent_samples) > 0:
+    if args.create_iq_recording:
         # Create spectrogram
         x = np.fromfile("iq_recording.sigmf-data", dtype=np.complex64)
         fft_size = 1024
         num_rows = len(x) // fft_size # // is an integer division which rounds down
         spectrogram = np.zeros((num_rows, fft_size))
         for i in range(num_rows):
-            spectrogram[i,:] = 10*np.log10(np.abs(np.fft.fftshift(np.fft.fft(x[i*fft_size:(i+1)*fft_size])))**2)
-        plt.figure(2)
+            spectrogram[i,:] = 10*np.log10(np.abs(np.fft.fftshift(np.fft.fft(x[i*fft_size:(i+1)*fft_size])))**2 / (fft_size * stats.sample_rate)) # dB/Hz
+        PSD = np.mean(spectrogram, axis=0) # Calc PSD by averaging over the time axis
+        plt.figure(1)
         plt.imshow(spectrogram, aspect='auto', extent = [stats.sample_rate/-2/1e6, stats.sample_rate/2/1e6, len(x)/stats.sample_rate, 0])
         plt.xlabel("Frequency [MHz]")
         plt.ylabel("Time [s]")
@@ -397,5 +378,42 @@ if __name__ == "__main__":
         }
         with open(f"iq_recording" + ".sigmf-meta", "w") as f:
             json.dump(sigmf_meta, f, indent=2)
+    else:
+        # PSD of only the last data packet
+        samples = stats.most_recent_samples
+        PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2 / (len(samples) * stats.sample_rate)) # dB/Hz
+    
+    f = np.linspace(-stats.sample_rate / 2, stats.sample_rate / 2, len(PSD))
+    plt.figure(2)
+    plt.plot(f / 1e6, PSD)
+    plt.xlabel("Frequency [MHz]")
+    plt.ylabel("Power Spectral Density [dB/Hz]")
+    # Bit of analysis to find -3 dB bandwidth
+    max_val_after_smoothing = 10.0 * np.log10(np.max(np.convolve(10**(PSD/10), np.ones(10)/10, mode='same')))
+    plt.axhline(y=max_val_after_smoothing, color='r', linestyle=':')
+    plt.text(f[0] / 1e6, max_val_after_smoothing, f"{max_val_after_smoothing:.2f} dB", verticalalignment='bottom', horizontalalignment='left', color='r')
+    half_power_point = max_val_after_smoothing - 3
+    indices = np.where(PSD >= half_power_point)[0]
+    if len(indices) > 0:
+        left_idx = indices[0]
+        right_idx = indices[-1]
+        plt.axvline(x=f[left_idx] / 1e6, color='r', linestyle=':')
+        plt.axvline(x=f[right_idx] / 1e6, color='r', linestyle=':')
+        bandwidth_mhz = float((f[right_idx] - f[left_idx]) / 1e6)
+        ax = plt.gca()
+        plt.text((f[left_idx] + f[right_idx]) / 2 / 1e6, ax.get_ylim()[1], f"{bandwidth_mhz:.2f} MHz", verticalalignment='bottom', horizontalalignment='center', color='r')
+        output_yaml_dict["measured_bandwidth_mhz"] = bandwidth_mhz
+    plt.grid()
+    plt.savefig("power_spectral_density.png")
+
+    output_yaml_dict["company"] = args.company
+    output_yaml_dict["product_name"] = args.product_name
+    output_yaml_dict["product_version"] = args.product_version
+    output_yaml_dict["bit_depth"] = stats.bit_depth
+    output_yaml_dict["sample_rate_hz"] = stats.sample_rate
+    timestamp_str = strftime("%Y%m%d_%H%M%S")
+    output_yaml_filename = f"certify_source_summary_{timestamp_str}.yaml"
+    with open(output_yaml_filename, "w") as f:
+        yaml.dump(output_yaml_dict, f)
 
 # TODO CREATE REQUIREMENTS.TXT
