@@ -27,10 +27,14 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Pip installs (prefer wxPython wheel)
+      - name: Install pre-built wxPython wheel
         run: |
           python -m pip install --upgrade pip
-          pip install -U wxPython --prefer-binary || true
+          # Download and install pre-built wxPython wheel
+          pip install https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-24.04/wxpython-4.2.4-cp310-cp310-linux_x86_64.whl
+
+      - name: Pip installs (remaining requirements)
+        run: |
           pip install -r requirements.txt
 
       - name: Run certify_source.py
