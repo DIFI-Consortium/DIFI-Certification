@@ -346,11 +346,11 @@ if __name__ == "__main__":
 
     # Always plot the last PSD at the end
     samples = stats.most_recent_samples
-    PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
+    PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2 / (len(samples)*stats.sample_rate)) # dB/Hz
     f = np.linspace(-stats.sample_rate / 2, stats.sample_rate / 2, len(PSD))
     plt.plot(f / 1e6, PSD)
-    plt.xlabel("Frequency (MHz)")
-    plt.ylabel("Power Spectral Density (dB/Hz)")
+    plt.xlabel("Frequency [MHz]")
+    plt.ylabel("Power Spectral Density [dB/Hz]")
     plt.grid()
     plt.savefig("final_data_packet_psd.png")
 
