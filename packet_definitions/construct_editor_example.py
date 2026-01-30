@@ -1,6 +1,12 @@
 import wx
 from construct_editor.wx_widgets import WxConstructHexEditor
-from .difi_context_v1_1 import difi_context_definition
+import sys
+import os
+if __name__ == "__main__":
+	sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+	from difi_context_v1_1 import difi_context_definition
+else:
+	from .difi_context_v1_1 import difi_context_definition
 
 '''
 sudo apt-get install build-essential libgtk-3-dev

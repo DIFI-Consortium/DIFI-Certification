@@ -1,5 +1,8 @@
 from construct import Struct, BitStruct, Enum
-from .construct_custom_types import *
+try:
+    from .construct_custom_types import *
+except ImportError:
+    from construct_custom_types import *
 
 difi_context_definition = Struct(
     "header" / BitStruct( # 1 word

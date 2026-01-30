@@ -27,9 +27,10 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Pip installs
+      - name: Pip installs (prefer wxPython wheel)
         run: |
           python -m pip install --upgrade pip
+          pip install -U wxPython --prefer-binary || true
           pip install -r requirements.txt
 
       - name: Run certify_source.py
@@ -45,3 +46,7 @@ jobs:
       - name: Run certify_sink.py
         run: |
           python certify_sink.py --port 50003 --sample-rate 100e3 --packet-size small --bit-depth 8
+
+      - name: Run construct editor example
+        run: |
+          python packet_definitions/construct_editor_example.py
