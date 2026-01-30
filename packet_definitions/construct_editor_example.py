@@ -20,4 +20,9 @@ frame = wx.Frame(None, title="Construct Hex Editor", size=(1300, 1000))
 editor_panel = WxConstructHexEditor(frame, construct=difi_context_definition, binary=b)
 editor_panel.construct_editor.expand_all()
 frame.Show(True)
+
+# Close the window after 5 seconds if running in CI
+if os.environ.get('CI', '').lower() == 'true':
+	wx.CallLater(5000, frame.Close)
+
 app.MainLoop()
