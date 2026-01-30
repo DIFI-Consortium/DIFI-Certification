@@ -41,7 +41,7 @@ jobs:
         run: |
           sudo apt-get install -y xvfb
           Xvfb :99 -screen 0 1024x768x24 &
-          echo "export DISPLAY=:99" >> $GITHUB_ENV
+          echo "DISPLAY=:99" >> $GITHUB_ENV
         shell: bash
 
       - name: Run certify_source.py
