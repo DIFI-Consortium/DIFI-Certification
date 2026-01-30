@@ -1,0 +1,4 @@
+pcap: DIFI_Validator/examples/Example1_1Msps_8bits.pcapng
+validate-bandwidth: 800e3
+validate-rf-freq: 1.95e9
+validate-if-freq: 0e6

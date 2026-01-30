@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from packet_definitions.pn11 import gen_pn11_qpsk, process_pn11_qpsk, pn11_bits
 import subprocess
 import yaml
+import sys
 
 # This script certfies a DIFI source, i.e., a device/software that generates DIFI packets, and we parse/verify them
 
@@ -197,8 +198,14 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
         return None
 
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Parse DIFI packets from pcap or live UDP port.")
+    # Allow cli args or a YAML file
+    base_parser = argparse.ArgumentParser(add_help=False)
+    base_parser.add_argument("--config", type=str, help="YAML config file with arguments")
+    config_args, remaining_argv = base_parser.parse_known_args()
+    defaults = {}
+    parser = argparse.ArgumentParser(description="Parse DIFI packets from pcap or live UDP port.", parents=[base_parser])
     parser.add_argument("--pcap", type=str, help="Path to pcap file to parse")
     parser.add_argument("--udp-port", type=int, help="UDP port to listen for live packets")
     parser.add_argument("--error-log", type=str, default="error_log.txt", help="Error log file")
@@ -207,10 +214,29 @@ if __name__ == "__main__":
     parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
     parser.add_argument("--product-name", type=str, default="Fillmein", help="Product name")
     parser.add_argument("--product-version", type=str, default="0.0", help="Product version")
-    parser.add_argument("--validate-rf-freq", type=float, help="Expected RF frequency in Hz for validation")
-    parser.add_argument("--validate-if-freq", type=float, help="Expected IF frequency in Hz for validation")
-    parser.add_argument("--validate-bandwidth", type=float, help="Expected bandwidth in Hz for validation")
-    args = parser.parse_args()
+    parser.add_argument("--validate-rf-freq", type=float, help="(Optional) Expected RF frequency in Hz for validation")
+    parser.add_argument("--validate-if-freq", type=float, help="(Optional) Expected IF frequency in Hz for validation")
+    parser.add_argument("--validate-bandwidth", type=float, help="(Optional) Expected bandwidth in Hz for validation")
+    valid_args = set()
+    for action in parser._actions:
+        if action.dest != argparse.SUPPRESS:
+            valid_args.add(action.dest.replace('_', '-'))
+    if config_args.config:
+        with open(config_args.config, "r") as f:
+            yaml_args = yaml.safe_load(f)
+            if yaml_args:
+                # Accept both dash and underscore in YAML keys, but always set defaults with underscores
+                normalized_yaml_args = {}
+                for k, v in yaml_args.items():
+                    k_norm = k.replace('-', '_')
+                    normalized_yaml_args[k_norm] = v
+                yaml_keys = set(k.replace('_', '-') for k in normalized_yaml_args.keys())
+                invalid_keys = yaml_keys - valid_args
+                if invalid_keys:
+                    raise ValueError(f"Unknown argument(s) in YAML config: {', '.join(invalid_keys)}")
+                defaults.update(normalized_yaml_args)
+    parser.set_defaults(**defaults)
+    args = parser.parse_args(remaining_argv)
 
     if not args.pcap and not args.udp_port:
         print("You must specify either --pcap or --udp-port")

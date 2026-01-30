@@ -17,6 +17,10 @@ A PCAP or live UDP stream can be parsed with either
 or for UDP, 
 `python certify_source.py --udp-port 50003`
 
+Use `python certify_source.py --help` to see all available arguments
+
+You can supply arguments via command line, or as a yaml file, eg `python certify_source.py --config certify_source_example_config.yml`
+
 One option is to use the gr-difi example `pn11_over_difi_tx.grc` to test the UDP mode.
 
 #### Certify Sink (Generate DIFI)
