@@ -253,22 +253,29 @@ if __name__ == "__main__":
     stats = PacketStats()
     packet_index = 0
 
+
     # PCAP Mode
     if args.pcap:
         for packet in PcapReader(args.pcap):
+            if UDP not in packet:
+                continue
             data = bytes(packet[UDP].payload)
+            if len(data) < 28: # ignore too small packets
+                continue
             process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq, validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth)
             packet_index += 1
 
     # UDP Mode
     elif args.udp_port:
         print(f"Listening for UDP packets on port {args.udp_port}...")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # TCP packets get ignored
         sock.bind(("", args.udp_port))
         try:
             samples_buffer = np.array([], dtype=np.complex64)
             while True:
                 data, addr = sock.recvfrom(4096)
+                if len(data) < 28: # ignore too small packets
+                    continue
                 samples = process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq, validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth)
                 if samples is not None and args.pn11:
                     samples_buffer = np.concatenate((samples_buffer, samples))
