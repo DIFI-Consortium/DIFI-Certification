@@ -11,6 +11,8 @@ from packet_definitions.pn11 import gen_pn11_qpsk, process_pn11_qpsk, pn11_bits
 import subprocess
 import yaml
 import sys
+import os
+import json
 
 # This script certfies a DIFI source, i.e., a device/software that generates DIFI packets, and we parse/verify them
 
@@ -20,6 +22,7 @@ class PacketStats:
     def __init__(self):
         self.bit_depth = 8  # gets updated by context packet
         self.sample_rate = 1
+        self.rf_freq = 0
         self.compliant_context_count = 0
         self.noncompliant_context_count = 0
         self.compliant_data_count = 0
@@ -46,7 +49,7 @@ except Exception as e:
     output_yaml_dict["difi_cert_commit_hash"] = "unknown"
 
 
-def process_packet(data, packet_index, stats, error_log, plot_psd=False, validate_rf_freq=None, validate_if_freq=None, validate_bandwidth=None):
+def process_packet(data, packet_index, stats, error_log, plot_psd=False, validate_rf_freq=None, validate_if_freq=None, validate_bandwidth=None, create_iq_recording=False):
     bit_depth = stats.bit_depth
     sample_rate = stats.sample_rate
     packet_type = data[0:4][0] >> 4
@@ -87,6 +90,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
                         f.write(f"[Context][Packet {packet_index}] {line}\n")
         stats.bit_depth = parsed.dataPacketFormat.data_item_size + 1
         stats.sample_rate = parsed.sampleRate
+        stats.rf_freq = parsed.rfFreq
         return None
 
     # Data Packet
@@ -104,6 +108,9 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
             raise Exception(f"Bit depth of {bit_depth} not supported for sample extraction")
         samples = samples.astype(np.float32)
         samples = samples[::2] + 1j * samples[1::2]
+        if create_iq_recording:
+            with open("iq_recording.sigmf-data", "ab") as f:
+                f.write(samples.tobytes())
         stats.most_recent_samples = samples  # for plotting at the end
         if plot_psd:
             plt.ion()
@@ -217,6 +224,7 @@ if __name__ == "__main__":
     parser.add_argument("--validate-rf-freq", type=float, help="(Optional) Expected RF frequency in Hz for validation")
     parser.add_argument("--validate-if-freq", type=float, help="(Optional) Expected IF frequency in Hz for validation")
     parser.add_argument("--validate-bandwidth", type=float, help="(Optional) Expected bandwidth in Hz for validation")
+    parser.add_argument("--create-iq-recording", action="store_true", help="Create IQ recording (SigMF format) file from samples in data packets")
     valid_args = set()
     for action in parser._actions:
         if action.dest != argparse.SUPPRESS:
@@ -242,6 +250,10 @@ if __name__ == "__main__":
         print("You must specify either --pcap or --udp-port")
         exit()
 
+    if args.create_iq_recording:
+        if os.path.exists("iq_recording.sigmf-data"):
+            os.remove("iq_recording.sigmf-data")
+
     # Add the pcap filename or UDP port to top of error log file, as well as start time
     with open(args.error_log, "w") as f:  # also clears the file
         if args.pcap:
@@ -253,7 +265,6 @@ if __name__ == "__main__":
     stats = PacketStats()
     packet_index = 0
 
-
     # PCAP Mode
     if args.pcap:
         for packet in PcapReader(args.pcap):
@@ -262,7 +273,7 @@ if __name__ == "__main__":
             data = bytes(packet[UDP].payload)
             if len(data) < 28: # ignore too small packets
                 continue
-            process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq, validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth)
+            process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq, validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth, create_iq_recording=args.create_iq_recording)
             packet_index += 1
 
     # UDP Mode
@@ -276,7 +287,7 @@ if __name__ == "__main__":
                 data, addr = sock.recvfrom(4096)
                 if len(data) < 28: # ignore too small packets
                     continue
-                samples = process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq, validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth)
+                samples = process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq, validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth, create_iq_recording=args.create_iq_recording)
                 if samples is not None and args.pn11:
                     samples_buffer = np.concatenate((samples_buffer, samples))
                     # Process PN11 in chunks of 2048 samples
@@ -327,5 +338,26 @@ if __name__ == "__main__":
     output_yaml_filename = f"certify_source_summary_{timestamp_str}.yaml"
     with open(output_yaml_filename, "w") as f:
         yaml.dump(output_yaml_dict, f)
+
+    if args.create_iq_recording and len(stats.most_recent_samples) > 0:
+        # Create SigMF metadata file
+        sigmf_meta =   {
+            "global": {
+                "core:datatype": "cf32_le", # we convert to np.complex64 during sample parsing
+                "core:sample_rate": stats.sample_rate,
+                "core:hw": args.product_name,
+                "core:author": args.company,
+                "core:version": "1.0.0"
+            },
+            "captures": [
+                {
+                    "core:sample_start": 0,
+                    "core:frequency": stats.rf_freq
+                }
+            ],
+            "annotations": []
+        }
+        with open(f"iq_recording" + ".sigmf-meta", "w") as f:
+            json.dump(sigmf_meta, f, indent=2)
 
 # TODO CREATE REQUIREMENTS.TXT

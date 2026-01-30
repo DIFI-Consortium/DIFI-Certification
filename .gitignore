@@ -31,3 +31,5 @@ PSD.png
 certify_source_summary*.yaml
 certify_sink_summary*.yaml
 final_data_packet_psd.png
+iq_recording.sigmf-data
+iq_recording.sigmf-meta
