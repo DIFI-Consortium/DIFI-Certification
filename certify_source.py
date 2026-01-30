@@ -100,14 +100,39 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 2
             samples = np.frombuffer(parsed.payload, dtype=np.int8)
             samples = samples / 128.0  # normalize to -1.0 to 1.0
+            samples = samples.astype(np.float32)
+            samples = samples[::2] + 1j * samples[1::2]
+        elif bit_depth == 12:
+            # Assume signed 12-bit, packed as little-endian, I then Q, 3 bytes = 2 samples. TODO: Test with 12-bit pcap!
+            payload = parsed.payload
+            num_iq_samples = ((parsed.header.pktSize - 7) * 4 * 8) // 24  # 24 bits per 2 IQ samples
+            if len(payload) * 8 < num_iq_samples * 12:
+                raise Exception(f"Payload too small for {num_iq_samples} 12-bit IQ samples")
+            samples = []
+            i = 0
+            while i + 2 < len(payload):
+                b0 = payload[i]
+                b1 = payload[i+1]
+                b2 = payload[i+2]
+                s1 = ((b1 & 0x0F) << 8) | b0 # Sample 1: lower 12 bits
+                s2 = (b2 << 4) | (b1 >> 4) # Sample 2: upper 12 bits
+                if s1 & 0x800: # Convert to signed
+                    s1 = s1 - 0x1000
+                if s2 & 0x800:
+                    s2 = s2 - 0x1000
+                samples.extend([s1, s2])
+                i += 3
+            samples = np.array(samples, dtype=np.float32)
+            samples = samples / 2048.0  # normalize to -1.0 to 1.0
+            samples = samples[::2] + 1j * samples[1::2]
         elif bit_depth == 16:
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 4
             samples = np.frombuffer(parsed.payload, dtype=np.int16)
             samples = samples / 32768.0  # normalize to -1.0 to 1.0
+            samples = samples.astype(np.float32)
+            samples = samples[::2] + 1j * samples[1::2]
         else:
             raise Exception(f"Bit depth of {bit_depth} not supported for sample extraction")
-        samples = samples.astype(np.float32)
-        samples = samples[::2] + 1j * samples[1::2]
         if create_iq_recording:
             with open("iq_recording.sigmf-data", "ab") as f:
                 f.write(samples.tobytes())
