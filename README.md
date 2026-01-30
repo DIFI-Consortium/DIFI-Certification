@@ -10,6 +10,19 @@ Welcome to the Digital Intermediate Frequency Interoperability (DIFI) Certificat
 
 ### DIFI Self-Certification Tooling
 
+#### Installation and Test on Ubuntu 24
+
+Note, you can install Ubuntu 24 on Windows using WSL, simply open the Microsoft Store and search for Ubuntu 24 and install it, then there should be a new app called Ubuntu 24 that will open a terminal, think of it like a VM without a graphical desktop.
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-pip python3-venv python-is-python3
+python -m venv difi-venv
+. difi-venv/bin/activate
+pip install -r requirements.txt
+python certify_source.py --pcap DIFI_Validator/examples/Example1_1Msps_8bits.pcapng
+```
+
 #### Certify Source (Parse DIFI)
 
 A PCAP or live UDP stream can be parsed with:
@@ -32,16 +45,20 @@ The following examples generate a live UDP stream of DIFI with 10 context packet
 
 There is no option for capturing to a pcap because you can simply run tcpdump, e.g., `sudo tcpdump -i lo udp port 50003 -w output.pcap`, to create a pcap out of the UDP stream being generated live.
 
-### DIFI Python Packet Validator 
+### DIFI Python Packet Validator
+
 The Packet validator is a collection of [Python](https://www.python.org/ "Python") scripts that generate Standard Context' packets, 'Version Context' packets and 'Data' packets (dcs.py, dvs.py & dds.py) for consumption by a DIFI packet receiver (drx.py). The collection of scripts were released as open source by [Kratos Defense](https://www.kratosdefense.com/ "Kratos") to the DIFI Consortium. 
 
-### DIFI GNU Radio Out of Tree blocks (gr-difi) 
+### DIFI GNU Radio Out of Tree blocks (gr-difi)
+
 The [GNU Radio](https://www.gnuradio.org/ "GNU Radio") out of tree blocks consist of a "Data" packet Source and Sink blocks and can be found in [gr-difi](https://github.com/DIFI-Consortium/gr-difi "gr-difi"). The collection of GNU Radio blocks were part of [gr-azure](https://github.com/microsoft/gr-azure "gr-azure") and released as open source by [Microsoft](https://www.Microsoft.com/ "Microsoft") to the DIFI Consortium.
 
-### DIFI Wireshark Dissector 
+### DIFI Wireshark Dissector
+
 The DIFI Wireshark Dissector is a LUA plugin created for [Wireshark](https://www.wireshark.org/ "Wireshark") that allows for packet inspection of DIFI Standard Context, Standard Data and Version Context packets. The plug-in was created by [Johanna Rivera](https://github.com/jo-rivera). The dissector supports DIFI 1.2 (2024).
 
 ### DIFI Tutorial ([DIFI 101](https://github.com/DIFI-Consortium/DIFI-Certification/blob/main/DIFI_101_Tutorial.md "DIFI 101"))
+
 The tutorial section is a collection of educational material that describe DIFI packets and include hands on examples to familiarize the reader with DIFI.  
 
 ## Using Git and GitHub
