@@ -7,17 +7,19 @@ from packet_definitions.difi_data_v1_1 import difi_data_definition
 from packet_definitions.difi_version_v1_1 import difi_version_definition
 import numpy as np
 import matplotlib.pyplot as plt
-from packet_definitions.pn11 import gen_pn11_qpsk, process_pn11_qpsk, pn11_bits
+from packet_definitions.pn11 import process_pn11_qpsk, pn11_bits
 import subprocess
 import yaml
-import sys
 import os
 import json
+import time
+import struct
 
-# This script certfies a DIFI source, i.e., a device/software that generates DIFI packets, and we parse/verify them
+# This script certifies a DIFI source, i.e., a device/software that generates DIFI packets; this script parses and verifies them
+# It is not intended to run in realtime, you either process a pcap, or you can use this script to temporarily record a pcap that then gets processed
+# Intended to run on Linux (eg Ubuntu 24)
 
-
-# holds packet statistics and state, these are intended to only be used internally
+# holds packet statistics and state, these are intended to only be used internally not saved to a file
 class PacketStats:
     def __init__(self):
         self.bit_depth = 8  # gets updated by context packet
@@ -39,15 +41,13 @@ class PacketStats:
         self.data_packet_size = 0  # in words
         self.most_recent_samples = np.array([], dtype=np.complex64)  # for plotting at the end
 
-
 output_yaml_dict = {}
 
 try:
     commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8").strip()
     output_yaml_dict["difi_cert_commit_hash"] = commit_hash
-except Exception as e:
+except Exception:
     output_yaml_dict["difi_cert_commit_hash"] = "unknown"
-
 
 def process_packet(data, packet_index, stats, error_log, plot_psd=False, validate_rf_freq=None, validate_if_freq=None, validate_bandwidth=None, create_iq_recording=False):
     bit_depth = stats.bit_depth
@@ -74,7 +74,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
         elif parsed.streamId != stats.stream_id:
             errors.append(f"Stream ID changed from {stats.stream_id} to {parsed.streamId}")
         timestamp = parsed.intSecsTimestamp + parsed.fracSecsTimestamp / 1e12
-        if timestamp <= stats.context_timestamp:  # might want just a < but TBD
+        if timestamp < stats.context_timestamp:  # Eventually may want to switch to <=
             errors.append(f"Context packet timestamp went backwards from {stats.context_timestamp} to {timestamp}")
         stats.context_timestamp = timestamp
         if not errors:
@@ -178,7 +178,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
         elif parsed.streamId != stats.stream_id:
             errors.append(f"Stream ID changed from {stats.stream_id} to {parsed.streamId}")
         timestamp = parsed.intSecsTimestamp + parsed.fracSecsTimestamp / 1e12
-        if timestamp <= stats.data_timestamp:
+        if timestamp < stats.data_timestamp: # Eventually may want to switch to <=
             errors.append(f"Data packet timestamp went backwards from {stats.data_timestamp} to {timestamp}")
         stats.data_timestamp = timestamp
         if not stats.data_packet_size:
@@ -213,7 +213,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
         elif parsed.streamId != stats.stream_id:
             errors.append(f"Stream ID changed from {stats.stream_id} to {parsed.streamId}")
         timestamp = parsed.intSecsTimestamp + parsed.fracSecsTimestamp / 1e12
-        if timestamp <= stats.version_timestamp:
+        if timestamp < stats.version_timestamp: # Eventually may want to switch to <=
             errors.append(f"Version packet timestamp went backwards from {stats.version_timestamp} to {timestamp}")
         stats.version_timestamp = timestamp
         if not errors:
@@ -231,7 +231,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
 
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  
     # Allow cli args or a YAML file
     base_parser = argparse.ArgumentParser(add_help=False)
     base_parser.add_argument("--config", type=str, help="YAML config file with arguments")
@@ -287,46 +287,78 @@ if __name__ == "__main__":
             f.write(f"Listening on UDP port: {args.udp_port}\n")
         f.write(f"Start time: {strftime('%Y-%m-%d %H:%M:%S')}\n")
 
+    # If UDP Mode, first record a live stream to a temporary pcap file, using tcpdump for max performance
+    if args.udp_port:
+        pcap_filename = "temp.pcap"
+        PCAP_GLOBAL_HEADER = (
+            b'\xd4\xc3\xb2\xa1'  # magic number
+            b'\x02\x00'          # version major
+            b'\x04\x00'          # version minor
+            b'\x00\x00\x00\x00'  # thiszone
+            b'\x00\x00\x00\x00'  # sigfigs
+            b'\xff\xff\x00\x00'  # snaplen
+            b'\x01\x00\x00\x00'  # network (Ethernet)
+        )
+        print(f"Recording UDP packets on port {args.udp_port}, hit control-c to finish...")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # TCP packets get ignored
+        sock.bind(("", args.udp_port))
+        count = 0
+        with open(pcap_filename, 'wb') as f:
+            f.write(PCAP_GLOBAL_HEADER)
+            try:
+                while True:
+                    data, addr = sock.recvfrom(65535)
+                    if len(data) < 28: # ignore packets too small to be DIFI
+                        continue
+                    # Write to temp pcap file
+                    ts = time.time()
+                    ts_sec = int(ts)
+                    ts_usec = int((ts - ts_sec) * 1_000_000)
+                    pkt_len = len(data)
+                    header = struct.pack('<IIII', ts_sec, ts_usec, pkt_len, pkt_len)
+                    f.write(header)
+                    f.write(data)
+                    count += 1
+                    if count % 100 == 0:
+                        print(f"Recorded {count} packets...", end='\r')
+            except KeyboardInterrupt:
+                print("\nStopped listening.")
+            finally:
+                sock.close()
+
+        print(f"Recorded {count} packets to {pcap_filename}")
+        if count == 0:
+            print("No packets recorded, exiting.")
+            exit()
+
+    # Process PCAP (either provided --pcap or the one we just recorded if --udp_port was used)
     stats = PacketStats()
     packet_index = 0
-
-    # PCAP Mode
     if args.pcap:
-        for packet in PcapReader(args.pcap):
+        pcap_filename = args.pcap
+    print(f"Processing packets from {pcap_filename}...")
+    samples_buffer = np.array([], dtype=np.complex64)
+    for packet in PcapReader(pcap_filename):
+        if args.udp_port: # pcaps made above did not include the headers, so no UDP layer
+            data = bytes(packet)
+        else: # if we pass in a pcap it is assumed to include headers, and be wireshark compliant, so we look for UDP layer and extract payload
             if UDP not in packet:
                 continue
             data = bytes(packet[UDP].payload)
-            if len(data) < 28: # ignore too small packets
-                continue
-            process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq, validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth, create_iq_recording=args.create_iq_recording)
-            packet_index += 1
-
-    # UDP Mode
-    elif args.udp_port:
-        print(f"Listening for UDP packets on port {args.udp_port}...")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # TCP packets get ignored
-        sock.bind(("", args.udp_port))
-        try:
-            samples_buffer = np.array([], dtype=np.complex64)
-            while True:
-                data, addr = sock.recvfrom(4096)
-                if len(data) < 28: # ignore too small packets
-                    continue
-                samples = process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq, validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth, create_iq_recording=args.create_iq_recording)
-                if samples is not None and args.pn11:
-                    samples_buffer = np.concatenate((samples_buffer, samples))
-                    # Process PN11 in chunks of 2048 samples
-                    if len(samples_buffer) >= 4092 * 2:  # 2 sequences worth, so we know there's 1 full sequence in the middle
-                        demod_bits = process_pn11_qpsk(samples_buffer)
-                        BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))]) / len(pn11_bits)
-                        print("BER:", BER)
-                        # for now just clear buffer after each processing, in theory we could keep leftover samples though
-                        samples_buffer = np.array([], dtype=np.complex64)
-                packet_index += 1
-        except KeyboardInterrupt:
-            print("\nStopped listening.")
-        finally:
-            sock.close()
+        if len(data) < 28: # ignore packets too small to be DIFI
+            continue
+        samples = process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq,
+                                 validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth, create_iq_recording=args.create_iq_recording)
+        if samples is not None and args.pn11:
+            samples_buffer = np.concatenate((samples_buffer, samples))
+            if len(samples_buffer) >= 4092 * 2: # Process PN11 in chunks of 2048 samples, 2 sequences worth, so we know there's 1 full sequence in the middle
+                demod_bits = process_pn11_qpsk(samples_buffer)
+                BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))]) / len(pn11_bits)
+                print("BER:", BER)
+                samples_buffer = np.array([], dtype=np.complex64) # for now just clear buffer after each processing, in theory we could keep leftover samples though
+        packet_index += 1
+        if packet_index % 100 == 0:
+            print(f"Processed {packet_index} packets...", end='\r')
 
     with open(args.error_log, "a") as f:
         f.write(f"Total packets processed: {packet_index + 1}\n")
@@ -376,11 +408,15 @@ if __name__ == "__main__":
             ],
             "annotations": []
         }
-        with open(f"iq_recording" + ".sigmf-meta", "w") as f:
+        with open("iq_recording" + ".sigmf-meta", "w") as f:
             json.dump(sigmf_meta, f, indent=2)
     else:
         # PSD of only the last data packet
-        samples = stats.most_recent_samples
+        if len(stats.most_recent_samples) == 0:
+            print("No data packets found, cannot plot PSD.")
+            samples = np.ones(1024) # just plot something so the code runs, but it will be flat since it's all ones
+        else:
+            samples = stats.most_recent_samples
         PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2 / (len(samples) * stats.sample_rate)) # dB/Hz
     
     f = np.linspace(-stats.sample_rate / 2, stats.sample_rate / 2, len(PSD))
@@ -415,5 +451,3 @@ if __name__ == "__main__":
     output_yaml_filename = f"certify_source_summary_{timestamp_str}.yaml"
     with open(output_yaml_filename, "w") as f:
         yaml.dump(output_yaml_dict, f)
-
-# TODO CREATE REQUIREMENTS.TXT

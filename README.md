@@ -27,7 +27,7 @@ python certify_source.py --pcap DIFI_Validator/examples/Example1_1Msps_8bits.pca
 
 A PCAP or live UDP stream can be parsed with:
 - PCAP: `python certify_source.py --pcap DIFI_Validator/examples/Example1_1Msps_8bits.pcapng`
-- UDP: `python certify_source.py --udp-port 50003`
+- UDP: `python certify_source.py --udp-port 50003` (e.g. using `python certify_sink.py --port 50003` to send it packets)
 
 Use `python certify_source.py --help` to see all available arguments
 
