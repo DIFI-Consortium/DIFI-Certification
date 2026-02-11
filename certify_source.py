@@ -332,11 +332,11 @@ if __name__ == "__main__":
             exit()
 
     # Process PCAP (either provided --pcap or the one we just recorded if --udp_port was used)
-    print(f"Processing packets from {pcap_filename}...")
     stats = PacketStats()
     packet_index = 0
     if args.pcap:
         pcap_filename = args.pcap
+    print(f"Processing packets from {pcap_filename}...")
     samples_buffer = np.array([], dtype=np.complex64)
     for packet in PcapReader(pcap_filename):
         if args.udp_port: # pcaps made above did not include the headers, so no UDP layer
