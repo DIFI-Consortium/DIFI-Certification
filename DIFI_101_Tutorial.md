@@ -142,7 +142,7 @@ You can feel free to change the IQ samples, or put a loop around it to send mult
 
 ### Simulating a Signal
 
-To make things more interesting, we will simulate a baseband signal, and use the IQ samples in place of the 1's and 0's we had above.  When your IQ samples start as a numpy array, you can convert them to integers of the correct datatype (e.g., int16), and then use `bytearray()` to generate the bytearray associated with the samples, as shown below.  Replace the `for` loop in the code above with the code below:
+To make things more interesting, we will simulate a baseband signal, and use the IQ samples in place of the 1's and 0's we had above.  When your IQ samples start as a numpy array, you can convert them to integers of the correct datatype (e.g., int16), and then use `bytearray()` to generate the bytearray associated with the samples, as shown below.  Replace the `for` loop in the code above (i.e. get rid of the entire for loop) with the code below:
 
 ``` python
 # Simulate a signal instead of 1's and 0's
