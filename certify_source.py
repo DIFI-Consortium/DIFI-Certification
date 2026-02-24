@@ -138,7 +138,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
             with open("iq_recording.sigmf-data", "ab") as f:
                 f.write(samples.tobytes())
         stats.most_recent_samples = samples  # for plotting at the end
-        if plot_psd:
+        if plot_psd:  # TODO: move this plotting code to a separate function
             plt.ion()
             PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
             f = np.linspace(-stats.sample_rate / 2,
