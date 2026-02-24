@@ -22,7 +22,7 @@ import struct
 # holds packet statistics and state, these are intended to only be used internally not saved to a file
 class PacketStats:
     def __init__(self):
-        self.bit_depth = 8  # gets updated by context packet
+        self.bit_depth = None  # gets updated by context packet
         self.sample_rate = 1
         self.rf_freq = 0
         self.compliant_context_count = 0
@@ -49,9 +49,8 @@ try:
 except Exception:
     output_yaml_dict["difi_cert_commit_hash"] = "unknown"
 
+
 def process_packet(data, packet_index, stats, error_log, plot_psd=False, validate_rf_freq=None, validate_if_freq=None, validate_bandwidth=None, create_iq_recording=False):
-    bit_depth = stats.bit_depth
-    sample_rate = stats.sample_rate
     packet_type = data[0:4][0] >> 4
 
     # Context Packet
@@ -94,15 +93,15 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
         return None
 
     # Data Packet
-    if packet_type == 0x1 and bit_depth:
+    if packet_type == 0x1 and stats.bit_depth:
         parsed = difi_data_definition.parse(data)
-        if bit_depth == 8:
+        if stats.bit_depth == 8:
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 2
             samples = np.frombuffer(parsed.payload, dtype=np.int8)
             samples = samples / 128.0  # normalize to -1.0 to 1.0
             samples = samples.astype(np.float32)
             samples = samples[::2] + 1j * samples[1::2]
-        elif bit_depth == 12:
+        elif stats.bit_depth == 12:
             # Assume signed 12-bit, packed as little-endian, I then Q, 3 bytes = 2 samples. TODO: Test with 12-bit pcap!
             payload = parsed.payload
             num_iq_samples = ((parsed.header.pktSize - 7) * 4 * 8) // 24  # 24 bits per 2 IQ samples
@@ -125,14 +124,15 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
             samples = np.array(samples, dtype=np.float32)
             samples = samples / 2048.0  # normalize to -1.0 to 1.0
             samples = samples[::2] + 1j * samples[1::2]
-        elif bit_depth == 16:
+        elif stats.bit_depth == 16:
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 4
             samples = np.frombuffer(parsed.payload, dtype=np.int16)
             samples = samples / 32768.0  # normalize to -1.0 to 1.0
             samples = samples.astype(np.float32)
             samples = samples[::2] + 1j * samples[1::2]
         else:
-            raise Exception(f"Bit depth of {bit_depth} not supported for sample extraction")
+            raise Exception(
+                f"Bit depth of {stats.bit_depth} not supported for sample extraction")
         if create_iq_recording:
             with open("iq_recording.sigmf-data", "ab") as f:
                 f.write(samples.tobytes())
@@ -140,7 +140,8 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
         if plot_psd:
             plt.ion()
             PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
-            f = np.linspace(-sample_rate / 2, sample_rate / 2, len(PSD))
+            f = np.linspace(-stats.sample_rate / 2,
+                            stats.sample_rate / 2, len(PSD))
             if not hasattr(process_packet, "fig") or process_packet.fig is None:
                 process_packet.fig, process_packet.axs = plt.subplots(3, 1, figsize=(8, 10))
             fig, axs = process_packet.fig, process_packet.axs
