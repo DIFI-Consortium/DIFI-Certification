@@ -190,7 +190,7 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
             samples_interleaved[1::2] = np.clip(np.imag(samples * 128), -128, 127).astype(np.int8)
             payload = samples_interleaved.tobytes()
         elif bit_depth == 12:
-            # 12-bit signed samples, pack two 12-bit samples into 3 bytes
+            # 12-bit signed samples, pack two 12-bit samples into 3 bytes (big-endian)
             i_samples = np.clip(np.real(samples * 2048), -2048, 2047).astype(np.int16)
             q_samples = np.clip(np.imag(samples * 2048), -2048, 2047).astype(np.int16)
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
@@ -200,6 +200,7 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
             for i in range(0, len(samples_interleaved), 2):
                 s1 = samples_interleaved[i] & 0xFFF  # 12 bits
                 s2 = samples_interleaved[i + 1] & 0xFFF
+                # Big-endian: s1 high 8, s1 low 4 | s2 high 4, s2 low 8
                 packed.append((s1 >> 4) & 0xFF)
                 packed.append(((s1 & 0xF) << 4) | ((s2 >> 8) & 0xF))
                 packed.append(s2 & 0xFF)
@@ -208,7 +209,8 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int16)
             samples_interleaved[0::2] = np.clip(np.real(samples * 32768), -32768, 32767).astype(np.int16)
             samples_interleaved[1::2] = np.clip(np.imag(samples * 32768), -32768, 32767).astype(np.int16)
-            payload = samples_interleaved.tobytes()
+            # big-endian
+            payload = samples_interleaved.astype('>i2').tobytes(order='C')
         else:
             raise ValueError(f"Unsupported bit_depth: {bit_depth}")
         data["header"]["seqNum"] = seq_num

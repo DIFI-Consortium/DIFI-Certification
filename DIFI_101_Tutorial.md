@@ -142,7 +142,7 @@ You can feel free to change the IQ samples, or put a loop around it to send mult
 
 ### Simulating a Signal
 
-To make things more interesting, we will simulate a baseband signal, and use the IQ samples in place of the 1's and 0's we had above.  When your IQ samples start as a numpy array, you can convert them to integers of the correct datatype (e.g., int16), and then use `bytearray()` to generate the bytearray associated with the samples, as shown below.  Replace the `for` loop in the code above with the code below:
+To make things more interesting, we will simulate a baseband signal, and use the IQ samples in place of the 1's and 0's we had above.  When your IQ samples start as a numpy array, you can convert them to integers of the correct datatype (e.g., int16), and then use `bytearray()` to generate the bytearray associated with the samples, as shown below.  Replace the `for` loop in the code above (i.e. get rid of the entire for loop) with the code below:
 
 ``` python
 # Simulate a signal instead of 1's and 0's
@@ -159,7 +159,7 @@ if False:
 deinterleaved_signal = np.zeros(len(signal)*2, dtype=np.int16)
 deinterleaved_signal[::2] = signal.real
 deinterleaved_signal[1::2] = signal.imag
-signal_bytearray = bytearray(deinterleaved_signal)
+signal_bytearray = deinterleaved_signal.astype('>i2').tobytes() # big-endian
 difi_packet.extend(signal_bytearray) # add it to the packet
 # Note that at this point, the Packet Size defined before should be updated, it's currently hardcoded
 ```
@@ -296,7 +296,7 @@ def decode_difi_packet(stream: io.BytesIO):
     print(" Payload Data Size = %d (bytes), %d (32-bit words)" % (payload_data_size_in_bytes, payload_data_num_32bit_words))
 
     signal_bytes = context_data[24:]
-    signal =  np.frombuffer(signal_bytes, dtype=np.int16) # assumes int16s of IQ
+    signal = np.frombuffer(signal_bytes, dtype='>i2') # assumes big-endian int16s of IQ
     signal = signal[::2] + 1j*signal[1::2] # interleave the IQ
     if True:
         plt.plot(signal.real, '.-')
