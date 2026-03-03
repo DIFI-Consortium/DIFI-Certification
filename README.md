@@ -39,11 +39,11 @@ An alternative option is to use the gr-difi example `pn11_over_difi_tx.grc` to t
 
 #### Certify Sink (Generate DIFI)
 
-The following examples generate a live UDP stream of DIFI with 10 context packets per second, 2 version packets per second, and data packets corresponding to the requested sample rate and samples-per-packet:
+The following example generates a live UDP stream of DIFI, for 10 seconds, with 10 context packets per second, 2 version packets per second, and data packets corresponding to the requested sample rate and samples-per-packet.  The samples sent are a QPSK signal with 4 samples-per-symbol and a rolloff of 0.35, with bits corresponding to the standard PN11 sequence cropped to 2046 due to QPSK being two bits per symbol, more details can be found [here](packet_definitions/pn11.py).
 
-`python certify_sink.py --port 50003 --sample-rate 100e3 --packet-size small --bit-depth 8`
+`python certify_sink.py --duration 10 --port 50003 --sample-rate 100e3 --packet-size small --bit-depth 8`
 
-There is no option for capturing to a pcap because you can simply run tcpdump, e.g., `sudo tcpdump -i lo udp port 50003 -w output.pcap`, to create a pcap out of the UDP stream being generated live.
+There is no command line option for capturing to a pcap because you can simply run tcpdump, e.g., `sudo tcpdump -i lo udp port 50003 -w output.pcap`, to create a pcap out of the UDP stream being generated live.
 
 ### DIFI Python Packet Validator
 
