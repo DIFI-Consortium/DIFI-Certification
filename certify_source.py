@@ -95,7 +95,21 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
     # Data Packet
     if packet_type == 0x1 and stats.bit_depth:
         parsed = difi_data_definition.parse(data)
-        if stats.bit_depth == 8:
+        if stats.bit_depth == 4:
+            # Each byte contains two 4-bit signed samples: I then Q, I don't think endianness matters here since it's just 1 byte
+            payload = parsed.payload
+            num_iq_samples = (parsed.header.pktSize - 7) * 4 // 1  # 1 byte = 2 samples
+            samples = []
+            for b in payload:
+                i_raw = (b >> 4) & 0x0F # high nibble
+                q_raw = b & 0x0F # low nibble
+                i = i_raw - 16 if i_raw & 0x8 else i_raw # convert from unsigned to signed 4-bit
+                q = q_raw - 16 if q_raw & 0x8 else q_raw
+                samples.extend([i, q])
+            samples = np.array(samples, dtype=np.float32)
+            samples = samples / 8.0  # normalize to -1.0 to 1.0
+            samples = samples[::2] + 1j * samples[1::2]
+        elif stats.bit_depth == 8:
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 2
             samples = np.frombuffer(parsed.payload, dtype=np.int8)
             samples = samples / 128.0  # normalize to -1.0 to 1.0

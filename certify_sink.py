@@ -185,7 +185,20 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
         start_t = time.time()
         samples = tx_samples_tiled[tx_samples_i : tx_samples_i + samples_per_packet]
         tx_samples_i = (tx_samples_i + samples_per_packet) % len(tx_samples)
-        if bit_depth == 8:
+        if bit_depth == 4:
+            # 4-bit signed samples, pack two I/Q pairs into a single byte (4 bits each)
+            i_samples = np.clip(np.real(samples * 8), -8, 7).astype(np.int8)
+            q_samples = np.clip(np.imag(samples * 8), -8, 7).astype(np.int8)
+            samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
+            samples_interleaved[0::2] = i_samples
+            samples_interleaved[1::2] = q_samples
+            packed = bytearray()
+            for i in range(0, len(samples_interleaved), 2):
+                s1 = samples_interleaved[i] & 0xF # pack two 4-bit signed samples into one byte
+                s2 = samples_interleaved[i + 1] & 0xF
+                packed.append((s1 << 4) | s2)
+            payload = bytes(packed)
+        elif bit_depth == 8:
             samples_interleaved = np.empty((samples_per_packet * 2,), dtype=np.int8)
             samples_interleaved[0::2] = np.clip(np.real(samples * 128), -128, 127).astype(np.int8)
             samples_interleaved[1::2] = np.clip(np.imag(samples * 128), -128, 127).astype(np.int8)
@@ -215,7 +228,7 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
         else:
             raise ValueError(f"Unsupported bit_depth: {bit_depth}")
         data["header"]["seqNum"] = seq_num
-        data["header"]["pktSize"] = 7 + (len(payload) + 3) // 4  # Update pktSize based on payload length
+        data["header"]["pktSize"] = 7 + len(payload) // 4  # Update pktSize based on payload length
         data["payload"] = payload
         pkt = difi_data_definition.build(data)
         send_packet(sock, addr, pkt)
@@ -230,16 +243,16 @@ if __name__ == "__main__":
     parser.add_argument("--sample-rate", type=float, default=100e3, help="Sample rate (Hz)")
     parser.add_argument("--duration", type=float, default=10.0, help="Duration to send packets (seconds)")
     parser.add_argument("--packet-size", type=str, default="small", choices=["small", "large"], help="Packet size (small or large)")
-    parser.add_argument("--bit-depth", type=int, default=8, choices=[8, 12, 16], help="Bit depth for IQ samples (8, 12, or 16)")
+    parser.add_argument("--bit-depth", type=int, default=8, choices=[4, 8, 12, 16], help="Bit depth for IQ samples (4, 8, 12, or 16)")
     parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
     parser.add_argument("--product-name", type=str, default="Fillmein", help="Product name")
     parser.add_argument("--product-version", type=str, default="0.0", help="Product version")
     args = parser.parse_args()
 
     if args.packet_size == "small":
-        packet_size_words = 360
+        packet_size_words = 360 # 353 words of IQ, or 1412 bytes
     elif args.packet_size == "large":
-        packet_size_words = 2232
+        packet_size_words = 2232 # 2225 words of IQ, or 8900 bytes
     else:
         raise ValueError("Invalid packet size")
     samples_per_packet = int(((packet_size_words - 7) * 4) / (args.bit_depth / 8.0 * 2))
