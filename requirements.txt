@@ -3,4 +3,3 @@ numpy
 matplotlib
 pyyaml
 construct
-construct-editor
