@@ -159,7 +159,7 @@ def context_sender(sock, addr, bit_depth, sample_rate):
         context["dataPacketFormat"]["item_packing_field_size"] = bit_depth - 1
         context["dataPacketFormat"]["data_item_size"] = bit_depth - 1
         context["sampleRate"] = sample_rate
-        context["bandwidth"] = sample_rate * 0.75
+        context["bandwidth"] = sample_rate * 0.25 # we're using a 4 samples-per-symbol QPSK signal
         pkt = difi_context_definition.build(context)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 16
