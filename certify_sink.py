@@ -257,12 +257,19 @@ if __name__ == "__main__":
     ]
     for t in threads:
         t.start()
-    print(f"Sending packets to {addr}. Press Ctrl+C to stop.")
+    print(
+        f"Sending packets to {addr} for {args.duration} seconds, press control+c to stop it early.")
     try:
         start_time = time.time()
+        last_print_time = start_time
         while True:
-            time.sleep(0.1)
-            if time.time() - start_time > args.duration:
+            now = time.time()
+            time_left = args.duration - (now - start_time)
+            if now - last_print_time >= 1.0 or time_left <= 0:
+                print(f"Time left: {max(0, time_left):.1f} seconds")
+                last_print_time = now
+            time.sleep(0.01)
+            if now - start_time > args.duration:
                 break
     except KeyboardInterrupt:
         print("\nStopped.")
