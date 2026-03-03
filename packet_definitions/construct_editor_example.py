@@ -1,3 +1,6 @@
+# Requires:  pip install construct-editor
+# might first require:  pip install https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-24.04/wxpython-4.2.4-cp310-cp310-linux_x86_64.whl
+
 import wx
 from construct_editor.wx_widgets import WxConstructHexEditor
 import sys

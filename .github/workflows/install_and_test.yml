@@ -37,6 +37,10 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      - name: Pip install construct-editor (wanted to keep it out of the requirements.txt)
+        run: |
+          pip install construct-editor
+
       - name: Start Xvfb (virtual framebuffer)
         run: |
           sudo apt-get install -y xvfb
