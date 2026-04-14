@@ -50,7 +50,7 @@ jobs:
 
       - name: Run certify_source.py
         run: |
-          python certify_source.py --pcap DIFI_Validator/examples/Example1_1Msps_8bits.pcapng
+          python certify_source.py --pcap example_pcaps/Example1_1Msps_8bits.pcapng
 
       - name: Check error_log.txt exists
         run: |

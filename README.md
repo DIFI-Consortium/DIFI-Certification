@@ -22,13 +22,13 @@ sudo apt install -y python3 python3-pip python3-venv python-is-python3
 python -m venv difi-venv
 . difi-venv/bin/activate
 pip install -r requirements.txt
-python certify_source.py --pcap DIFI_Validator/examples/Example1_1Msps_8bits.pcapng
+python certify_source.py --pcap example_pcaps/Example1_1Msps_8bits.pcapng
 ```
 
 #### Certify Source (Parse DIFI)
 
 A PCAP or live UDP stream can be parsed with:
-- PCAP: `python certify_source.py --pcap DIFI_Validator/examples/Example1_1Msps_8bits.pcapng`
+- PCAP: `python certify_source.py --pcap example_pcaps/Example1_1Msps_8bits.pcapng`
 - UDP: `python certify_source.py --udp-port 50003` (e.g. using `python certify_sink.py --port 50003` to send it packets)
 
 Use `python certify_source.py --help` to see all available arguments
