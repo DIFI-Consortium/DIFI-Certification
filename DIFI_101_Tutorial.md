@@ -18,7 +18,7 @@ All DIFI packets also have a 4-bit sequence number that can be used to deal with
 
 ## How to Use DIFI 
 
-There are multiple ways you can use DIFI in your application.  If you are using GNU Radio, there are blocks in the out-of-tree module [gr-difi](https://github.com/DIFI-Consortium/gr-difi) that provide DIFI Source and DIFI Sink functionality to GNU Radio, so that you can send or receive DIFI packets using UDP or TCP.  There is also the Python code in the DIFI_Validator directory which provides methods for generating and parsing DIFI packets.  On the hardware side, there are vendors such as [Kratos](https://www.kratosdefense.com/products/space/networks/network-devices/spectralnet) who make digitizers (transceivers) that can communicate over DIFI.  If you use USRP SDRs, there will soon be a UHD C++ application added to this repo that will generate DIFI packets, as well as an RFNoC block that allows a USRP to generate DIFI packets on a different interface than that used for UHD control.
+There are multiple ways you can use DIFI in your application.  If you are using GNU Radio, there are blocks in the out-of-tree module [gr-difi](https://github.com/DIFI-Consortium/gr-difi) that provide DIFI Source and DIFI Sink functionality to GNU Radio, so that you can send or receive DIFI packets using UDP or TCP.  There is also the Python code in this repo provides methods for generating (certify_sink.py) and parsing (certify_source.py) DIFI packets.  On the hardware side, there are vendors such as [Kratos](https://www.kratosdefense.com/products/space/networks/network-devices/spectralnet) who make digitizers (transceivers) that can communicate over DIFI.  If you use USRP SDRs, there will soon be a UHD C++ application added to this repo that will generate DIFI packets, as well as an RFNoC block that allows a USRP to generate DIFI packets on a different interface than that used for UHD control.
 
 ## Creating DIFI Packets in Python
 
@@ -190,7 +190,7 @@ Hit the Start button, which is the shark fin on the top-left, then trigger a pac
 
 ## Parsing DIFI Packets in Python
 
-Instead of using Wireshark to parse the packet, we will do it ourselves in Python.  The following script receives UDP packets on a specified port, and then parses packets that are found to have the DIFI data packet type (it doesn't support parsing context or version packets, see the DIFI_Validator code if that is your goal).  This is meant to provide an example of how to receive packets in Python, parse the bytes, and pull out the DIFI fields.  
+Instead of using Wireshark to parse the packet, we will do it ourselves in Python.  The following script receives UDP packets on a specified port, and then parses packets that are found to have the DIFI data packet type (it doesn't support parsing context or version packets, see the `certify_source.py` code if that is your goal).  This is meant to provide an example of how to receive packets in Python, parse the bytes, and pull out the DIFI fields.  
 
 To exit the application you may have to hit control-C, and then send another packet, for it to fully exit.
 
