@@ -6,6 +6,8 @@
 
 Welcome to the Digital Intermediate Frequency Interoperability (DIFI) Certification GitHub Repo! This repository is used by the [DIFI Consortium Working Group](https://dificonsortium.org/) to share resources and tooling with DIFI Consortium members and the user community to enable verification, validation and testing of DIFI streams and devices in accordance with the [DIFI standards](https://dificonsortium.org/standards/).
 
+For the old/legacy DIFI_Validator functionality (e.g., dcs.py, dds.py, drx.py, webgui.py), see https://github.com/DIFI-Consortium/Legacy-DIFI-Validator.
+
 ## DIFI Certification Working Group Projects
 
 ### DIFI Self-Certification Tooling
