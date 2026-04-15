@@ -20,7 +20,7 @@ jobs:
       - name: Apt installs
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libgl1-mesa-dev libglu1-mesa-dev libjpeg-dev libtiff-dev libsdl2-dev libgstreamer-plugins-base1.0-dev libnotify-dev freeglut3-dev libsm-dev
+          sudo apt-get install -y libgtk-3-dev libgl1-mesa-dev libglu1-mesa-dev libjpeg-dev libtiff-dev libsdl2-dev libgstreamer-plugins-base1.0-dev libnotify-dev freeglut3-dev libsm-dev tcpdump
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -61,6 +61,60 @@ jobs:
       - name: Run certify_sink.py
         run: |
           python certify_sink.py --port 50003 --sample-rate 100e3 --packet-size small --bit-depth 8
+
+      - name: Run certify_sink (PN11 QPSK large packets) with tcpdump capture
+        run: |
+          # Start tcpdump in the background, capture for 6 seconds
+          sudo tcpdump -i lo udp port 50000 -w test1_PN11_QPSK.pcap &
+          TCPDUMP_PID=$!
+          # Start certify_sink
+          python certify_sink.py --ip 127.0.0.1 --port 50000 --sample-rate 1000000 --duration 5 --packet-size large --bit-depth 12 &
+          SINK_PID=$!
+          # Let tcpdump run for 6 seconds then stop it
+          sleep 6
+          sudo kill $TCPDUMP_PID || true
+          wait $SINK_PID || true
+          wait $TCPDUMP_PID 2>/dev/null || true
+
+      - name: Verify pcap file exists and is at least 7 MB
+        run: |
+          if [ ! -f test1_PN11_QPSK.pcap ]; then
+            echo "test1_PN11_QPSK.pcap not found!" && exit 1
+          fi
+          FILE_SIZE=$(stat -c%s test1_PN11_QPSK.pcap)
+          MIN_SIZE=$((7 * 1024 * 1024))
+          echo "File size: $FILE_SIZE bytes (minimum: $MIN_SIZE bytes)"
+          if [ "$FILE_SIZE" -lt "$MIN_SIZE" ]; then
+            echo "File is smaller than 7 MB!" && exit 1
+          fi
+
+      - name: Run certify_source on captured pcap
+        run: |
+          # Remove any summary files from prior steps so we only find the new one
+          rm -f certify_source_summary_*.yaml
+          python certify_source.py --pcap test1_PN11_QPSK.pcap --pn11
+
+      - name: Verify certify_source summary output
+        run: |
+          # Find the generated summary file (timestamp varies)
+          SUMMARY_FILE=$(ls certify_source_summary_*.yaml | head -n 1)
+          if [ -z "$SUMMARY_FILE" ]; then
+            echo "No certify_source_summary_*.yaml file found!" && exit 1
+          fi
+          echo "Found summary file: $SUMMARY_FILE"
+          # Check data_packet_size_in_words is 2230
+          if ! grep -q "data_packet_size_in_words: 2230" "$SUMMARY_FILE"; then
+            echo "data_packet_size_in_words is not 2230!"
+            grep "data_packet_size_in_words" "$SUMMARY_FILE" || true
+            exit 1
+          fi
+          # Check overall_result is PASS
+          if ! grep -q "overall_result: PASS" "$SUMMARY_FILE"; then
+            echo "overall_result is not PASS!"
+            grep "overall_result" "$SUMMARY_FILE" || true
+            exit 1
+          fi
+          echo "All checks passed!"
 
       - name: Run construct editor example
         run: |
