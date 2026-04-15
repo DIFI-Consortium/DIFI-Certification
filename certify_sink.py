@@ -256,6 +256,8 @@ if __name__ == "__main__":
     else:
         raise ValueError("Invalid packet size")
     samples_per_packet = int(((packet_size_words - 7) * 4) / (args.bit_depth / 8.0 * 2))
+    if args.bit_depth == 12:
+        samples_per_packet -= samples_per_packet % 4  # 12-bit IQ = 3 bytes/sample, need multiple of 4 samples for word alignment
     print(f"samples_per_packet: {samples_per_packet}")
 
     if samples_per_packet > len(tx_samples) * 2:
