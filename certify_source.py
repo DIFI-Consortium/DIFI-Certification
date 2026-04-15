@@ -367,7 +367,7 @@ if __name__ == "__main__":
                                  validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth, create_iq_recording=args.create_iq_recording)
         if samples is not None and args.pn11:
             samples_buffer = np.concatenate((samples_buffer, samples))
-            if len(samples_buffer) >= 4092 * 2: # Process PN11 in chunks of 2048 samples, 2 sequences worth, so we know there's 1 full sequence in the middle
+            if len(samples_buffer) >= 8188 * 2: # Process PN11 in chunks, 2 sequences worth (2047 symbols * 4 sps), so we know there's 1 full sequence in the middle
                 demod_bits = process_pn11_qpsk(samples_buffer)
                 BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))]) / len(pn11_bits)
                 print("BER:", BER)

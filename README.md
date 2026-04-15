@@ -41,7 +41,7 @@ An alternative option is to use the gr-difi example `pn11_over_difi_tx.grc` to t
 
 #### Certify Sink (Generate DIFI)
 
-The following example generates a live UDP stream of DIFI, for 10 seconds, with 10 context packets per second, 2 version packets per second, and data packets corresponding to the requested sample rate and samples-per-packet.  The samples sent are a QPSK signal with 4 samples-per-symbol and a rolloff of 0.35, with bits corresponding to the standard PN11 sequence cropped to 2046 due to QPSK being two bits per symbol, more details can be found [here](packet_definitions/pn11.py).
+The following example generates a live UDP stream of DIFI, for 10 seconds, with 10 context packets per second, 2 version packets per second, and data packets corresponding to the requested sample rate and samples-per-packet.  The samples sent are a QPSK signal with 4 samples-per-symbol and a rolloff of 0.35, with bits corresponding to the standard PN11 sequence (2047 bits repeated), more details can be found [here](packet_definitions/pn11.py).
 
 `python certify_sink.py --duration 10 --port 50003 --sample-rate 100e3 --packet-size small --bit-depth 8`
 
