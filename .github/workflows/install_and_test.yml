@@ -102,6 +102,8 @@ jobs:
             echo "No certify_source_summary_*.yaml file found!" && exit 1
           fi
           echo "Found summary file: $SUMMARY_FILE"
+          # show the contents for debugging sake
+          cat "$SUMMARY_FILE"
           # Check data_packet_size_in_words is 2230
           if ! grep -q "data_packet_size_in_words: 2230" "$SUMMARY_FILE"; then
             echo "data_packet_size_in_words is not 2230!"
