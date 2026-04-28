@@ -19,11 +19,13 @@ Note, you can install Ubuntu 24 on Windows using WSL, simply open the Microsoft 
 ```bash
 sudo apt update
 sudo apt install -y python3 python3-pip python3-venv python-is-python3
-python -m venv difi-venv
-. difi-venv/bin/activate
+python -m venv venv
+. venv/bin/activate
 pip install -r requirements.txt
 python certify_source.py --pcap example_pcaps/Example1_1Msps_8bits.pcapng
 ```
+
+(if you're using VSCode with the Python extension pack, every time you open this repo it should automatically find and active the venv).
 
 #### Certify Source (Parse DIFI)
 
