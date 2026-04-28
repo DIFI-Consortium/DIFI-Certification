@@ -328,6 +328,14 @@ while True:
     decode_difi_packet(stream)
 ```
 
+## DIFI 1.2.1 and Above Notes
+
+Going from DIFI 1.1 to 1.2.1 adds some new mechanisms that can be confusing at first.
+
+The spec has wording like "a Packet Stream is a sequence of packets of the same Packet Class that serves a particular purpose described by the Information Class that incorporates the Packet Stream" which can be confusing. A better way to put it is, Packet Class  tells you how to parse the bits in that packet; the Information Class tells you what other streams to expect alongside it and what the system is doing.  For example, if you get a packet that's Information Class = 0x0003, Packet Class = 0x0000 it means "I'm a Standard Flow Signal Data packet that's part of a Data-Plane-plus-Flow-Control-Real-Time-TSF stream, so somewhere there's a paired Context stream (0x0001) and a Real Time TSF Timing Flow Control stream (0x0006) sharing my Stream ID."
+
+Another confusing area is packet types vs packet classes.  For data packets, even though there are two different classes, the only difference is whether the time is represented in seconds or samples.  For context packets, there are three different classes, the first two are almost exactly the same, they represent the data flow and the only difference is whether time is seconds or samples, but the third class is essentially the version packet and is a lot different.  v1.2.1 adds command packets, there are two classes, and they differ only in how the Fractional-Seconds Timestamp is interpreted.  So when reading the specs, things seem way more complicated than they actually are.
+
 ## External References
 
 - [DIFI Consortium](https://dificonsortium.org/)
