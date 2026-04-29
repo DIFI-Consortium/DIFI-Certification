@@ -2,19 +2,25 @@ import socket
 import threading
 import time
 import argparse
-from packet_definitions.difi_context_v1_1 import difi_context_definition
-from packet_definitions.difi_data_v1_1 import difi_data_definition
-from packet_definitions.difi_version_v1_1 import difi_version_definition
+from packet_definitions.difi_context_v1_1 import difi_context_definition as difi_context_v1_1
+from packet_definitions.difi_data_v1_1 import difi_data_definition as difi_data_v1_1
+from packet_definitions.difi_version_v1_1 import difi_version_definition as difi_version_v1_1
+from packet_definitions.difi_context_v1_2_1 import difi_context_definition as difi_context_v1_2_1
+from packet_definitions.difi_data_v1_2_1 import difi_data_definition as difi_data_v1_2_1
+from packet_definitions.difi_version_v1_2_1 import difi_version_definition as difi_version_v1_2_1
 import numpy as np
 from packet_definitions.pn11 import gen_pn11_qpsk
 import subprocess
 import yaml
 from time import strftime
 
+SUPPORTED_DIFI_VERSIONS = ("1.1", "1.2.1")
+
 CONTEXT_PACKETS_PER_SEC = 10
 VERSION_PACKETS_PER_SEC = 2
 
-context = {
+# v1.1 context dict — gain/level fields are refLevel1/refLevel2/stage1/stage2 (raw int cif0/refPoint)
+context_v1_1 = {
     "header": {
         "pktType": 4,
         "classId": 1,
@@ -46,6 +52,73 @@ context = {
     "stage1GainAtten": 0.0,
     "stage2GainAtten": -13.25,
     "sampleRate": 0.0, # Gets filled in
+    "timeStampAdj": 0,
+    "timeStampCal": 0,
+    "stateEventInd": {
+        "misc_enables": 160,
+        "reserved": 0,
+        "calibrated_time_indicator": 0,
+        "valid_data_indicator": 0,
+        "reference_lock_indicator": 1,
+        "agc_mgc_indicator": 0,
+        "detected_signal_indicator": 0,
+        "spectral_inversion_indicator": 0,
+        "over_range_indicator": 0,
+        "sample_loss_indicator": 0,
+        "reserved2": 0,
+        "user_defined": 0,
+    },
+    "dataPacketFormat": {
+        "packing_method": "link_efficient",
+        "real_complex_type": "complex_cartesian",
+        "data_item_format": "signed_fixed_point",
+        "sample_repeat_indicator": "no_repeat",
+        "event_tag_size": 0,
+        "channel_tag_size": 0,
+        "data_item_fraction_size": 0,
+        "item_packing_field_size": 0,  # FILL IN BEFORE SENDING
+        "data_item_size": 0,  # FILL IN BEFORE SENDING
+        "repeat_count": 0,
+        "vector_size": 0,
+    },
+}
+
+# v1.2.1 context dict — Information Class 0x0000 + Packet Class 0x0001
+# (Standard Flow Signal Context, Real-Time TSF). Fields renamed per the
+# v1.2.1 spec: refLevel/scalingLevel + gain1/gain2 (was refLevel1/refLevel2 +
+# stage1/stage2GainAtten); cif0 and refPoint are Enums in the v1.2.1 schema.
+context_v1_2_1 = {
+    "header": {
+        "pktType": 4,
+        "classId": 1,
+        "reserved": 0,
+        "tsm": 1,
+        "tsi": "POSIX",
+        "tsf": 2,
+        "seqNum": -1,  # FILL IN BEFORE SENDING
+        "pktSize": 27,
+    },
+    "streamId": 0,
+    "classId": {
+        "paddingBits": 0,
+        "reserved1": 0,
+        "oui": 6971934,
+        "infoClassCode": 0,
+        "packetClassCode": 1,
+    },
+    "intSecsTimestamp": 1740688471,
+    "fracSecsTimestamp": 200000000000,
+    "cif0": "context_changed",  # 0xFBB98000
+    "refPoint": "IF",  # 100
+    "bandwidth": 0.0,  # Gets filled in
+    "ifFreq": 0.0,
+    "rfFreq": 1950000000.0,
+    "ifBandOffset": 0.0,
+    "refLevel": 0.0,
+    "scalingLevel": 0.0,
+    "gain1": 0.0,
+    "gain2": -13.25,
+    "sampleRate": 0.0,  # Gets filled in
     "timeStampAdj": 0,
     "timeStampCal": 0,
     "stateEventInd": {
@@ -151,33 +224,54 @@ def send_packet(sock, addr, packet_bytes):
     sock.sendto(packet_bytes, addr)
 
 
-def context_sender(sock, addr, bit_depth, sample_rate):
+def get_definitions(difi_version):
+    if difi_version == "1.1":
+        return {
+            "context_def": difi_context_v1_1,
+            "context_dict": context_v1_1,
+            "data_def": difi_data_v1_1,
+            "version_def": difi_version_v1_1,
+        }
+    if difi_version == "1.2.1":
+        return {
+            "context_def": difi_context_v1_2_1,
+            "context_dict": context_v1_2_1,
+            "data_def": difi_data_v1_2_1,
+            "version_def": difi_version_v1_2_1,
+        }
+    raise ValueError(f"Unsupported DIFI version: {difi_version}")
+
+
+def context_sender(sock, addr, bit_depth, sample_rate, defs):
     interval = 1.0 / CONTEXT_PACKETS_PER_SEC
     seq_num = 0
+    ctx = defs["context_dict"]
+    ctx_def = defs["context_def"]
     while True:
-        context["header"]["seqNum"] = seq_num
-        context["dataPacketFormat"]["item_packing_field_size"] = bit_depth - 1
-        context["dataPacketFormat"]["data_item_size"] = bit_depth - 1
-        context["sampleRate"] = sample_rate
-        context["bandwidth"] = sample_rate * 0.25 # we're using a 4 samples-per-symbol QPSK signal
-        pkt = difi_context_definition.build(context)
+        ctx["header"]["seqNum"] = seq_num
+        ctx["dataPacketFormat"]["item_packing_field_size"] = bit_depth - 1
+        ctx["dataPacketFormat"]["data_item_size"] = bit_depth - 1
+        ctx["sampleRate"] = sample_rate
+        ctx["bandwidth"] = sample_rate * 0.25  # we're using a 4 samples-per-symbol QPSK signal
+        pkt = ctx_def.build(ctx)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 16
         time.sleep(interval)
 
 
-def version_sender(sock, addr):
+def version_sender(sock, addr, defs):
     interval = 1.0 / VERSION_PACKETS_PER_SEC
     seq_num = 0
+    ver_def = defs["version_def"]
     while True:
         version["header"]["seqNum"] = seq_num
-        pkt = difi_version_definition.build(version)
+        pkt = ver_def.build(version)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 16
         time.sleep(interval)
 
 
-def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
+def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth, defs):
     global tx_samples_i
     interval = samples_per_packet / sample_rate  # seconds between packets
     seq_num = 0
@@ -230,7 +324,7 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth):
         data["header"]["seqNum"] = seq_num
         data["header"]["pktSize"] = 7 + len(payload) // 4  # Update pktSize based on payload length
         data["payload"] = payload
-        pkt = difi_data_definition.build(data)
+        pkt = defs["data_def"].build(data)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 16  # wrap seq_num for demo
         time_elapsed = time.time() - start_t
@@ -247,7 +341,10 @@ if __name__ == "__main__":
     parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
     parser.add_argument("--product-name", type=str, default="Fillmein", help="Product name")
     parser.add_argument("--product-version", type=str, default="0.0", help="Product version")
+    parser.add_argument("--difi-version", type=str, default="1.2.1", choices=list(SUPPORTED_DIFI_VERSIONS),
+                        help="DIFI specification version to emit (default: 1.2.1)")
     args = parser.parse_args()
+    defs = get_definitions(args.difi_version)
 
     if args.packet_size == "small":
         packet_size_words = 360 # 353 words of IQ, or 1412 bytes
@@ -267,14 +364,14 @@ if __name__ == "__main__":
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     threads = [
-        threading.Thread(target=context_sender, args=(sock, addr, args.bit_depth, args.sample_rate), daemon=True),
-        threading.Thread(target=version_sender, args=(sock, addr), daemon=True),
-        threading.Thread(target=data_sender, args=(sock, addr, args.sample_rate, samples_per_packet, args.bit_depth), daemon=True),
+        threading.Thread(target=context_sender, args=(sock, addr, args.bit_depth, args.sample_rate, defs), daemon=True),
+        threading.Thread(target=version_sender, args=(sock, addr, defs), daemon=True),
+        threading.Thread(target=data_sender, args=(sock, addr, args.sample_rate, samples_per_packet, args.bit_depth, defs), daemon=True),
     ]
     for t in threads:
         t.start()
     print(
-        f"Sending packets to {addr} for {args.duration} seconds, press control+c to stop it early.")
+        f"Sending DIFI v{args.difi_version} packets to {addr} for {args.duration} seconds, press control+c to stop it early.")
     try:
         start_time = time.time()
         last_print_time = start_time
@@ -293,6 +390,7 @@ if __name__ == "__main__":
     output_yaml_dict["company"] = args.company
     output_yaml_dict["product_name"] = args.product_name
     output_yaml_dict["product_version"] = args.product_version
+    output_yaml_dict["difi_version"] = args.difi_version
     output_yaml_dict["bit_depth"] = args.bit_depth
     output_yaml_dict["sample_rate_hz"] = args.sample_rate
     output_yaml_dict["samples_per_packet"] = samples_per_packet
