@@ -182,7 +182,7 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
         if stats.bit_depth == 4:
             # Each byte contains two 4-bit signed samples: I then Q, I don't think endianness matters here since it's just 1 byte
             payload = parsed.payload
-            num_iq_samples = (parsed.header.pktSize - 7) * 4 // 1  # 1 byte = 2 samples
+            num_iq_samples = (parsed.header.pktSize - 7) * 4  # 1 byte holds 1 IQ pair (4b I + 4b Q)
             samples = []
             for b in payload:
                 i_raw = (b >> 4) & 0x0F # high nibble
@@ -236,6 +236,8 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
         else:
             raise Exception(
                 f"Bit depth of {stats.bit_depth} not supported for sample extraction")
+        if num_iq_samples != len(samples):
+            raise Exception(f"Payload size doesnt match packet size, expected {num_iq_samples} IQ samples but got {len(samples)}")
         if create_iq_recording:
             with open("iq_recording.sigmf-data", "ab") as f:
                 f.write(samples.tobytes())
@@ -271,8 +273,6 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
             fig.tight_layout()
             fig.canvas.draw()
             fig.canvas.flush_events()
-        if num_iq_samples != len(samples):
-            raise Exception(f"Payload size doesnt match packet size, expected {num_iq_samples} IQ samples but got {len(samples)}")
         errors = defs["data"].validate(parsed)
         if stats.data_sequence_count != -1 and parsed.header.seqNum != (stats.data_sequence_count + 1) % 16:
             errors.append(f"Data packet sequence count jumped from {stats.data_sequence_count} to {parsed.header.seqNum}")
@@ -383,6 +383,9 @@ if __name__ == "__main__":
     if not args.pcap and not args.udp_port:
         print("You must specify either --pcap or --udp-port")
         exit()
+    if args.pcap and args.udp_port:
+        print("Specify either --pcap or --udp-port, not both")
+        exit()
 
     if args.create_iq_recording:
         if os.path.exists("iq_recording.sigmf-data"):
@@ -406,7 +409,7 @@ if __name__ == "__main__":
             b'\x00\x00\x00\x00'  # thiszone
             b'\x00\x00\x00\x00'  # sigfigs
             b'\xff\xff\x00\x00'  # snaplen
-            b'\x01\x00\x00\x00'  # network (Ethernet)
+            b'\x93\x00\x00\x00'  # network (LINKTYPE_USER0 = 147; pcap holds raw UDP payloads with no L2/L3/L4 framing)
         )
         print(f"Recording UDP packets on port {args.udp_port}, hit control-c to finish...")
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # TCP packets get ignored
@@ -464,8 +467,11 @@ if __name__ == "__main__":
             samples_buffer = np.concatenate((samples_buffer, samples))
             if len(samples_buffer) >= 8188 * 2: # Process PN11 in chunks, 2 sequences worth (2047 symbols * 4 sps), so we know there's 1 full sequence in the middle
                 demod_bits = process_pn11_qpsk(samples_buffer)
-                BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))]) / len(pn11_bits)
-                print("BER:", BER)
+                if len(demod_bits) >= len(pn11_bits):
+                    BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))]) / len(pn11_bits)
+                    print("BER:", BER)
+                else:
+                    print(f"Skipping BER (got {len(demod_bits)} demod bits, need {len(pn11_bits)})")
                 samples_buffer = np.array([], dtype=np.complex64) # for now just clear buffer after each processing, in theory we could keep leftover samples though
         packet_index += 1
         if packet_index % 100 == 0:
