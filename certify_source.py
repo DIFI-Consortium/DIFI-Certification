@@ -193,12 +193,14 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
             samples = np.array(samples, dtype=np.float32)
             samples = samples / 8.0  # normalize to -1.0 to 1.0
             samples = samples[::2] + 1j * samples[1::2]
+            samples = samples.astype(np.complex64)
         elif stats.bit_depth == 8:
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 2
             samples = np.frombuffer(parsed.payload, dtype=np.int8)
             samples = samples / 128.0  # normalize to -1.0 to 1.0
             samples = samples.astype(np.float32)
             samples = samples[::2] + 1j * samples[1::2]
+            samples = samples.astype(np.complex64)
         elif stats.bit_depth == 12:
             # Assume signed 12-bit, packed as big-endian, I then Q, 3 bytes = 2 samples.
             payload = parsed.payload
@@ -223,12 +225,14 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
             samples = np.array(samples, dtype=np.float32)
             samples = samples / 2048.0  # normalize to -1.0 to 1.0
             samples = samples[::2] + 1j * samples[1::2]
+            samples = samples.astype(np.complex64)
         elif stats.bit_depth == 16:
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 4
             samples = np.frombuffer(parsed.payload, dtype='>i2')  # big-endian!
             samples = samples / 32768.0  # normalize to -1.0 to 1.0
             samples = samples.astype(np.float32)
             samples = samples[::2] + 1j * samples[1::2]
+            samples = samples.astype(np.complex64)
         else:
             raise Exception(
                 f"Bit depth of {stats.bit_depth} not supported for sample extraction")
@@ -468,7 +472,7 @@ if __name__ == "__main__":
             print(f"Processed {packet_index} packets...", end='\r')
 
     with open(args.error_log, "a") as f:
-        f.write(f"Total packets processed: {packet_index + 1}\n")
+        f.write(f"Total packets processed: {packet_index}\n")
 
     print("compliant_context_count:", stats.compliant_context_count)
     print("noncompliant_context_count:", stats.noncompliant_context_count)
