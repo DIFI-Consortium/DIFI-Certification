@@ -207,8 +207,8 @@ data = {
     "payload": "",
 }
 
-tx_samples = gen_pn11_qpsk()
-tx_samples_tiled = np.concatenate((tx_samples, tx_samples, tx_samples, tx_samples))
+tx_samples = None  # populated in __main__ once --sps is known
+tx_samples_tiled = None
 tx_samples_i = 0
 
 output_yaml_dict = {}
@@ -242,7 +242,7 @@ def get_definitions(difi_version):
     raise ValueError(f"Unsupported DIFI version: {difi_version}")
 
 
-def context_sender(sock, addr, bit_depth, sample_rate, defs):
+def context_sender(sock, addr, bit_depth, sample_rate, sps, defs):
     interval = 1.0 / CONTEXT_PACKETS_PER_SEC
     seq_num = 0
     ctx = defs["context_dict"]
@@ -252,7 +252,7 @@ def context_sender(sock, addr, bit_depth, sample_rate, defs):
         ctx["dataPacketFormat"]["item_packing_field_size"] = bit_depth - 1
         ctx["dataPacketFormat"]["data_item_size"] = bit_depth - 1
         ctx["sampleRate"] = sample_rate
-        ctx["bandwidth"] = sample_rate * 0.25  # we're using a 4 samples-per-symbol QPSK signal
+        ctx["bandwidth"] = sample_rate / sps  # QPSK signal occupies sample_rate / sps of bandwidth
         pkt = ctx_def.build(ctx)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 16
@@ -338,6 +338,7 @@ if __name__ == "__main__":
     parser.add_argument("--duration", type=float, default=10.0, help="Duration to send packets (seconds)")
     parser.add_argument("--packet-size", type=str, default="small", choices=["small", "large"], help="Packet size (small or large)")
     parser.add_argument("--bit-depth", type=int, default=8, choices=[4, 8, 12, 16], help="Bit depth for IQ samples (4, 8, 12, or 16)")
+    parser.add_argument("--sps", type=int, default=4, help="Samples per symbol for the PN11 QPSK signal (default: 4)")
     parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
     parser.add_argument("--product-name", type=str, default="Fillmein", help="Product name")
     parser.add_argument("--product-version", type=str, default="0.0", help="Product version")
@@ -345,6 +346,9 @@ if __name__ == "__main__":
                         help="DIFI specification version to emit (default: 1.2.1)")
     args = parser.parse_args()
     defs = get_definitions(args.difi_version)
+
+    tx_samples = gen_pn11_qpsk(args.sps)
+    tx_samples_tiled = np.concatenate((tx_samples, tx_samples, tx_samples, tx_samples))
 
     if args.packet_size == "small":
         packet_size_words = 360 # 353 words of IQ, or 1412 bytes
@@ -364,7 +368,7 @@ if __name__ == "__main__":
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     threads = [
-        threading.Thread(target=context_sender, args=(sock, addr, args.bit_depth, args.sample_rate, defs), daemon=True),
+        threading.Thread(target=context_sender, args=(sock, addr, args.bit_depth, args.sample_rate, args.sps, defs), daemon=True),
         threading.Thread(target=version_sender, args=(sock, addr, defs), daemon=True),
         threading.Thread(target=data_sender, args=(sock, addr, args.sample_rate, samples_per_packet, args.bit_depth, defs), daemon=True),
     ]

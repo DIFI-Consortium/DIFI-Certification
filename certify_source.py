@@ -350,6 +350,7 @@ if __name__ == "__main__":
     parser.add_argument("--error-log", type=str, default="error_log.txt", help="Error log file")
     parser.add_argument("--plot-psd", action="store_true", help="Plot the Power Spectral Density (PSD)")
     parser.add_argument("--pn11", action="store_true", help="Run PN11 receiver and report BER")
+    parser.add_argument("--sps", type=int, default=4, help="Samples per symbol for PN11 QPSK demod (default: 4)")
     parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
     parser.add_argument("--product-name", type=str, default="Fillmein", help="Product name")
     parser.add_argument("--product-version", type=str, default="0.0", help="Product version")
@@ -465,8 +466,8 @@ if __name__ == "__main__":
                                  validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth, create_iq_recording=args.create_iq_recording)
         if samples is not None and args.pn11:
             samples_buffer = np.concatenate((samples_buffer, samples))
-            if len(samples_buffer) >= 8188 * 2: # Process PN11 in chunks, 2 sequences worth (2047 symbols * 4 sps), so we know there's 1 full sequence in the middle
-                demod_bits = process_pn11_qpsk(samples_buffer)
+            if len(samples_buffer) >= 2047 * args.sps * 2: # Process PN11 in chunks, 2 sequences worth (2047 symbols * sps), so we know there's 1 full sequence in the middle
+                demod_bits = process_pn11_qpsk(samples_buffer, args.sps)
                 if len(demod_bits) >= len(pn11_bits):
                     BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))]) / len(pn11_bits)
                     print("BER:", BER)
