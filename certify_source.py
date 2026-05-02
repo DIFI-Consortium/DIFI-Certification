@@ -453,6 +453,8 @@ if __name__ == "__main__":
     output_yaml_dict["difi_version"] = args.difi_version
     print(f"Processing packets from {pcap_filename} (DIFI v{args.difi_version})...")
     samples_buffer = np.array([], dtype=np.complex64)
+    pn11_total_bit_errors = 0
+    pn11_total_bits = 0
     for packet in PcapReader(pcap_filename):
         if args.udp_port: # pcaps made above did not include the headers, so no UDP layer
             data = bytes(packet)
@@ -469,7 +471,10 @@ if __name__ == "__main__":
             if len(samples_buffer) >= 2047 * args.sps * 2: # Process PN11 in chunks, 2 sequences worth (2047 symbols * sps), so we know there's 1 full sequence in the middle
                 demod_bits = process_pn11_qpsk(samples_buffer, args.sps)
                 if len(demod_bits) >= len(pn11_bits):
-                    BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))]) / len(pn11_bits)
+                    bit_errors = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))])
+                    pn11_total_bit_errors += bit_errors
+                    pn11_total_bits += len(pn11_bits)
+                    BER = bit_errors / len(pn11_bits)
                     print("BER:", BER)
                 else:
                     print(f"Skipping BER (got {len(demod_bits)} demod bits, need {len(pn11_bits)})")
@@ -571,6 +576,11 @@ if __name__ == "__main__":
     output_yaml_dict["product_version"] = args.product_version
     output_yaml_dict["bit_depth"] = stats.bit_depth
     output_yaml_dict["sample_rate_hz"] = stats.sample_rate
+    if args.pn11:
+        if pn11_total_bits > 0:
+            output_yaml_dict["ber"] = pn11_total_bit_errors / pn11_total_bits
+        else:
+            output_yaml_dict["ber"] = None  # not enough samples to compute BER
     timestamp_str = strftime("%Y%m%d_%H%M%S")
     output_yaml_filename = f"certify_source_summary_{timestamp_str}.yaml"
     with open(output_yaml_filename, "w") as f:

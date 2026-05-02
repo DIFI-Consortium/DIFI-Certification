@@ -116,6 +116,12 @@ jobs:
             grep "overall_result" "$SUMMARY_FILE" || true
             exit 1
           fi
+          # Check PN11 BER is exactly 0
+          if ! grep -qE "^ber: 0(\.0+)?$" "$SUMMARY_FILE"; then
+            echo "ber is not 0!"
+            grep "^ber:" "$SUMMARY_FILE" || true
+            exit 1
+          fi
           echo "All checks passed!"
 
       - name: Run construct editor example
