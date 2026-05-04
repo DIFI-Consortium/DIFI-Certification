@@ -2,9 +2,6 @@ import argparse
 import socket
 from time import strftime
 from scapy.all import PcapReader, UDP
-from packet_definitions.difi_context_v1_1 import difi_context_definition
-from packet_definitions.difi_data_v1_1 import difi_data_definition
-from packet_definitions.difi_version_v1_1 import difi_version_definition
 import numpy as np
 import matplotlib.pyplot as plt
 from packet_definitions.pn11 import process_pn11_qpsk, pn11_bits
@@ -14,6 +11,17 @@ import os
 import json
 import time
 import struct
+
+# Per-version packet-definition modules
+from packet_definitions.difi_context_v1_1 import difi_context_definition as difi_context_v1_1
+from packet_definitions.difi_data_v1_1 import difi_data_definition as difi_data_v1_1
+from packet_definitions.difi_version_v1_1 import difi_version_definition as difi_version_v1_1
+from packet_definitions.difi_context_v1_2_1 import difi_context_definition as difi_context_v1_2_1
+from packet_definitions.difi_data_v1_2_1 import difi_data_definition as difi_data_v1_2_1
+from packet_definitions.difi_version_v1_2_1 import difi_version_definition as difi_version_v1_2_1
+from packet_definitions.difi_command_v1_2_1 import difi_command_definition as difi_command_v1_2_1
+
+SUPPORTED_DIFI_VERSIONS = ("1.1", "1.2.1")
 
 # This script certifies a DIFI source, i.e., a device/software that generates DIFI packets; this script parses and verifies them
 # It is not intended to run in realtime, you either process a pcap, or you can use this script to temporarily record a pcap that then gets processed
@@ -31,13 +39,17 @@ class PacketStats:
         self.noncompliant_data_count = 0
         self.compliant_version_count = 0
         self.noncompliant_version_count = 0
+        self.compliant_command_count = 0
+        self.noncompliant_command_count = 0
         self.context_sequence_count = -1  # used to find gaps
         self.data_sequence_count = -1
         self.version_sequence_count = -1
+        self.command_sequence_count = -1
         self.stream_id = -1  # stream ID can be 0 so we cant start it as None or 0
         self.context_timestamp = 0  # used to check monotonicity
         self.data_timestamp = 0
         self.version_timestamp = 0
+        self.command_timestamp = 0
         self.data_packet_size = 0  # in words
         self.most_recent_samples = np.array([], dtype=np.complex64)  # for plotting at the end
 
@@ -50,15 +62,87 @@ except Exception:
     output_yaml_dict["difi_cert_commit_hash"] = "unknown"
 
 
-def process_packet(data, packet_index, stats, error_log, plot_psd=False, validate_rf_freq=None, validate_if_freq=None, validate_bandwidth=None, create_iq_recording=False):
-    packet_type = data[0:4][0] >> 4
+def get_definitions(difi_version):
+    if difi_version == "1.1":
+        return {
+            "version": "1.1",
+            "context": difi_context_v1_1,
+            "data": difi_data_v1_1,
+            
+            "version_pkt_types": (0x5,), # In v1.1 the version-flow packet is its own pktType (0x5)
+            "version_pkt": difi_version_v1_1,
+            "command_pkt": None,  # no command packets defined in v1.1
+        }
+    if difi_version == "1.2.1":
+        return {
+            "version": "1.2.1",
+            "context": difi_context_v1_2_1,
+            "data": difi_data_v1_2_1,
+            # v1.2.1 spec moves version flow under Context (pktType 0x4) with packet class 0x0004, but real-world emitters frequently still use
+            # the legacy v1.1 pktType 0x5; accept either.
+            "version_pkt_types": (0x5, 0x4),
+            "version_pkt": difi_version_v1_2_1,
+            "command_pkt": difi_command_v1_2_1,
+        }
+    raise ValueError(f"Unsupported DIFI version: {difi_version}")
+
+
+def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, validate_rf_freq=None, validate_if_freq=None, validate_bandwidth=None, create_iq_recording=False):
+    packet_type = data[0] >> 4
+    # Bytes 12-15 of every DIFI packet are Word 4 = Information Class | Packet Class.
+    # Peek the 16-bit packetClassCode without parsing so we can disambiguate
+    # v1.2.1's pktType 0x4 (signal context vs version flow).
+    packet_class_code = int.from_bytes(data[14:16], "big") if len(data) >= 16 else None
+
+    # Version Flow Packet
+    #   v1.1:   pktType 0x5
+    #   v1.2.1: pktType 0x5 (legacy emitters) or pktType 0x4 with packet class 0x0004
+    is_version_pkt = (
+        defs["version_pkt"] is not None
+        and packet_type in defs["version_pkt_types"]
+        and (
+            defs["version"] == "1.1"
+            or packet_type == 0x5  # any 0x5 in v1.2.1 mode is a legacy version flow
+            or packet_class_code == 0x0004
+        )
+    )
+    if is_version_pkt:
+        ver_def = defs["version_pkt"]
+        if len(data) != ver_def.sizeof():
+            raise Exception(f"Version packet size {len(data)} does not match expected size {ver_def.sizeof()}")
+        parsed = ver_def.parse(data)
+        errors = ver_def.validate(parsed)
+        if stats.version_sequence_count != -1 and parsed.header.seqNum != (stats.version_sequence_count + 1) % 16:
+            errors.append(f"Version packet sequence count jumped from {stats.version_sequence_count} to {parsed.header.seqNum}")
+        stats.version_sequence_count = parsed.header.seqNum
+        if stats.stream_id == -1:
+            stats.stream_id = parsed.streamId
+        elif parsed.streamId != stats.stream_id:
+            errors.append(f"Stream ID changed from {stats.stream_id} to {parsed.streamId}")
+        timestamp = parsed.intSecsTimestamp + parsed.fracSecsTimestamp / 1e12
+        if timestamp < stats.version_timestamp:
+            errors.append(f"Version packet timestamp went backwards from {stats.version_timestamp} to {timestamp}")
+        stats.version_timestamp = timestamp
+        if not errors:
+            stats.compliant_version_count += 1
+        else:
+            print("Validation errors found:")
+            stats.noncompliant_version_count += 1
+            for error in errors:
+                print(f" - {error}")
+            with open(error_log, "a") as f:
+                for error in errors:
+                    for line in str(error).splitlines():
+                        f.write(f"[Version][Packet {packet_index}] {line}\n")
+        return None
 
     # Context Packet
     if packet_type == 0x4:
-        if len(data) != difi_context_definition.sizeof():
-            raise Exception(f"Packet size {len(data)} does not match expected size {difi_context_definition.sizeof()}")
-        parsed = difi_context_definition.parse(data)
-        errors = difi_context_definition.validate(parsed)
+        ctx_def = defs["context"]
+        if len(data) != ctx_def.sizeof():
+            raise Exception(f"Packet size {len(data)} does not match expected size {ctx_def.sizeof()}")
+        parsed = ctx_def.parse(data)
+        errors = ctx_def.validate(parsed)
         if validate_rf_freq is not None and abs(parsed.rfFreq - validate_rf_freq) > 1e-6: # leave a tolerance
             errors.append(f"RF frequency {parsed.rfFreq} does not match expected {validate_rf_freq}")
         if validate_if_freq is not None and abs(parsed.ifFreq - validate_if_freq) > 1e-6:
@@ -94,11 +178,11 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
 
     # Data Packet
     if packet_type == 0x1 and stats.bit_depth:
-        parsed = difi_data_definition.parse(data)
+        parsed = defs["data"].parse(data)
         if stats.bit_depth == 4:
             # Each byte contains two 4-bit signed samples: I then Q, I don't think endianness matters here since it's just 1 byte
             payload = parsed.payload
-            num_iq_samples = (parsed.header.pktSize - 7) * 4 // 1  # 1 byte = 2 samples
+            num_iq_samples = (parsed.header.pktSize - 7) * 4  # 1 byte holds 1 IQ pair (4b I + 4b Q)
             samples = []
             for b in payload:
                 i_raw = (b >> 4) & 0x0F # high nibble
@@ -109,12 +193,14 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
             samples = np.array(samples, dtype=np.float32)
             samples = samples / 8.0  # normalize to -1.0 to 1.0
             samples = samples[::2] + 1j * samples[1::2]
+            samples = samples.astype(np.complex64)
         elif stats.bit_depth == 8:
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 2
             samples = np.frombuffer(parsed.payload, dtype=np.int8)
             samples = samples / 128.0  # normalize to -1.0 to 1.0
             samples = samples.astype(np.float32)
             samples = samples[::2] + 1j * samples[1::2]
+            samples = samples.astype(np.complex64)
         elif stats.bit_depth == 12:
             # Assume signed 12-bit, packed as big-endian, I then Q, 3 bytes = 2 samples.
             payload = parsed.payload
@@ -139,15 +225,19 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
             samples = np.array(samples, dtype=np.float32)
             samples = samples / 2048.0  # normalize to -1.0 to 1.0
             samples = samples[::2] + 1j * samples[1::2]
+            samples = samples.astype(np.complex64)
         elif stats.bit_depth == 16:
             num_iq_samples = (parsed.header.pktSize - 7) * 4 // 4
             samples = np.frombuffer(parsed.payload, dtype='>i2')  # big-endian!
             samples = samples / 32768.0  # normalize to -1.0 to 1.0
             samples = samples.astype(np.float32)
             samples = samples[::2] + 1j * samples[1::2]
+            samples = samples.astype(np.complex64)
         else:
             raise Exception(
                 f"Bit depth of {stats.bit_depth} not supported for sample extraction")
+        if num_iq_samples != len(samples):
+            raise Exception(f"Payload size doesnt match packet size, expected {num_iq_samples} IQ samples but got {len(samples)}")
         if create_iq_recording:
             with open("iq_recording.sigmf-data", "ab") as f:
                 f.write(samples.tobytes())
@@ -183,9 +273,7 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
             fig.tight_layout()
             fig.canvas.draw()
             fig.canvas.flush_events()
-        if num_iq_samples != len(samples):
-            raise Exception(f"Payload size doesnt match packet size, expected {num_iq_samples} IQ samples but got {len(samples)}")
-        errors = difi_data_definition.validate(parsed)
+        errors = defs["data"].validate(parsed)
         if stats.data_sequence_count != -1 and parsed.header.seqNum != (stats.data_sequence_count + 1) % 16:
             errors.append(f"Data packet sequence count jumped from {stats.data_sequence_count} to {parsed.header.seqNum}")
         stats.data_sequence_count = parsed.header.seqNum
@@ -215,34 +303,37 @@ def process_packet(data, packet_index, stats, error_log, plot_psd=False, validat
                         f.write(f"[Data][Packet {packet_index}] {line}\n")
         return samples
 
-    # Version Packet
-    if packet_type == 0x5:
-        if len(data) != difi_version_definition.sizeof():
-            raise Exception(f"Packet size {len(data)} does not match expected size {difi_version_definition.sizeof()}")
-        parsed = difi_version_definition.parse(data)
-        errors = difi_version_definition.validate(parsed)
-        if stats.version_sequence_count != -1 and parsed.header.seqNum != (stats.version_sequence_count + 1) % 16:
-            errors.append(f"Version packet sequence count jumped from {stats.version_sequence_count} to {parsed.header.seqNum}")
-        stats.version_sequence_count = parsed.header.seqNum
+    # Command Packet (v1.2.1+ only — Timing Flow Control, packet classes 0x0005 / 0x0006)
+    if packet_type == 0x6 and defs["command_pkt"] is not None:
+        cmd_def = defs["command_pkt"]
+        if len(data) != cmd_def.sizeof():
+            raise Exception(f"Command packet size {len(data)} does not match expected size {cmd_def.sizeof()}")
+        parsed = cmd_def.parse(data)
+        errors = cmd_def.validate(parsed)
+        if stats.command_sequence_count != -1 and parsed.header.seqNum != (stats.command_sequence_count + 1) % 16:
+            errors.append(f"Command packet sequence count jumped from {stats.command_sequence_count} to {parsed.header.seqNum}")
+        stats.command_sequence_count = parsed.header.seqNum
         if stats.stream_id == -1:
             stats.stream_id = parsed.streamId
         elif parsed.streamId != stats.stream_id:
             errors.append(f"Stream ID changed from {stats.stream_id} to {parsed.streamId}")
+        # Fractional seconds in command packet are picoseconds (class 0x0006) or sample count (class 0x0005);
+        # the monotonicity check still works against the same units packet-to-packet within the run.
         timestamp = parsed.intSecsTimestamp + parsed.fracSecsTimestamp / 1e12
-        if timestamp < stats.version_timestamp: # Eventually may want to switch to <=
-            errors.append(f"Version packet timestamp went backwards from {stats.version_timestamp} to {timestamp}")
-        stats.version_timestamp = timestamp
+        if timestamp < stats.command_timestamp:
+            errors.append(f"Command packet timestamp went backwards from {stats.command_timestamp} to {timestamp}")
+        stats.command_timestamp = timestamp
         if not errors:
-            stats.compliant_version_count += 1
+            stats.compliant_command_count += 1
         else:
             print("Validation errors found:")
-            stats.noncompliant_version_count += 1
+            stats.noncompliant_command_count += 1
             for error in errors:
                 print(f" - {error}")
             with open(error_log, "a") as f:
                 for error in errors:
                     for line in str(error).splitlines():
-                        f.write(f"[Version][Packet {packet_index}] {line}\n")
+                        f.write(f"[Command][Packet {packet_index}] {line}\n")
         return None
 
 
@@ -259,6 +350,7 @@ if __name__ == "__main__":
     parser.add_argument("--error-log", type=str, default="error_log.txt", help="Error log file")
     parser.add_argument("--plot-psd", action="store_true", help="Plot the Power Spectral Density (PSD)")
     parser.add_argument("--pn11", action="store_true", help="Run PN11 receiver and report BER")
+    parser.add_argument("--sps", type=int, default=4, help="Samples per symbol for PN11 QPSK demod (default: 4)")
     parser.add_argument("--company", type=str, default="Fillmein", help="Company name")
     parser.add_argument("--product-name", type=str, default="Fillmein", help="Product name")
     parser.add_argument("--product-version", type=str, default="0.0", help="Product version")
@@ -266,6 +358,8 @@ if __name__ == "__main__":
     parser.add_argument("--validate-if-freq", type=float, help="(Optional) Expected IF frequency in Hz for validation")
     parser.add_argument("--validate-bandwidth", type=float, help="(Optional) Expected bandwidth in Hz for validation")
     parser.add_argument("--create-iq-recording", action="store_true", help="Create IQ recording (SigMF format) file from samples in data packets")
+    parser.add_argument("--difi-version", type=str, default="1.2.1", choices=list(SUPPORTED_DIFI_VERSIONS),
+                        help="DIFI specification version to validate against (default: 1.2.1)")
     valid_args = set()
     for action in parser._actions:
         if action.dest != argparse.SUPPRESS:
@@ -290,6 +384,9 @@ if __name__ == "__main__":
     if not args.pcap and not args.udp_port:
         print("You must specify either --pcap or --udp-port")
         exit()
+    if args.pcap and args.udp_port:
+        print("Specify either --pcap or --udp-port, not both")
+        exit()
 
     if args.create_iq_recording:
         if os.path.exists("iq_recording.sigmf-data"):
@@ -313,7 +410,7 @@ if __name__ == "__main__":
             b'\x00\x00\x00\x00'  # thiszone
             b'\x00\x00\x00\x00'  # sigfigs
             b'\xff\xff\x00\x00'  # snaplen
-            b'\x01\x00\x00\x00'  # network (Ethernet)
+            b'\x93\x00\x00\x00'  # network (LINKTYPE_USER0 = 147; pcap holds raw UDP payloads with no L2/L3/L4 framing)
         )
         print(f"Recording UDP packets on port {args.udp_port}, hit control-c to finish...")
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # TCP packets get ignored
@@ -352,8 +449,12 @@ if __name__ == "__main__":
     packet_index = 0
     if args.pcap:
         pcap_filename = args.pcap
-    print(f"Processing packets from {pcap_filename}...")
+    defs = get_definitions(args.difi_version)
+    output_yaml_dict["difi_version"] = args.difi_version
+    print(f"Processing packets from {pcap_filename} (DIFI v{args.difi_version})...")
     samples_buffer = np.array([], dtype=np.complex64)
+    pn11_total_bit_errors = 0
+    pn11_total_bits = 0
     for packet in PcapReader(pcap_filename):
         if args.udp_port: # pcaps made above did not include the headers, so no UDP layer
             data = bytes(packet)
@@ -363,21 +464,27 @@ if __name__ == "__main__":
             data = bytes(packet[UDP].payload)
         if len(data) < 28: # ignore packets too small to be DIFI
             continue
-        samples = process_packet(data, packet_index, stats, args.error_log, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq,
+        samples = process_packet(data, packet_index, stats, args.error_log, defs, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq,
                                  validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth, create_iq_recording=args.create_iq_recording)
         if samples is not None and args.pn11:
             samples_buffer = np.concatenate((samples_buffer, samples))
-            if len(samples_buffer) >= 8188 * 2: # Process PN11 in chunks, 2 sequences worth (2047 symbols * 4 sps), so we know there's 1 full sequence in the middle
-                demod_bits = process_pn11_qpsk(samples_buffer)
-                BER = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))]) / len(pn11_bits)
-                print("BER:", BER)
+            if len(samples_buffer) >= 2047 * args.sps * 2: # Process PN11 in chunks, 2 sequences worth (2047 symbols * sps), so we know there's 1 full sequence in the middle
+                demod_bits = process_pn11_qpsk(samples_buffer, args.sps)
+                if len(demod_bits) >= len(pn11_bits):
+                    bit_errors = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))])
+                    pn11_total_bit_errors += bit_errors
+                    pn11_total_bits += len(pn11_bits)
+                    BER = bit_errors / len(pn11_bits)
+                    print("BER:", BER)
+                else:
+                    print(f"Skipping BER (got {len(demod_bits)} demod bits, need {len(pn11_bits)})")
                 samples_buffer = np.array([], dtype=np.complex64) # for now just clear buffer after each processing, in theory we could keep leftover samples though
         packet_index += 1
         if packet_index % 100 == 0:
             print(f"Processed {packet_index} packets...", end='\r')
 
     with open(args.error_log, "a") as f:
-        f.write(f"Total packets processed: {packet_index + 1}\n")
+        f.write(f"Total packets processed: {packet_index}\n")
 
     print("compliant_context_count:", stats.compliant_context_count)
     print("noncompliant_context_count:", stats.noncompliant_context_count)
@@ -385,7 +492,13 @@ if __name__ == "__main__":
     print("noncompliant_data_count:", stats.noncompliant_data_count)
     print("compliant_version_count:", stats.compliant_version_count)
     print("noncompliant_version_count:", stats.noncompliant_version_count)
-    if stats.noncompliant_context_count == 0 and stats.noncompliant_data_count == 0 and stats.noncompliant_version_count == 0:
+    if defs["command_pkt"] is not None:
+        print("compliant_command_count:", stats.compliant_command_count)
+        print("noncompliant_command_count:", stats.noncompliant_command_count)
+    if (stats.noncompliant_context_count == 0
+            and stats.noncompliant_data_count == 0
+            and stats.noncompliant_version_count == 0
+            and stats.noncompliant_command_count == 0):
         print("Overall Result: PASS")
         output_yaml_dict["overall_result"] = "PASS"
     else:
@@ -463,6 +576,11 @@ if __name__ == "__main__":
     output_yaml_dict["product_version"] = args.product_version
     output_yaml_dict["bit_depth"] = stats.bit_depth
     output_yaml_dict["sample_rate_hz"] = stats.sample_rate
+    if args.pn11:
+        if pn11_total_bits > 0:
+            output_yaml_dict["ber"] = pn11_total_bit_errors / pn11_total_bits
+        else:
+            output_yaml_dict["ber"] = None  # not enough samples to compute BER
     timestamp_str = strftime("%Y%m%d_%H%M%S")
     output_yaml_filename = f"certify_source_summary_{timestamp_str}.yaml"
     with open(output_yaml_filename, "w") as f:

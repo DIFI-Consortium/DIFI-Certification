@@ -16,7 +16,7 @@ So we'll have a separate Construct definition (and thus file) for version, and t
 # Used for 0x1 and 0x3 packetClassCode, see difi_version_v1_2_1.py for the 0x4 (version) packet
 difi_context_definition = Struct(
     "header" / BitStruct( # 1 word
-        "pktType"  / Bits(4),
+        "pktType"  / Bits(4), # 0x4 for context packets
         "classId"  / Bits(1),
         "reserved" / Bits(2),
         "tsm"      / Bits(1), # for 0x1, 0->fine and 1->coarse. For 0x3 it's always 0
@@ -67,8 +67,8 @@ difi_context_definition = Struct(
         "event_tag_size"          / Bits(3), # 0 for no event tags
         "channel_tag_size"        / Bits(4), # 0 for no channel tags
         "data_item_fraction_size" / Bits(4),
-        "item_packing_field_size" / Bits(6),
-        "data_item_size"          / Bits(6),   # unsigned number that is one less than the actual Data Item size, so usually 7 or 15
+        "item_packing_field_size" / Bits(6),   # TODO: is it 23 for 12-bit?
+        "data_item_size"          / Bits(6),   # unsigned number that is one less than the actual Data Item size, so usually 7 or 11 or 15
         "repeat_count"            / Bits(16),  # 2nd word, bits 16-31
         "vector_size"             / Bits(16))) # 2nd word, bits 0-15
 
@@ -76,19 +76,46 @@ difi_context_definition = Struct(
 # Validations
 def validate(packet):
     errors = []
-    ''' Need an example pcap before filling these out
-    if packet.header.pktType != 0x4: errors.append("Not a standard flow signal context packet")
+    if packet.header.pktType != 0x4: errors.append("Not a context packet (pktType must be 0x4)")
     if packet.header.pktSize != 27: errors.append("Packet size is not 27 words")
     if packet.header.classId != 1: errors.append("Class ID must be 1 for standard flow signal context")
     if packet.header.reserved != 0: errors.append("Reserved bits must be 0")
-    if packet.header.tsm != 1: errors.append("TSM must be 1")
-    if packet.header.tsf != 2: errors.append("TSF must be 2")
-    if packet.cif0 != 0xFBB98000: errors.append(f"Nonstandard CIF0, it was {packet.cif0:X}")
+    if packet.header.tsi == "not_allowed": errors.append("TSI must not be 0")
+    if packet.classId.paddingBits != 0: errors.append("Padding bits must be 0")
+    if packet.classId.oui != 0x6A621E: errors.append("OUI is invalid, expecting 0x6A621E")
+    pkt_class = packet.classId.packetClassCode
+    if pkt_class not in (0x0001, 0x0003):
+        errors.append(f"Packet Class Code 0x{pkt_class:04X} not a valid v1.2.1 context class (expected 0x0001 or 0x0003)")
+    if pkt_class == 0x0001:
+        if packet.header.tsf != 2: errors.append("Packet Class 0x0001 requires TSF=0x2 (Real Time picoseconds)")
+        if packet.header.tsm != 1: errors.append("Packet Class 0x0001 requires TSM=1 (coarse) for Information Class 0x0000")
+    if pkt_class == 0x0003:
+        if packet.header.tsf != 1: errors.append("Packet Class 0x0003 requires TSF=0x1 (Sample Count)")
+        if packet.header.tsm != 0: errors.append("Packet Class 0x0003 requires TSM=0 (fine)")
+    info_class = packet.classId.infoClassCode
+    if info_class not in (0x0000, 0x0002, 0x0003, 0x0004):
+        errors.append(f"Information Class 0x{info_class:04X} not valid for v1.2.1 signal context")
+    if info_class == 0x0000 and pkt_class != 0x0001: errors.append("Information Class 0x0000 must use Packet Class 0x0001")
+    if info_class == 0x0002 and pkt_class != 0x0003: errors.append("Information Class 0x0002 must use Packet Class 0x0003")
+    if info_class == 0x0003 and pkt_class != 0x0001: errors.append("Information Class 0x0003 must use Packet Class 0x0001")
+    if info_class == 0x0004 and pkt_class != 0x0003: errors.append("Information Class 0x0004 must use Packet Class 0x0003")
+    if packet.cif0 not in ("context_changed", "no_change"):
+        errors.append(f"Nonstandard CIF0; expected 0xFBB98000 or 0x7BB98000")
+    if packet.refPoint not in ("IF", "RF", "antenna", "air"):
+        errors.append(f"Reference Point must be 100 (IF), 75 (RF), 25 (antenna), or 15 (air); was {packet.refPoint}")
+    if packet.dataPacketFormat.packing_method != "link_efficient": errors.append("Packing type must be link-efficient")
     if packet.dataPacketFormat.real_complex_type != "complex_cartesian": errors.append(f"Bad real_complex_type, value was {packet.dataPacketFormat.real_complex_type}")
     if packet.dataPacketFormat.data_item_format != "signed_fixed_point": errors.append(f"Bad data_item_format, value was {packet.dataPacketFormat.data_item_format}")
     if packet.dataPacketFormat.sample_repeat_indicator != "no_repeat": errors.append(f"Bad sample_repeat_indicator, value was {packet.dataPacketFormat.sample_repeat_indicator}")
     if packet.dataPacketFormat.event_tag_size != 0: errors.append(f"Bad event_tag_size, value was {packet.dataPacketFormat.event_tag_size}")
     if packet.dataPacketFormat.channel_tag_size != 0: errors.append(f"Bad channel_tag_size, value was {packet.dataPacketFormat.channel_tag_size}")
-    '''
+    print(packet.dataPacketFormat.item_packing_field_size)
+    # TODO: figure out how item_packing_field_size works, e.g. for 12-bit IQ should it be 23?
+    #if packet.dataPacketFormat.item_packing_field_size < 3 or packet.dataPacketFormat.item_packing_field_size > 15:
+    #    errors.append("Bit depth out of range")
+    if packet.dataPacketFormat.data_item_size < 3 or packet.dataPacketFormat.data_item_size > 15:
+        errors.append("Data item size out of range")
+    if packet.rfFreq < 0 or packet.rfFreq > 100e9: errors.append(f"RF frequency {packet.rfFreq} Hz out of expected range (0-100 GHz)")
+    if packet.ifFreq < 0 or packet.ifFreq > 100e9: errors.append(f"IF frequency {packet.ifFreq} Hz out of expected range (0-100 GHz)")
     return errors
 difi_context_definition.validate = validate # so it can be called as difi_context.validate(packet)

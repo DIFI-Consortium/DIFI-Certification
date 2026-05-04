@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Constants
-sps = 4
 rc_num_taps = 51
 rc_beta = 0.35
 
@@ -56,7 +55,7 @@ def fractional_delay_filter(delay):
     return h
 
 # Roughly -1 to +1
-def gen_pn11_qpsk():
+def gen_pn11_qpsk(sps):
     samples = qpsk_modulate(pn11_bits, sps)
     h_rc = rc_filter(rc_num_taps, rc_beta, sps)
     samples = np.convolve(samples, h_rc, "same") # Filter our signal, in order to apply the pulse shaping
@@ -70,7 +69,7 @@ def gen_pn11_qpsk():
     print("Generated", len(samples), "samples for PN11 QPSK signal")
     return samples
 
-def process_pn11_qpsk(samples):
+def process_pn11_qpsk(samples, sps):
     # Create template to correlate against
     template = qpsk_modulate(pn11_bits, sps)
 
@@ -122,8 +121,9 @@ def process_pn11_qpsk(samples):
 
 if __name__ == "__main__":
     SNR_dB = 10
+    sps = 4
 
-    tx_samples = gen_pn11_qpsk()
+    tx_samples = gen_pn11_qpsk(sps)
 
     # for testing purposes, apply a known fractional delay
     h_delay = fractional_delay_filter(0.123) 
@@ -160,7 +160,7 @@ if __name__ == "__main__":
         plt.show()
 
     # Process received samples
-    demod_bits = process_pn11_qpsk(tx_samples)
+    demod_bits = process_pn11_qpsk(tx_samples, sps)
 
     # Compare
     num_bit_errors = sum([demod_bits[i] != pn11_bits[i] for i in range(len(pn11_bits))])
