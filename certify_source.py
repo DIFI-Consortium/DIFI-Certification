@@ -244,7 +244,7 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
         stats.most_recent_samples = samples  # for plotting at the end
         if plot_psd:  # TODO: move this plotting code to a separate function
             plt.ion()
-            PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2)
+            PSD = 10 * np.log10(np.abs(np.fft.fftshift(np.fft.fft(samples))) ** 2 / (len(samples) * stats.sample_rate))
             f = np.linspace(-stats.sample_rate / 2,
                             stats.sample_rate / 2, len(PSD))
             if not hasattr(process_packet, "fig") or process_packet.fig is None:
@@ -255,7 +255,7 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
             axs[0].plot(f / 1e6, PSD)
             axs[0].set_xlabel("Frequency (MHz)")
             axs[0].set_ylabel("Power Spectral Density (dB/Hz)")
-            axs[0].set_ylim(-30, 30)
+            axs[0].set_ylim(-90, -30)
             axs[0].grid()
             # IQ scatter subplot
             axs[1].cla()
