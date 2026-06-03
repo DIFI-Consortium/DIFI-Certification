@@ -109,7 +109,6 @@ def validate(packet):
     if packet.dataPacketFormat.sample_repeat_indicator != "no_repeat": errors.append(f"Bad sample_repeat_indicator, value was {packet.dataPacketFormat.sample_repeat_indicator}")
     if packet.dataPacketFormat.event_tag_size != 0: errors.append(f"Bad event_tag_size, value was {packet.dataPacketFormat.event_tag_size}")
     if packet.dataPacketFormat.channel_tag_size != 0: errors.append(f"Bad channel_tag_size, value was {packet.dataPacketFormat.channel_tag_size}")
-    print(packet.dataPacketFormat.item_packing_field_size)
     # TODO: figure out how item_packing_field_size works, e.g. for 12-bit IQ should it be 23?
     #if packet.dataPacketFormat.item_packing_field_size < 3 or packet.dataPacketFormat.item_packing_field_size > 15:
     #    errors.append("Bit depth out of range")
