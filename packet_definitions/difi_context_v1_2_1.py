@@ -109,11 +109,10 @@ def validate(packet):
     if packet.dataPacketFormat.sample_repeat_indicator != "no_repeat": errors.append(f"Bad sample_repeat_indicator, value was {packet.dataPacketFormat.sample_repeat_indicator}")
     if packet.dataPacketFormat.event_tag_size != 0: errors.append(f"Bad event_tag_size, value was {packet.dataPacketFormat.event_tag_size}")
     if packet.dataPacketFormat.channel_tag_size != 0: errors.append(f"Bad channel_tag_size, value was {packet.dataPacketFormat.channel_tag_size}")
-    # TODO: figure out how item_packing_field_size works, e.g. for 12-bit IQ should it be 23?
-    #if packet.dataPacketFormat.item_packing_field_size < 3 or packet.dataPacketFormat.item_packing_field_size > 15:
-    #    errors.append("Bit depth out of range")
     if packet.dataPacketFormat.data_item_size < 3 or packet.dataPacketFormat.data_item_size > 15:
         errors.append("Data item size out of range")
+    if packet.dataPacketFormat.item_packing_field_size != packet.dataPacketFormat.data_item_size:
+        errors.append("For DIFI, item_packing_field_size should always match data_item_size")
     if packet.rfFreq < 0 or packet.rfFreq > 100e9: errors.append(f"RF frequency {packet.rfFreq} Hz out of expected range (0-100 GHz)")
     if packet.ifFreq < 0 or packet.ifFreq > 100e9: errors.append(f"IF frequency {packet.ifFreq} Hz out of expected range (0-100 GHz)")
     return errors
