@@ -56,7 +56,7 @@ jobs:
             -T fields -e difi.v49spec | head -n 1)
           test "$LEGACY_V49_SPEC" = "0x00000004"
 
-          CONTEXT_CIF=$(tshark -r example_pcaps/DIFIv1_1_Example1_1Msps_8bits.pcapng \
+          CONTEXT_CIF=$(tshark -r example_pcaps/Example1_1Msps_8bits.pcapng \
             -X lua_script:wireshark-dissector/difi-dissector.lua \
             -Y 'difi.packet_type == 0x4 && difi.packet_class_code == 0x0001' \
             -T fields -e difi.ctxt_cif | head -n 1)
