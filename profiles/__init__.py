@@ -13,6 +13,15 @@ _VALIDATOR_NAMES = (
 )
 
 
+def available_profiles():
+    """Return the profile names provided by Python modules in this package."""
+    return sorted(
+        path.stem
+        for path in Path(__file__).parent.glob("*.py")
+        if path.stem != "__init__" and path.stem.isidentifier()
+    )
+
+
 @lru_cache(maxsize=None)
 def load_profile(profile):
     """Load and validate the module selected by ``--profile``."""

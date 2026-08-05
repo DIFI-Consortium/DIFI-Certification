@@ -12,6 +12,7 @@ import json
 import time
 import struct
 from profiles import (
+    available_profiles,
     load_profile,
     validate_profile_command,
     validate_profile_context,
@@ -371,7 +372,13 @@ if __name__ == "__main__":
     parser.add_argument("--create-iq-recording", action="store_true", help="Create IQ recording (SigMF format) file from samples in data packets")
     parser.add_argument("--difi-version", type=str, default="1.2.1", choices=list(SUPPORTED_DIFI_VERSIONS),
                         help="DIFI specification version to validate against (default: 1.2.1)")
-    parser.add_argument("--profile", type=str, default="", help="Specific profile to do extra validations on")
+    parser.add_argument(
+        "--profile",
+        type=str,
+        default="",
+        choices=available_profiles(),
+        help="Specific profile to do extra validations on",
+    )
 
     valid_args = set()
     for action in parser._actions:
