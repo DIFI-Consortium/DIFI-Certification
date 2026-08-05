@@ -18,4 +18,4 @@ iq_recording.sigmf-meta
 iq_recording_spectrogram.png
 power_spectral_density.png
 temp.pcap
-venv/
+.venv/

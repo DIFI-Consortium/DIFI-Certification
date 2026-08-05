@@ -2,6 +2,7 @@ import socket
 import threading
 import time
 import argparse
+from fractions import Fraction
 from packet_definitions.difi_context_v1_1 import difi_context_definition as difi_context_v1_1
 from packet_definitions.difi_data_v1_1 import difi_data_definition as difi_data_v1_1
 from packet_definitions.difi_version_v1_1 import difi_version_definition as difi_version_v1_1
@@ -18,6 +19,7 @@ SUPPORTED_DIFI_VERSIONS = ("1.1", "1.2.1")
 
 CONTEXT_PACKETS_PER_SEC = 10
 VERSION_PACKETS_PER_SEC = 2
+PICOSECONDS_PER_SECOND = 1_000_000_000_000
 
 # v1.1 context dict — gain/level fields are refLevel1/refLevel2/stage1/stage2 (raw int cif0/refPoint)
 context_v1_1 = {
@@ -224,6 +226,16 @@ def send_packet(sock, addr, packet_bytes):
     sock.sendto(packet_bytes, addr)
 
 
+def set_packet_timestamp(packet, timestamp_ps):
+    packet["intSecsTimestamp"], packet["fracSecsTimestamp"] = divmod(
+        timestamp_ps, PICOSECONDS_PER_SECOND
+    )
+
+
+def set_current_timestamp(packet):
+    set_packet_timestamp(packet, time.time_ns() * 1_000)
+
+
 def get_definitions(difi_version):
     if difi_version == "1.1":
         return {
@@ -253,6 +265,7 @@ def context_sender(sock, addr, bit_depth, sample_rate, sps, defs):
         ctx["dataPacketFormat"]["data_item_size"] = bit_depth - 1
         ctx["sampleRate"] = sample_rate
         ctx["bandwidth"] = sample_rate / sps  # QPSK signal occupies sample_rate / sps of bandwidth
+        set_current_timestamp(ctx)
         pkt = ctx_def.build(ctx)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 16
@@ -265,6 +278,7 @@ def version_sender(sock, addr, defs):
     ver_def = defs["version_def"]
     while True:
         version["header"]["seqNum"] = seq_num
+        set_current_timestamp(version)
         pkt = ver_def.build(version)
         send_packet(sock, addr, pkt)
         seq_num = (seq_num + 1) % 16
@@ -274,6 +288,9 @@ def version_sender(sock, addr, defs):
 def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth, defs):
     global tx_samples_i
     interval = samples_per_packet / sample_rate  # seconds between packets
+    sample_rate_fraction = Fraction(str(sample_rate))
+    start_timestamp_ps = time.time_ns() * 1_000
+    samples_sent = 0
     seq_num = 0
     while True:
         start_t = time.time()
@@ -323,9 +340,15 @@ def data_sender(sock, addr, sample_rate, samples_per_packet, bit_depth, defs):
             raise ValueError(f"Unsupported bit_depth: {bit_depth}")
         data["header"]["seqNum"] = seq_num
         data["header"]["pktSize"] = 7 + len(payload) // 4  # Update pktSize based on payload length
+        # Derive every timestamp from the total sample count so rounding errors do not accumulate.
+        timestamp_offset_ps = round(
+            Fraction(samples_sent * PICOSECONDS_PER_SECOND, 1) / sample_rate_fraction
+        )
+        set_packet_timestamp(data, start_timestamp_ps + timestamp_offset_ps)
         data["payload"] = payload
         pkt = defs["data_def"].build(data)
         send_packet(sock, addr, pkt)
+        samples_sent += samples_per_packet
         seq_num = (seq_num + 1) % 16  # wrap seq_num for demo
         time_elapsed = time.time() - start_t
         time.sleep(interval - time_elapsed if interval > time_elapsed else 0)

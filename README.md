@@ -19,10 +19,10 @@ Note, you can install Ubuntu 24 on Windows using WSL, simply open the Microsoft 
 ```bash
 sudo apt update
 sudo apt install -y python3 python3-pip python3-venv python-is-python3
-python -m venv venv
-. venv/bin/activate
+python -m venv .venv
+. .venv/bin/activate
 pip install -r requirements.txt
-python certify_source.py --pcap example_pcaps/Example1_1Msps_8bits.pcapng
+python certify_source.py --pcap example_pcaps/DIFIv1_1_Example1_1Msps_8bits.pcapng
 ```
 
 (if you're using VSCode with the Python extension pack, every time you open this repo it should automatically find and active the venv).
@@ -30,7 +30,7 @@ python certify_source.py --pcap example_pcaps/Example1_1Msps_8bits.pcapng
 #### Certify Source (Parse DIFI)
 
 A PCAP or live UDP stream can be parsed with:
-- PCAP: `python certify_source.py --pcap example_pcaps/Example1_1Msps_8bits.pcapng`
+- PCAP: `python certify_source.py --pcap example_pcaps/DIFIv1_1_Example1_1Msps_8bits.pcapng`
 - UDP: `python certify_source.py --udp-port 50003` (e.g. using `python certify_sink.py --port 50003` to send it packets)
 
 Use `python certify_source.py --help` to see all available arguments

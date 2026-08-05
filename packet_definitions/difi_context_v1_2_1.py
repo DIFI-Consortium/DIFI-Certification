@@ -67,7 +67,7 @@ difi_context_definition = Struct(
         "event_tag_size"          / Bits(3), # 0 for no event tags
         "channel_tag_size"        / Bits(4), # 0 for no channel tags
         "data_item_fraction_size" / Bits(4),
-        "item_packing_field_size" / Bits(6),   # TODO: is it 23 for 12-bit?
+        "item_packing_field_size" / Bits(6),   # For DIFI, always matches data_item_size
         "data_item_size"          / Bits(6),   # unsigned number that is one less than the actual Data Item size, so usually 7 or 11 or 15
         "repeat_count"            / Bits(16),  # 2nd word, bits 16-31
         "vector_size"             / Bits(16))) # 2nd word, bits 0-15

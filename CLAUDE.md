@@ -36,7 +36,7 @@ pip install -r requirements.txt
 
 Parse/validate a DIFI stream (pcap or live UDP):
 ```bash
-python certify_source.py --pcap example_pcaps/Example1_1Msps_8bits.pcapng
+python certify_source.py --pcap example_pcaps/DIFIv1_1_Example1_1Msps_8bits.pcapng
 python certify_source.py --udp-port 50003                 # records via tcpdump-style loop until Ctrl-C
 python certify_source.py --config certify_source_example_config.yml
 python certify_source.py --pcap <file> --pn11             # also runs PN11 QPSK BER demod

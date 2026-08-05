@@ -11,6 +11,14 @@ import os
 import json
 import time
 import struct
+from profiles import (
+    available_profiles,
+    load_profile,
+    validate_profile_command,
+    validate_profile_context,
+    validate_profile_data,
+    validate_profile_version,
+)
 
 # Per-version packet-definition modules
 from packet_definitions.difi_context_v1_1 import difi_context_definition as difi_context_v1_1
@@ -87,7 +95,7 @@ def get_definitions(difi_version):
     raise ValueError(f"Unsupported DIFI version: {difi_version}")
 
 
-def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, validate_rf_freq=None, validate_if_freq=None, validate_bandwidth=None, create_iq_recording=False):
+def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, validate_rf_freq=None, validate_if_freq=None, validate_bandwidth=None, create_iq_recording=False, profile=None):
     packet_type = data[0] >> 4
     # Bytes 12-15 of every DIFI packet are Word 4 = Information Class | Packet Class.
     # Peek the 16-bit packetClassCode without parsing so we can disambiguate
@@ -112,6 +120,7 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
             raise Exception(f"Version packet size {len(data)} does not match expected size {ver_def.sizeof()}")
         parsed = ver_def.parse(data)
         errors = ver_def.validate(parsed)
+        errors.extend(validate_profile_version(profile, parsed))
         if stats.version_sequence_count != -1 and parsed.header.seqNum != (stats.version_sequence_count + 1) % 16:
             errors.append(f"Version packet sequence count jumped from {stats.version_sequence_count} to {parsed.header.seqNum}")
         stats.version_sequence_count = parsed.header.seqNum
@@ -143,6 +152,7 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
             raise Exception(f"Packet size {len(data)} does not match expected size {ctx_def.sizeof()}")
         parsed = ctx_def.parse(data)
         errors = ctx_def.validate(parsed)
+        errors.extend(validate_profile_context(profile, parsed))
         if validate_rf_freq is not None and abs(parsed.rfFreq - validate_rf_freq) > 1e-6: # leave a tolerance
             errors.append(f"RF frequency {parsed.rfFreq} does not match expected {validate_rf_freq}")
         if validate_if_freq is not None and abs(parsed.ifFreq - validate_if_freq) > 1e-6:
@@ -274,6 +284,7 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
             fig.canvas.draw()
             fig.canvas.flush_events()
         errors = defs["data"].validate(parsed)
+        errors.extend(validate_profile_data(profile, parsed))
         if stats.data_sequence_count != -1 and parsed.header.seqNum != (stats.data_sequence_count + 1) % 16:
             errors.append(f"Data packet sequence count jumped from {stats.data_sequence_count} to {parsed.header.seqNum}")
         stats.data_sequence_count = parsed.header.seqNum
@@ -310,6 +321,7 @@ def process_packet(data, packet_index, stats, error_log, defs, plot_psd=False, v
             raise Exception(f"Command packet size {len(data)} does not match expected size {cmd_def.sizeof()}")
         parsed = cmd_def.parse(data)
         errors = cmd_def.validate(parsed)
+        errors.extend(validate_profile_command(profile, parsed))
         if stats.command_sequence_count != -1 and parsed.header.seqNum != (stats.command_sequence_count + 1) % 16:
             errors.append(f"Command packet sequence count jumped from {stats.command_sequence_count} to {parsed.header.seqNum}")
         stats.command_sequence_count = parsed.header.seqNum
@@ -360,6 +372,14 @@ if __name__ == "__main__":
     parser.add_argument("--create-iq-recording", action="store_true", help="Create IQ recording (SigMF format) file from samples in data packets")
     parser.add_argument("--difi-version", type=str, default="1.2.1", choices=list(SUPPORTED_DIFI_VERSIONS),
                         help="DIFI specification version to validate against (default: 1.2.1)")
+    parser.add_argument(
+        "--profile",
+        type=str,
+        default="",
+        choices=available_profiles(),
+        help="Specific profile to do extra validations on",
+    )
+
     valid_args = set()
     for action in parser._actions:
         if action.dest != argparse.SUPPRESS:
@@ -380,6 +400,10 @@ if __name__ == "__main__":
                 defaults.update(normalized_yaml_args)
     parser.set_defaults(**defaults)
     args = parser.parse_args(remaining_argv)
+
+    # Resolve the profile before doing any capture/file work so an invalid name
+    # fails even when the input contains no packets of a profile-validated type.
+    load_profile(args.profile)
 
     if not args.pcap and not args.udp_port:
         print("You must specify either --pcap or --udp-port")
@@ -465,7 +489,7 @@ if __name__ == "__main__":
         if len(data) < 28: # ignore packets too small to be DIFI
             continue
         samples = process_packet(data, packet_index, stats, args.error_log, defs, plot_psd=args.plot_psd, validate_rf_freq=args.validate_rf_freq,
-                                 validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth, create_iq_recording=args.create_iq_recording)
+                                 validate_if_freq=args.validate_if_freq, validate_bandwidth=args.validate_bandwidth, create_iq_recording=args.create_iq_recording, profile=args.profile)
         if samples is not None and args.pn11:
             samples_buffer = np.concatenate((samples_buffer, samples))
             if len(samples_buffer) >= 2047 * args.sps * 2: # Process PN11 in chunks, 2 sequences worth (2047 symbols * sps), so we know there's 1 full sequence in the middle
