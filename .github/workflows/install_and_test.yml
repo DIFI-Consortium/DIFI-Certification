@@ -44,19 +44,19 @@ jobs:
       - name: Test Wireshark v1.2.1 Version Context dispatch
         run: |
           text2pcap -q -u 4991,4991 wireshark-dissector/tests/version-context-v1_2_1.txt version-context-v1_2_1.pcapng
-          V49_SPEC=$(tshark -r version-context-v1_2_1.pcapng \
+          V49_SPEC=$(tshark --disable-protocol vrt -r version-context-v1_2_1.pcapng \
             -X lua_script:wireshark-dissector/difi-dissector.lua \
             -Y 'difi.packet_type == 0x4 && difi.packet_class_code == 0x0004' \
             -T fields -e difi.v49spec)
           test "$V49_SPEC" = "0x00000004"
 
-          LEGACY_V49_SPEC=$(tshark -r example_pcaps/Example1_1Msps_8bits.pcapng \
+          LEGACY_V49_SPEC=$(tshark --disable-protocol vrt -r example_pcaps/Example1_1Msps_8bits.pcapng \
             -X lua_script:wireshark-dissector/difi-dissector.lua \
             -Y 'difi.packet_type == 0x5 && difi.packet_class_code == 0x0004' \
             -T fields -e difi.v49spec | head -n 1)
           test "$LEGACY_V49_SPEC" = "0x00000004"
 
-          CONTEXT_CIF=$(tshark -r example_pcaps/Example1_1Msps_8bits.pcapng \
+          CONTEXT_CIF=$(tshark --disable-protocol vrt -r example_pcaps/Example1_1Msps_8bits.pcapng \
             -X lua_script:wireshark-dissector/difi-dissector.lua \
             -Y 'difi.packet_type == 0x4 && difi.packet_class_code == 0x0001' \
             -T fields -e difi.ctxt_cif | head -n 1)
