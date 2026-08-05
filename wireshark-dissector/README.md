@@ -1,6 +1,6 @@
 # DIFI Dissector
 
-This project contains a [DIFI](https://dificonsortium.org/) dissector plugin for Wireshark. It supports decoding of Context, Data and Version packets as defined in v1.0.0 of the DIFI spec.
+This project contains a [DIFI](https://dificonsortium.org/) dissector plugin for Wireshark. It supports decoding of Context, Data, Version and Command packets as defined in v1.2.1 of the DIFI spec, while retaining support for legacy v1.1 Version packets.
 
 # Pre-requisites
 * Install [Wireshark](https://www.wireshark.org/)

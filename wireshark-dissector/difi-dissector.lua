@@ -300,11 +300,20 @@ function difi_protocol.dissector(buffer, pinfo, tree)
     local name = "unknown type=" .. packet_type_int .. " , class=" .. packet_class_int
 
     if packet_type_int == 0x4 then
-        if packet_class_int == 1 then name = "Standard Flow Signal Context Packet" end
-        if packet_class_int == 3 then name = "Sample Count Context Packet" end
-        context_pkt_dissector(buffer, tree, name)
+        if packet_class_int == 0x4 then
+            -- DIFI v1.2.1 defines Version Flow as a Context packet with
+            -- packet class 0x0004. Its 44-byte layout differs from the
+            -- 108-byte layouts used by the other Context packet classes.
+            name = "Version Flow Signal Context Packet"
+            version_pkt_dissector(buffer, tree, name)
+        else
+            if packet_class_int == 0x1 then name = "Standard Flow Signal Context Packet" end
+            if packet_class_int == 0x3 then name = "Sample Count Context Packet" end
+            context_pkt_dissector(buffer, tree, name)
+        end
 
     elseif packet_type_int == 0x5 then
+        -- Retain support for the legacy DIFI v1.1 Version packet type.
         name = "Version Flow Signal Context Packet"
         version_pkt_dissector(buffer, tree, name)
 
