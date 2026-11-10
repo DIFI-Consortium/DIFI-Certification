@@ -86,15 +86,18 @@ def validate(packet):
     pkt_class = packet.classId.packetClassCode
     if pkt_class not in (0x0001, 0x0003):
         errors.append(f"Packet Class Code 0x{pkt_class:04X} not a valid v1.2.1 context class (expected 0x0001 or 0x0003)")
-    if pkt_class == 0x0001:
-        if packet.header.tsf != 2: errors.append("Packet Class 0x0001 requires TSF=0x2 (Real Time picoseconds)")
-        if packet.header.tsm != 1: errors.append("Packet Class 0x0001 requires TSM=1 (coarse) for Information Class 0x0000")
-    if pkt_class == 0x0003:
-        if packet.header.tsf != 1: errors.append("Packet Class 0x0003 requires TSF=0x1 (Sample Count)")
-        if packet.header.tsm != 0: errors.append("Packet Class 0x0003 requires TSM=0 (fine)")
     info_class = packet.classId.infoClassCode
     if info_class not in (0x0000, 0x0002, 0x0003, 0x0004):
         errors.append(f"Information Class 0x{info_class:04X} not valid for v1.2.1 signal context")
+    if pkt_class == 0x0001:
+        if packet.header.tsf != 2: errors.append("Packet Class 0x0001 requires TSF=0x2 (Real Time picoseconds)")
+    if pkt_class == 0x0001 and info_class == 0x0000:
+        if packet.header.tsm != 1: errors.append("Packet Class 0x0001 requires TSM=1 (coarse) for Information Class 0x0000")
+    if pkt_class == 0x0001 and info_class == 0x0003:
+        if packet.header.tsm != 0: errors.append("Packet Class 0x0001 requires TSM=0 (fine) for Information Class 0x0003")
+    if pkt_class == 0x0003:
+        if packet.header.tsf != 1: errors.append("Packet Class 0x0003 requires TSF=0x1 (Sample Count)")
+        if packet.header.tsm != 0: errors.append("Packet Class 0x0003 requires TSM=0 (fine)")
     if info_class == 0x0000 and pkt_class != 0x0001: errors.append("Information Class 0x0000 must use Packet Class 0x0001")
     if info_class == 0x0002 and pkt_class != 0x0003: errors.append("Information Class 0x0002 must use Packet Class 0x0003")
     if info_class == 0x0003 and pkt_class != 0x0001: errors.append("Information Class 0x0003 must use Packet Class 0x0001")
