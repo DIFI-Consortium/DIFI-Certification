@@ -18,6 +18,11 @@ local tsf_codes = {
     [3] = "Free-Running Count Time"
 }
 
+local tsm_codes = {
+    [0] = "Fine",
+    [1] = "Coarse"
+}
+
 -- Common Header fields
 packet_type    = ProtoField.uint8 ("difi.packet_type", "Packet Type", base.HEX, nil)
 tsi            = ProtoField.uint8 ("difi.tsi", "TSI", base.DEC, tsi_codes)
@@ -37,6 +42,7 @@ data     = ProtoField.bytes ("difi.data", "Payload")
 data_len = ProtoField.uint64("difi.data_len", "Length", base.DEC)
 
 -- Context Packet Header fields
+tsm           = ProtoField.uint8 ("difi.tsm", "Timestamp Mode", base.DEC, tsm_codes)
 ctxt_cif      = ProtoField.uint32("difi.ctxt_cif", "Context Indicator Field", base.HEX)
 ref_point     = ProtoField.uint32("difi.ref_point", "Reference Point", base.HEX)
 bandwidth     = ProtoField.uint64("difi.bandwidth", "Bandwidth (Hz)", base.DEC)
@@ -88,7 +94,7 @@ difi_protocol.fields = {
     -- data
     data, data_len,
     -- context
-    ctxt_cif, ref_point, bandwidth, if_ref_freq, rf_ref_freq, if_offset, ref_level, scaling_level,
+    tsm, ctxt_cif, ref_point, bandwidth, if_ref_freq, rf_ref_freq, if_offset, ref_level, scaling_level,
     stage1_gain, stage2_gain, sample_rate, timestamp_adj, time_cal, se_indicator, data_format,
     -- version
     ctxt_cif0, ctxt_cif1, v49spec, year, day, revision, user_type, icd_version,
@@ -149,6 +155,10 @@ local function context_pkt_dissector(buffer, tree, name)
     difi_common_dissector(buffer, subtree)
 
     -- Additional header fields
+    local packet_class_int = bit.band(buffer(12, 4):uint(), 0xffff)
+    if (packet_class_int == 0x1 or packet_class_int == 0x3) then
+        subtree:add(tsm, bit.rshift(bit.band(buffer(0, 4):uint(), 0x01000000), 24))
+    end
     subtree:add(ctxt_cif,  buffer(28, 4):uint())
     subtree:add(ref_point, buffer(32, 4):uint())
 
